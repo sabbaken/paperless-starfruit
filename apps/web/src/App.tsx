@@ -6,7 +6,7 @@ import { AppShell, type NavItem } from './components/app-shell';
 import { ConnectScreen } from './screens/ConnectScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
-import { ProvidersScreen } from './screens/ProvidersScreen';
+import { ApiKeysScreen } from './screens/ApiKeysScreen';
 import { ProcessingSettings } from './screens/ProcessingSettings';
 import { ThemeToggle } from './components/theme-toggle';
 import { Button } from './components/ui/button';
@@ -15,8 +15,8 @@ const META: Record<string, { title: string; description: string; width?: 'narrow
   '/dashboard': { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
   '/review': { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
   '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
-  '/settings/providers': { title: 'Providers', description: 'LLM & OCR connections and keys' },
-  '/settings/processing': { title: 'Processing', description: 'How documents are picked up and enriched' },
+  '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
+  '/settings/processing': { title: 'Processing', description: 'Models & how documents are enriched' },
 };
 
 export function App() {
@@ -77,7 +77,7 @@ export function App() {
       icon: SlidersHorizontal,
       children: [
         { to: '/settings/connection', label: 'Connection' },
-        { to: '/settings/providers', label: 'Providers' },
+        { to: '/settings/api-keys', label: 'API Keys' },
         { to: '/settings/processing', label: 'Processing' },
       ],
     },
@@ -104,10 +104,10 @@ export function App() {
         <Route path="/review" element={<ReviewScreen />} />
         <Route path="/settings" element={<Navigate to="/settings/connection" replace />} />
         <Route path="/settings/connection" element={<ConnectScreen status={connected} />} />
-        <Route path="/settings/providers" element={<ProvidersScreen />} />
+        <Route path="/settings/api-keys" element={<ApiKeysScreen />} />
         <Route
           path="/settings/processing"
-          element={<ProcessingSettings onGoToProviders={() => navigate('/settings/providers')} />}
+          element={<ProcessingSettings onGoToProviders={() => navigate('/settings/api-keys')} />}
         />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

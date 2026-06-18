@@ -1,5 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { PROVIDER_KIND } from '@paperless-ai/shared';
 import { createTestDb } from '../../test/db';
@@ -22,7 +22,6 @@ function makeService(pingImpl: () => Promise<void> = () => Promise.resolve()) {
 const anthropicInput = {
   name: 'Claude',
   kind: PROVIDER_KIND.ANTHROPIC,
-  model: 'claude-haiku-4-5',
   apiKey: 'sk-secret-123',
 };
 
@@ -31,7 +30,7 @@ describe('ProviderService CRUD', () => {
     const { db, service } = makeService();
     const created = service.create(anthropicInput);
 
-    expect(created).toMatchObject({ name: 'Claude', kind: 'anthropic', model: 'claude-haiku-4-5' });
+    expect(created).toMatchObject({ name: 'Claude', kind: 'anthropic' });
     expect(created).not.toHaveProperty('apiKey');
     expect(created.caps.billingUnit).toBe('tokens');
 
@@ -40,21 +39,20 @@ describe('ProviderService CRUD', () => {
     expect(row.apiKeyEncrypted.length).toBeGreaterThan(0);
   });
 
-  it('round-trips the decrypted key via getResolved', () => {
+  it('round-trips the decrypted key via getCredential', () => {
     const { service } = makeService();
     const created = service.create(anthropicInput);
-    expect(service.getResolved(created.id)?.apiKey).toBe('sk-secret-123');
+    expect(service.getCredential(created.id)?.apiKey).toBe('sk-secret-123');
   });
 
   it('keeps the stored key when an update omits apiKey', () => {
     const { service } = makeService();
     const created = service.create(anthropicInput);
 
-    service.update(created.id, { name: 'Renamed', kind: PROVIDER_KIND.ANTHROPIC, model: 'claude-sonnet-4-6' });
+    service.update(created.id, { name: 'Renamed', kind: PROVIDER_KIND.ANTHROPIC });
 
     expect(service.get(created.id).name).toBe('Renamed');
-    expect(service.getResolved(created.id)?.apiKey).toBe('sk-secret-123');
-    expect(service.getResolved(created.id)?.model).toBe('claude-sonnet-4-6');
+    expect(service.getCredential(created.id)?.apiKey).toBe('sk-secret-123');
   });
 
   it('replaces the key when an update provides apiKey', () => {
@@ -62,19 +60,22 @@ describe('ProviderService CRUD', () => {
     const created = service.create(anthropicInput);
 
     service.update(created.id, { ...anthropicInput, apiKey: 'sk-rotated-999' });
-    expect(service.getResolved(created.id)?.apiKey).toBe('sk-rotated-999');
+    expect(service.getCredential(created.id)?.apiKey).toBe('sk-rotated-999');
   });
 
-  it('clears the pipeline default when its provider is deleted', () => {
+  it('clears the selected model when its credential is deleted', () => {
     const { db, service } = makeService();
     const created = service.create(anthropicInput);
-    db.insert(settings).values({ id: 1, defaultProviderId: created.id }).run();
+    db.insert(settings)
+      .values({ id: 1, llmProviderId: created.id, llmModel: 'claude-haiku-4-5' })
+      .run();
 
     service.remove(created.id);
 
     expect(service.list()).toHaveLength(0);
     const row = db.select().from(settings).where(eq(settings.id, 1)).all()[0];
-    expect(row.defaultProviderId).toBeNull();
+    expect(row.llmProviderId).toBeNull();
+    expect(row.llmModel).toBeNull();
   });
 });
 
@@ -103,7 +104,6 @@ describe('ProviderService.test', () => {
       id: created.id,
       name: created.name,
       kind: created.kind,
-      model: created.model,
     });
     expect(result.ok).toBe(true);
     expect(llm.ping).toHaveBeenCalledOnce();
@@ -114,11 +114,71 @@ describe('ProviderService.test', () => {
     const result = await service.test({
       name: 'local',
       kind: PROVIDER_KIND.OPENAI_COMPATIBLE,
-      model: 'llama3',
-      apiKey: 'x',
     });
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/base URL/i);
     expect(llm.ping).not.toHaveBeenCalled();
+  });
+
+  it('tests a local endpoint by listing its models (no LLM ping)', async () => {
+    const { service, llm } = makeService();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: [{ id: 'llama3.1' }] }), { status: 200 }),
+      ),
+    );
+    const result = await service.test({
+      name: 'Ollama',
+      kind: PROVIDER_KIND.OPENAI_COMPATIBLE,
+      baseUrl: 'http://localhost:11434/v1',
+    });
+    expect(result.ok).toBe(true);
+    expect(llm.ping).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
+
+const local = { name: 'Ollama', kind: PROVIDER_KIND.OPENAI_COMPATIBLE, baseUrl: 'http://localhost:11434/v1' };
+
+describe('ProviderService.listAvailableModels', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('returns curated catalog models for a cloud credential', async () => {
+    const { service } = makeService();
+    service.create(anthropicInput);
+    const { api, local: localList } = await service.listAvailableModels();
+    expect(localList).toHaveLength(0);
+    expect(api).toHaveLength(1);
+    expect(api[0]).toMatchObject({ kind: 'anthropic', manual: false });
+    expect(api[0].models.length).toBeGreaterThan(0);
+    expect(api[0].models[0]).toHaveProperty('vision');
+  });
+
+  it('discovers a local endpoint’s models live', async () => {
+    const { service } = makeService();
+    service.create(local);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: [{ id: 'llama3.1' }, { id: 'qwen2.5' }] }), {
+          status: 200,
+        }),
+      ),
+    );
+    const { api, local: localList } = await service.listAvailableModels();
+    expect(api).toHaveLength(0);
+    expect(localList).toHaveLength(1);
+    expect(localList[0].manual).toBe(false);
+    expect(localList[0].models.map((m) => m.id)).toEqual(['llama3.1', 'qwen2.5']);
+  });
+
+  it('marks a local endpoint manual when it is unreachable', async () => {
+    const { service } = makeService();
+    service.create(local);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
+    const { local: localList } = await service.listAvailableModels();
+    expect(localList[0]).toMatchObject({ manual: true });
+    expect(localList[0].models).toEqual([]);
   });
 });

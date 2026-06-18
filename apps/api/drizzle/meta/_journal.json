@@ -15,6 +15,20 @@
       "when": 1781809704041,
       "tag": "0001_acoustic_dexter_bennett",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781822216470,
+      "tag": "0002_breezy_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781822238844,
+      "tag": "0003_yellow_silver_surfer",
+      "breakpoints": true
     }
   ]
 }

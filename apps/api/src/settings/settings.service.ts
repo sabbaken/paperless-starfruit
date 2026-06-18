@@ -45,6 +45,9 @@ function toSettings(row: SettingsRow): Settings {
     language: row.language,
     ocrEnabled: row.ocrEnabled,
     correspondentBlacklist: row.correspondentBlacklist,
-    defaultProviderId: row.defaultProviderId ?? null,
+    llmProviderId: row.llmProviderId ?? null,
+    llmModel: row.llmModel ?? null,
+    ocrProviderId: row.ocrProviderId ?? null,
+    ocrModel: row.ocrModel ?? null,
   };
 }

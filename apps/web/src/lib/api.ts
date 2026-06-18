@@ -1,4 +1,5 @@
 import type {
+  AvailableModels,
   ConnectionStatus,
   ConnectionTestResult,
   PaperlessConnectionInput,
@@ -102,6 +103,8 @@ export const providerApi = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+
+  models: () => request<AvailableModels>('/providers/models'),
 };
 
 export const settingsApi = {

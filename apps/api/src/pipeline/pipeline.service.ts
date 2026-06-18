@@ -59,7 +59,7 @@ export class PipelineService {
     if (!client) throw new Error('No paperless connection is configured.');
 
     const settings = this.settings.get();
-    const provider = this.resolveProvider(settings.defaultProviderId);
+    const provider = this.resolveProvider(settings.llmProviderId, settings.llmModel);
 
     const doc = await client.getDocument(job.documentId);
     // M3 relies on paperless's existing OCR text; OCR write-back lands in M5.
@@ -145,15 +145,15 @@ export class PipelineService {
     return { contentHash: hash, cost, decision: 'review-queued' };
   }
 
-  private resolveProvider(defaultProviderId: number | null): ResolvedProvider {
-    if (defaultProviderId == null) {
-      throw new Error('No LLM provider selected — choose a default provider in Settings.');
+  private resolveProvider(llmProviderId: number | null, llmModel: string | null): ResolvedProvider {
+    if (llmProviderId == null || !llmModel) {
+      throw new Error('No LLM model selected — choose one in Settings → Processing.');
     }
-    const provider = this.providers.getResolved(defaultProviderId);
-    if (!provider) {
+    const credential = this.providers.getCredential(llmProviderId);
+    if (!credential) {
       throw new Error('The selected LLM provider no longer exists — pick another in Settings.');
     }
-    return provider;
+    return { ...credential, model: llmModel };
   }
 
   private async applyAuto(

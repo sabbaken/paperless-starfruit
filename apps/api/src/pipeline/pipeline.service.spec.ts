@@ -23,7 +23,10 @@ const DEFAULT_SETTINGS: Settings = {
   language: 'auto',
   ocrEnabled: false,
   correspondentBlacklist: [],
-  defaultProviderId: 9,
+  llmProviderId: 9,
+  llmModel: 'claude-haiku-4-5',
+  ocrProviderId: null,
+  ocrModel: null,
 };
 
 const DEFAULT_DOC: PaperlessDocument = {
@@ -48,7 +51,7 @@ interface Overrides {
   hasCompleted?: boolean;
   resolvedTags?: { id: number | null; name: string; isNew: boolean }[];
   resolvedCorrespondent?: { id: number | null; name: string; isNew: boolean } | null;
-  resolvedProvider?: unknown;
+  credential?: unknown;
 }
 
 function makePipeline(o: Overrides = {}) {
@@ -59,11 +62,11 @@ function makePipeline(o: Overrides = {}) {
   };
   const connection = { getClient: () => client } as unknown as ConnectionService;
 
-  const resolvedProvider =
-    o.resolvedProvider === undefined
-      ? { name: 'c', kind: 'anthropic', apiKey: 'k', baseUrl: null, model: 'claude-haiku-4-5' }
-      : o.resolvedProvider;
-  const providers = { getResolved: vi.fn().mockReturnValue(resolvedProvider) } as unknown as ProviderService;
+  const credential =
+    o.credential === undefined
+      ? { name: 'c', kind: 'anthropic', apiKey: 'k', baseUrl: null }
+      : o.credential;
+  const providers = { getCredential: vi.fn().mockReturnValue(credential) } as unknown as ProviderService;
 
   const settings = {
     get: () => ({ ...DEFAULT_SETTINGS, ...o.settings }),
@@ -190,13 +193,13 @@ describe('PipelineService.process', () => {
     await expect(pipeline.process(JOB)).rejects.toThrow(/no text/i);
   });
 
-  it('fails when no provider is selected', async () => {
-    const { pipeline } = makePipeline({ settings: { defaultProviderId: null } });
-    await expect(pipeline.process(JOB)).rejects.toThrow(/No LLM provider/i);
+  it('fails when no model is selected', async () => {
+    const { pipeline } = makePipeline({ settings: { llmProviderId: null, llmModel: null } });
+    await expect(pipeline.process(JOB)).rejects.toThrow(/No LLM model/i);
   });
 
   it('fails when the selected provider has been deleted', async () => {
-    const { pipeline } = makePipeline({ resolvedProvider: null });
+    const { pipeline } = makePipeline({ credential: null });
     await expect(pipeline.process(JOB)).rejects.toThrow(/no longer exists/i);
   });
 });

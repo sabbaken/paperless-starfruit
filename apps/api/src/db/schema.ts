@@ -22,14 +22,17 @@ export const paperlessConnection = sqliteTable('paperless_connection', {
   createdAt: timestamp('created_at'),
 });
 
-/** A configured LLM / OCR provider. The API key is stored encrypted at rest. */
+/**
+ * A configured provider credential (an API key, or a local OpenAI-compatible
+ * endpoint). The API key is stored encrypted at rest. The model is no longer
+ * bound here — it is chosen per task in settings.
+ */
 export const provider = sqliteTable('provider', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   kind: text('kind').notNull(),
   baseUrl: text('base_url'),
   apiKeyEncrypted: text('api_key_encrypted').notNull(),
-  model: text('model').notNull(),
   caps: text('caps', { mode: 'json' }),
   createdAt: timestamp('created_at'),
 });
@@ -64,8 +67,12 @@ export const settings = sqliteTable('settings', {
     .notNull()
     .$type<string[]>()
     .default([]),
-  /** FK-ish pointer to `provider.id` the pipeline extracts with; null until set. */
-  defaultProviderId: integer('default_provider_id'),
+  /** The credential + model the pipeline extracts with; null until chosen. */
+  llmProviderId: integer('llm_provider_id'),
+  llmModel: text('llm_model'),
+  /** The credential + model used for OCR (consumed in M5); null until chosen. */
+  ocrProviderId: integer('ocr_provider_id'),
+  ocrModel: text('ocr_model'),
 });
 
 /**

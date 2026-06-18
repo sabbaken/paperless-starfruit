@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PROVIDER_KIND } from '../const';
+import { PROVIDER_KIND, PROVIDER_KIND_META } from '../const';
 
 export const providerKindSchema = z.enum([
   PROVIDER_KIND.OPENAI,
@@ -28,39 +28,57 @@ const optionalUrl = z.preprocess(
   z.string().url().optional(),
 );
 
-/** The user-editable, non-secret fields of a provider. */
+/**
+ * The user-editable, non-secret fields of a credential. A credential is now just
+ * an API key (or local endpoint) per provider — the model is chosen separately,
+ * in processing settings.
+ */
 const providerFieldsSchema = z.object({
   name: z.string().min(1),
   kind: providerKindSchema,
   baseUrl: optionalUrl,
-  model: z.string().min(1),
 });
 
-/** Provider as exposed to the web UI — the API key is NEVER returned. */
+/** Local (OpenAI-compatible) endpoints require a base URL; cloud kinds require a key. */
+const requireKeyAndUrl = (
+  v: { kind: z.infer<typeof providerKindSchema>; baseUrl?: string; apiKey?: string },
+  ctx: z.RefinementCtx,
+  keyRequired: boolean,
+) => {
+  const meta = PROVIDER_KIND_META[v.kind];
+  if (meta.needsBaseUrl && !v.baseUrl) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['baseUrl'], message: 'Base URL is required' });
+  }
+  if (keyRequired && meta.keyRequired && !v.apiKey) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['apiKey'], message: 'API key is required' });
+  }
+};
+
+/** Credential as exposed to the web UI — the API key is NEVER returned. */
 export const providerConfigSchema = providerFieldsSchema.extend({
   id: z.number().int(),
   caps: providerCapsSchema,
 });
 export type ProviderConfig = z.infer<typeof providerConfigSchema>;
 
-/** Create payload — the key is required and write-only. */
-export const providerInputSchema = providerFieldsSchema.extend({
-  apiKey: z.string().min(1),
-});
+/** Create payload — key required for cloud kinds, optional for local. */
+export const providerInputSchema = providerFieldsSchema
+  .extend({ apiKey: z.string().optional() })
+  .superRefine((v, ctx) => requireKeyAndUrl(v, ctx, true));
 export type ProviderInput = z.infer<typeof providerInputSchema>;
 
 /** Update payload — a blank key means "keep the stored one". */
-export const providerUpdateSchema = providerFieldsSchema.extend({
-  apiKey: z.string().min(1).optional(),
-});
+export const providerUpdateSchema = providerFieldsSchema
+  .extend({ apiKey: z.string().optional() })
+  .superRefine((v, ctx) => requireKeyAndUrl(v, ctx, false));
 export type ProviderUpdate = z.infer<typeof providerUpdateSchema>;
 
 /**
- * Test payload. A candidate connection carries its own `apiKey`; testing an
- * already-saved provider sends its `id` so the server uses the stored key.
+ * Test payload. A candidate carries its own `apiKey`; testing an already-saved
+ * credential sends its `id` so the server uses the stored key.
  */
 export const providerTestInputSchema = providerFieldsSchema.extend({
-  apiKey: z.string().min(1).optional(),
+  apiKey: z.string().optional(),
   id: z.number().int().optional(),
 });
 export type ProviderTestInput = z.infer<typeof providerTestInputSchema>;
@@ -115,8 +133,12 @@ export const settingsSchema = z.object({
   language: z.string().default('auto'),
   ocrEnabled: z.boolean().default(false),
   correspondentBlacklist: z.array(z.string()).default([]),
-  /** Which provider the extraction pipeline uses; null until one is chosen. */
-  defaultProviderId: z.number().int().nullable().default(null),
+  /** The credential + model the extraction pipeline runs on; null until chosen. */
+  llmProviderId: z.number().int().nullable().default(null),
+  llmModel: z.string().nullable().default(null),
+  /** The credential + model used for OCR (wired up in M5); chosen ahead of time. */
+  ocrProviderId: z.number().int().nullable().default(null),
+  ocrModel: z.string().nullable().default(null),
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
