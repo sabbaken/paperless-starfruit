@@ -1,7 +1,14 @@
 node_modules/
 .env
 .env.*
+!.env.example
 dist/
 build/
+.turbo/
+*.tsbuildinfo
+data/
+*.db
+*.db-shm
+*.db-wal
 *.log
 .DS_Store
