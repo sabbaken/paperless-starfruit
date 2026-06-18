@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './components/theme-provider';
 import { App } from './App';
 import './index.css';
@@ -14,7 +15,9 @@ createRoot(rootEl).render(
   <StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

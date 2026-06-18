@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Inbox, LayoutDashboard, Loader2, SlidersHorizontal } from 'lucide-react';
 import { connectionApi, statsApi } from './lib/api';
 import { AppShell, type NavItem } from './components/app-shell';
@@ -12,16 +12,17 @@ import { ThemeToggle } from './components/theme-toggle';
 import { Button } from './components/ui/button';
 
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
-  dashboard: { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
-  review: { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
-  connection: { title: 'Connection', description: 'Your paperless-ngx instance' },
-  providers: { title: 'Providers', description: 'LLM & OCR connections and keys' },
-  processing: { title: 'Processing', description: 'How documents are picked up and enriched' },
+  '/dashboard': { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
+  '/review': { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
+  '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
+  '/settings/providers': { title: 'Providers', description: 'LLM & OCR connections and keys' },
+  '/settings/processing': { title: 'Processing', description: 'How documents are picked up and enriched' },
 };
 
 export function App() {
   const status = useQuery({ queryKey: ['connection'], queryFn: connectionApi.get });
-  const [view, setView] = useState('dashboard');
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   // Drives the live "pending review" badge in the nav; cheap and always-on.
   const stats = useQuery({
     queryKey: ['stats'],
@@ -65,18 +66,19 @@ export function App() {
     );
   }
 
-  const meta = META[view] ?? META.dashboard;
+  const connected = status.data;
+  const meta = META[pathname] ?? META['/dashboard'];
   const nav: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
     {
-      id: 'settings',
+      to: '/settings',
       label: 'Settings',
       icon: SlidersHorizontal,
       children: [
-        { id: 'connection', label: 'Connection' },
-        { id: 'providers', label: 'Providers' },
-        { id: 'processing', label: 'Processing' },
+        { to: '/settings/connection', label: 'Connection' },
+        { to: '/settings/providers', label: 'Providers' },
+        { to: '/settings/processing', label: 'Processing' },
       ],
     },
   ];
@@ -84,29 +86,31 @@ export function App() {
   return (
     <AppShell
       nav={nav}
-      active={view}
-      onNavigate={setView}
+      activePath={pathname}
+      onNavigate={(to) => navigate(to)}
       title={meta.title}
       description={meta.description}
       width={meta.width}
       sidebarFooter={
         <div className="flex items-center gap-2 text-muted-foreground">
           <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
-          <span className="truncate">{status.data.baseUrl}</span>
+          <span className="truncate">{connected.baseUrl}</span>
         </div>
       }
     >
-      {view === 'dashboard' ? (
-        <DashboardScreen onReview={() => setView('review')} />
-      ) : view === 'review' ? (
-        <ReviewScreen />
-      ) : view === 'connection' ? (
-        <ConnectScreen status={status.data} />
-      ) : view === 'providers' ? (
-        <ProvidersScreen />
-      ) : (
-        <ProcessingSettings onGoToProviders={() => setView('providers')} />
-      )}
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<DashboardScreen onReview={() => navigate('/review')} />} />
+        <Route path="/review" element={<ReviewScreen />} />
+        <Route path="/settings" element={<Navigate to="/settings/connection" replace />} />
+        <Route path="/settings/connection" element={<ConnectScreen status={connected} />} />
+        <Route path="/settings/providers" element={<ProvidersScreen />} />
+        <Route
+          path="/settings/processing"
+          element={<ProcessingSettings onGoToProviders={() => navigate('/settings/providers')} />}
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </AppShell>
   );
 }
