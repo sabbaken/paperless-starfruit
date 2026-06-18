@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { DbModule } from './db/db.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { ConnectionModule } from './connection/connection.module';
+import { ProvidersModule } from './providers/providers.module';
 import { QueueModule } from './queue/queue.module';
 import { PollerModule } from './poller/poller.module';
 import { HealthController } from './health.controller';
@@ -17,6 +18,7 @@ import { HealthController } from './health.controller';
     DbModule,
     CryptoModule,
     ConnectionModule,
+    ProvidersModule,
     QueueModule,
     PollerModule,
   ],

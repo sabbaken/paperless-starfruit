@@ -8,6 +8,13 @@
       "when": 1781774759423,
       "tag": "0000_zippy_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781809704041,
+      "tag": "0001_acoustic_dexter_bennett",
+      "breakpoints": true
     }
   ]
 }

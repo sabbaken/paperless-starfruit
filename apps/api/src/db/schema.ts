@@ -64,6 +64,8 @@ export const settings = sqliteTable('settings', {
     .notNull()
     .$type<string[]>()
     .default([]),
+  /** FK-ish pointer to `provider.id` the pipeline extracts with; null until set. */
+  defaultProviderId: integer('default_provider_id'),
 });
 
 /**
@@ -121,3 +123,8 @@ export const auditLog = sqliteTable('audit_log', {
 
 export type Job = typeof job.$inferSelect;
 export type NewJob = typeof job.$inferInsert;
+export type Provider = typeof provider.$inferSelect;
+export type NewProvider = typeof provider.$inferInsert;
+export type SettingsRow = typeof settings.$inferSelect;
+export type ReviewItem = typeof reviewItem.$inferSelect;
+export type AuditLog = typeof auditLog.$inferSelect;
