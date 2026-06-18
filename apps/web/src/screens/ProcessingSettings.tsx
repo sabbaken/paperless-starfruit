@@ -11,7 +11,7 @@ import { Select } from '../components/ui/select';
 import { Switch } from '../components/ui/switch';
 import { Textarea } from '../components/ui/textarea';
 
-export function SettingsScreen({ onGoToProviders }: { onGoToProviders: () => void }) {
+export function ProcessingSettings({ onGoToProviders }: { onGoToProviders: () => void }) {
   const settings = useQuery({ queryKey: ['settings'], queryFn: settingsApi.get });
   const providers = useQuery({ queryKey: ['providers'], queryFn: providerApi.list });
 

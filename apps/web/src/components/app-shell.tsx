@@ -1,8 +1,13 @@
 import type { LucideIcon } from 'lucide-react';
 import { FileStack } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
 import { ThemeToggle } from './theme-toggle';
+
+export interface SubNavItem {
+  id: string;
+  label: string;
+}
 
 export interface NavItem {
   id: string;
@@ -10,6 +15,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** Optional count pill (e.g. pending review backlog); hidden when 0. */
   badge?: number;
+  /** Nested destinations shown beneath this item when its section is active. */
+  children?: SubNavItem[];
 }
 
 interface AppShellProps {
@@ -46,28 +53,57 @@ export function AppShell({
         <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
           {nav.map((item) => {
             const Icon = item.icon;
-            const isActive = item.id === active;
+            const childIds = item.children?.map((c) => c.id) ?? [];
+            // A parent with children is a section header, not a destination of
+            // its own; clicking it opens its first child.
+            const sectionActive = item.id === active || childIds.includes(active);
+            const leafActive = !item.children && item.id === active;
+            const target = item.children?.[0]?.id ?? item.id;
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onNavigate(item.id)}
-                aria-current={isActive ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+              <Fragment key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(target)}
+                  aria-current={item.id === active ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    leafActive
+                      ? 'bg-accent text-accent-foreground'
+                      : sectionActive
+                        ? 'text-foreground'
+                        : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge ? (
+                    <span className="rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground tabular-nums">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </button>
+
+                {item.children && sectionActive && (
+                  <div className="my-0.5 ml-4 flex flex-col gap-0.5 border-l pl-3">
+                    {item.children.map((child) => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        onClick={() => onNavigate(child.id)}
+                        aria-current={child.id === active ? 'page' : undefined}
+                        className={cn(
+                          'rounded-md px-2.5 py-1.5 text-left text-sm transition-colors',
+                          child.id === active
+                            ? 'bg-accent font-medium text-accent-foreground'
+                            : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                        )}
+                      >
+                        {child.label}
+                      </button>
+                    ))}
+                  </div>
                 )}
-              >
-                <Icon className="size-4 shrink-0" />
-                <span className="flex-1">{item.label}</span>
-                {item.badge ? (
-                  <span className="rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground tabular-nums">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </button>
+              </Fragment>
             );
           })}
         </nav>
