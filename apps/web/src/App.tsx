@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 import { connectionApi } from './lib/api';
 import { ConnectScreen } from './screens/ConnectScreen';
-import { Button } from './components/ui';
+import { ThemeToggle } from './components/theme-toggle';
+import { Button } from './components/ui/button';
 
 export function App() {
   const status = useQuery({
@@ -10,27 +12,25 @@ export function App() {
   });
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      {status.isError ? (
-        <Unreachable
-          message={status.error instanceof Error ? status.error.message : 'unknown error'}
-          onRetry={() => void status.refetch()}
-          retrying={status.isFetching}
-        />
-      ) : status.isLoading || !status.data ? (
-        <Booting />
-      ) : (
-        <ConnectScreen status={status.data} />
-      )}
-    </main>
-  );
-}
+    <div className="flex min-h-screen flex-col">
+      <header className="flex items-center justify-between px-6 py-4">
+        <span className="text-sm font-semibold tracking-tight">Paperless AI</span>
+        <ThemeToggle />
+      </header>
 
-function Booting() {
-  return (
-    <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.22em] text-paper-faint">
-      <span className="h-2 w-2 animate-pulse rounded-full bg-warn" />
-      initializing
+      <main className="flex flex-1 items-center justify-center px-6 pb-16">
+        {status.isError ? (
+          <Unreachable
+            message={status.error instanceof Error ? status.error.message : 'unknown error'}
+            onRetry={() => void status.refetch()}
+            retrying={status.isFetching}
+          />
+        ) : status.isLoading || !status.data ? (
+          <Loader2 className="size-5 animate-spin text-muted-foreground" aria-label="Loading" />
+        ) : (
+          <ConnectScreen status={status.data} />
+        )}
+      </main>
     </div>
   );
 }
@@ -46,12 +46,12 @@ function Unreachable({
 }) {
   return (
     <div className="w-full max-w-sm space-y-4 text-center">
-      <div className="flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-[0.22em] text-alert">
-        <span className="h-2 w-2 rounded-full bg-alert" />
-        backend unreachable
+      <div className="space-y-1.5">
+        <p className="font-medium">Backend unreachable</p>
+        <p className="text-sm text-muted-foreground">{message}</p>
       </div>
-      <p className="font-mono text-xs text-paper-dim">{message}</p>
-      <Button variant="ghost" onClick={onRetry} disabled={retrying}>
+      <Button variant="outline" onClick={onRetry} disabled={retrying}>
+        {retrying && <Loader2 className="animate-spin" />}
         {retrying ? 'Retrying…' : 'Retry'}
       </Button>
     </div>
