@@ -5,12 +5,14 @@ import { cn } from '../lib/cn';
 import { ThemeToggle } from './theme-toggle';
 
 export interface SubNavItem {
-  id: string;
+  /** Route path this item navigates to. */
+  to: string;
   label: string;
 }
 
 export interface NavItem {
-  id: string;
+  /** Route path this item navigates to (the parent of a section may redirect). */
+  to: string;
   label: string;
   icon: LucideIcon;
   /** Optional count pill (e.g. pending review backlog); hidden when 0. */
@@ -21,8 +23,9 @@ export interface NavItem {
 
 interface AppShellProps {
   nav: NavItem[];
-  active: string;
-  onNavigate: (id: string) => void;
+  /** Current route pathname, used to highlight the active item. */
+  activePath: string;
+  onNavigate: (to: string) => void;
   title: string;
   description?: string;
   /** Content max-width: 'narrow' for forms, 'wide' for tables/side-by-side. */
@@ -34,7 +37,7 @@ interface AppShellProps {
 
 export function AppShell({
   nav,
-  active,
+  activePath,
   onNavigate,
   title,
   description,
@@ -53,18 +56,21 @@ export function AppShell({
         <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
           {nav.map((item) => {
             const Icon = item.icon;
-            const childIds = item.children?.map((c) => c.id) ?? [];
+            const childPaths = item.children?.map((c) => c.to) ?? [];
             // A parent with children is a section header, not a destination of
             // its own; clicking it opens its first child.
-            const sectionActive = item.id === active || childIds.includes(active);
-            const leafActive = !item.children && item.id === active;
-            const target = item.children?.[0]?.id ?? item.id;
+            const sectionActive =
+              item.to === activePath ||
+              childPaths.includes(activePath) ||
+              activePath.startsWith(`${item.to}/`);
+            const leafActive = !item.children && item.to === activePath;
+            const target = item.children?.[0]?.to ?? item.to;
             return (
-              <Fragment key={item.id}>
+              <Fragment key={item.to}>
                 <button
                   type="button"
                   onClick={() => onNavigate(target)}
-                  aria-current={item.id === active ? 'page' : undefined}
+                  aria-current={item.to === activePath ? 'page' : undefined}
                   className={cn(
                     'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     leafActive
@@ -87,13 +93,13 @@ export function AppShell({
                   <div className="my-0.5 ml-4 flex flex-col gap-0.5 border-l pl-3">
                     {item.children.map((child) => (
                       <button
-                        key={child.id}
+                        key={child.to}
                         type="button"
-                        onClick={() => onNavigate(child.id)}
-                        aria-current={child.id === active ? 'page' : undefined}
+                        onClick={() => onNavigate(child.to)}
+                        aria-current={child.to === activePath ? 'page' : undefined}
                         className={cn(
                           'rounded-md px-2.5 py-1.5 text-left text-sm transition-colors',
-                          child.id === active
+                          child.to === activePath
                             ? 'bg-accent font-medium text-accent-foreground'
                             : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                         )}
