@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Boxes, Loader2, Plug } from 'lucide-react';
+import { Boxes, Loader2, Plug, SlidersHorizontal } from 'lucide-react';
 import { connectionApi } from './lib/api';
 import { AppShell, type NavItem } from './components/app-shell';
 import { ConnectScreen } from './screens/ConnectScreen';
 import { ProvidersScreen } from './screens/ProvidersScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { ThemeToggle } from './components/theme-toggle';
 import { Button } from './components/ui/button';
 
 const NAV: NavItem[] = [
   { id: 'providers', label: 'Providers', icon: Boxes },
+  { id: 'settings', label: 'Settings', icon: SlidersHorizontal },
   { id: 'connection', label: 'Connection', icon: Plug },
 ];
 
 const META: Record<string, { title: string; description: string }> = {
   providers: { title: 'Providers', description: 'LLM & OCR connections and keys' },
+  settings: { title: 'Settings', description: 'Processing behaviour & defaults' },
   connection: { title: 'Connection', description: 'Your paperless-ngx instance' },
 };
 
@@ -75,6 +78,8 @@ export function App() {
     >
       {view === 'connection' ? (
         <ConnectScreen status={status.data} />
+      ) : view === 'settings' ? (
+        <SettingsScreen onGoToProviders={() => setView('providers')} />
       ) : (
         <ProvidersScreen />
       )}

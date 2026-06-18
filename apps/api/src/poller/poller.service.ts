@@ -1,20 +1,87 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import {
+  Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+  type OnModuleDestroy,
+} from '@nestjs/common';
+import { ConnectionService } from '../connection/connection.service';
+import { SettingsService } from '../settings/settings.service';
+import { TaxonomyService } from '../taxonomy/taxonomy.service';
+import { ReviewService } from '../review/review.service';
 import { QueueService } from '../queue/queue.service';
 
+const MIN_INTERVAL_SEC = 15;
+
 /**
- * Polls paperless-ngx for documents carrying the trigger tag and enqueues them.
- * M0 scaffold: the cron is wired but the paperless lookup lands in M1.
+ * Polls paperless-ngx for documents carrying a trigger tag (review or auto) and
+ * enqueues fresh ones. Self-scheduling so it honours the configurable poll
+ * interval without a fixed cron expression.
  */
 @Injectable()
-export class PollerService {
+export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(PollerService.name);
+  private stopped = false;
+  private timer?: ReturnType<typeof setTimeout>;
 
-  constructor(private readonly queue: QueueService) {}
+  constructor(
+    private readonly connection: ConnectionService,
+    private readonly settings: SettingsService,
+    private readonly taxonomy: TaxonomyService,
+    private readonly review: ReviewService,
+    private readonly queue: QueueService,
+  ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
-  poll(): void {
-    // M1: resolve trigger-tag id -> list tagged docs -> this.queue.enqueue(id)
-    this.logger.debug('poll tick (scaffold no-op)');
+  onApplicationBootstrap(): void {
+    this.schedule(0);
+  }
+
+  onModuleDestroy(): void {
+    this.stopped = true;
+    if (this.timer) clearTimeout(this.timer);
+  }
+
+  /**
+   * One poll cycle: enqueue tagged documents that aren't already in flight or
+   * awaiting review. Returns the number of newly-enqueued documents.
+   */
+  async pollOnce(): Promise<number> {
+    const client = this.connection.getClient();
+    if (!client) {
+      this.logger.debug('no paperless connection; skipping poll');
+      return 0;
+    }
+
+    const { reviewTagId, autoTagId } = await this.taxonomy.resolveTriggerTags(client);
+    const { results } = await client.listDocuments({
+      tagIds: [reviewTagId, autoTagId],
+      ordering: 'added',
+    });
+
+    let enqueued = 0;
+    for (const doc of results) {
+      // A pending review item means we already processed it and are waiting on
+      // the user — don't re-enqueue (the trigger tag stays until they decide).
+      if (this.review.hasPending(doc.id)) continue;
+      if (this.queue.enqueue(doc.id)) enqueued++;
+    }
+    if (enqueued > 0) this.logger.log(`enqueued ${enqueued} document(s)`);
+    return enqueued;
+  }
+
+  private schedule(delayMs: number): void {
+    if (this.stopped) return;
+    this.timer = setTimeout(() => void this.tick(), delayMs);
+  }
+
+  private async tick(): Promise<void> {
+    let intervalSec = MIN_INTERVAL_SEC;
+    try {
+      intervalSec = this.settings.get().pollIntervalSec;
+      await this.pollOnce();
+    } catch (err) {
+      this.logger.warn(`poll failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      this.schedule(Math.max(MIN_INTERVAL_SEC, intervalSec) * 1000);
+    }
   }
 }

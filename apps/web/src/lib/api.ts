@@ -7,6 +7,8 @@ import type {
   ProviderTestInput,
   ProviderTestResult,
   ProviderUpdate,
+  Settings,
+  SettingsUpdate,
 } from '@paperless-ai/shared';
 
 /** A request that reached the server but came back non-2xx. */
@@ -96,4 +98,11 @@ export const providerApi = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+};
+
+export const settingsApi = {
+  get: () => request<Settings>('/settings'),
+
+  update: (patch: SettingsUpdate) =>
+    request<Settings>('/settings', { method: 'PATCH', body: JSON.stringify(patch) }),
 };

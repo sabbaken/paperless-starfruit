@@ -14,8 +14,11 @@ import { job, type Job } from '../db/schema';
 export class QueueService {
   constructor(@Inject(DB) private readonly db: Db) {}
 
-  /** Enqueue a document, unless it already has an active (queued/running) job. */
-  enqueue(documentId: number): void {
+  /**
+   * Enqueue a document unless it already has an active (queued/running) job.
+   * Returns true if a new job row was inserted, false if one was already active.
+   */
+  enqueue(documentId: number): boolean {
     const existing = this.db
       .select({ id: job.id })
       .from(job)
@@ -28,9 +31,10 @@ export class QueueService {
       .limit(1)
       .all();
 
-    if (existing.length > 0) return;
+    if (existing.length > 0) return false;
 
     this.db.insert(job).values({ documentId }).run();
+    return true;
   }
 
   /** Atomically claim the oldest queued job and mark it running. */

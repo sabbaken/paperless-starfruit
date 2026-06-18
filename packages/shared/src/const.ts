@@ -16,6 +16,14 @@ export const DEFAULT_TRIGGER_TAGS = {
   auto: 'ai-process-auto',
 } as const;
 
+/** Review-item lifecycle. `pending` waits on the user; the rest are terminal. */
+export const REVIEW_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+} as const;
+export type ReviewStatus = (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS];
+
 /** Provider families. OpenAI-compatible covers Ollama / LM Studio / vLLM / OpenRouter. */
 export const PROVIDER_KIND = {
   OPENAI: 'openai',
