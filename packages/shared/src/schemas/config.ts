@@ -28,7 +28,10 @@ export type ProviderInput = z.infer<typeof providerInputSchema>;
 /** Connection to the paperless-ngx instance. */
 export const paperlessConnectionSchema = z.object({
   baseUrl: z.string().url(),
-  apiVersion: z.number().int().positive().default(9),
+  // Optional override. Left blank, the API version is auto-detected from the
+  // server's `X-Api-Version` on connect (paperless rejects an unsupported pin
+  // with 406), then stored and pinned for subsequent requests.
+  apiVersion: z.number().int().positive().optional(),
 });
 export type PaperlessConnection = z.infer<typeof paperlessConnectionSchema>;
 
@@ -36,6 +39,26 @@ export const paperlessConnectionInputSchema = paperlessConnectionSchema.extend({
   token: z.string().min(1),
 });
 export type PaperlessConnectionInput = z.infer<typeof paperlessConnectionInputSchema>;
+
+/** Token-free view of the stored connection (GET /api/connection). */
+export const connectionStatusSchema = z.discriminatedUnion('connected', [
+  z.object({ connected: z.literal(false) }),
+  z.object({
+    connected: z.literal(true),
+    baseUrl: z.string().url(),
+    apiVersion: z.number().int(),
+  }),
+]);
+export type ConnectionStatus = z.infer<typeof connectionStatusSchema>;
+
+/** Result of probing a paperless instance (POST /api/connection/test). */
+export const connectionTestResultSchema = z.object({
+  ok: z.boolean(),
+  documentCount: z.number().int().optional(),
+  version: z.string().optional(),
+  error: z.string().optional(),
+});
+export type ConnectionTestResult = z.infer<typeof connectionTestResultSchema>;
 
 /** Single-row application settings. */
 export const settingsSchema = z.object({

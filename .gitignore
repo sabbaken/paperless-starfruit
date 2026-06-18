@@ -12,3 +12,6 @@ data/
 *.db-wal
 *.log
 .DS_Store
+
+# Dev paperless-ngx consume folder (drop files here to ingest)
+docker/paperless-consume/
