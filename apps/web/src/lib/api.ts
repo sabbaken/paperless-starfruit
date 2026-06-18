@@ -2,6 +2,11 @@ import type {
   ConnectionStatus,
   ConnectionTestResult,
   PaperlessConnectionInput,
+  ProviderConfig,
+  ProviderInput,
+  ProviderTestInput,
+  ProviderTestResult,
+  ProviderUpdate,
 } from '@paperless-ai/shared';
 
 /** A request that reached the server but came back non-2xx. */
@@ -70,4 +75,25 @@ export const connectionApi = {
     }),
 
   remove: () => request<void>('/connection', { method: 'DELETE' }),
+};
+
+export const providerApi = {
+  list: () => request<ProviderConfig[]>('/providers'),
+
+  create: (input: ProviderInput) =>
+    request<ProviderConfig>('/providers', { method: 'POST', body: JSON.stringify(input) }),
+
+  update: (id: number, input: ProviderUpdate) =>
+    request<ProviderConfig>(`/providers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+
+  remove: (id: number) => request<void>(`/providers/${id}`, { method: 'DELETE' }),
+
+  test: (input: ProviderTestInput) =>
+    request<ProviderTestResult>('/providers/test', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
 };

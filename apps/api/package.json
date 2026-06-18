@@ -14,17 +14,23 @@
     "db:migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.85",
+    "@ai-sdk/google": "^3.0.83",
+    "@ai-sdk/mistral": "^3.0.40",
+    "@ai-sdk/openai": "^3.0.73",
+    "@ai-sdk/openai-compatible": "^2.0.51",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^5.0.1",
     "@paperless-ai/shared": "workspace:*",
+    "ai": "^6.0.208",
     "better-sqlite3": "^11.7.0",
     "drizzle-orm": "^0.38.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "zod": "^3.24.1"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
