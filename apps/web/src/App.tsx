@@ -1,21 +1,19 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Boxes, Loader2, Plug, SlidersHorizontal } from 'lucide-react';
-import { connectionApi } from './lib/api';
+import { Boxes, Inbox, LayoutDashboard, Loader2, Plug, SlidersHorizontal } from 'lucide-react';
+import { connectionApi, statsApi } from './lib/api';
 import { AppShell, type NavItem } from './components/app-shell';
 import { ConnectScreen } from './screens/ConnectScreen';
+import { DashboardScreen } from './screens/DashboardScreen';
+import { ReviewScreen } from './screens/ReviewScreen';
 import { ProvidersScreen } from './screens/ProvidersScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { ThemeToggle } from './components/theme-toggle';
 import { Button } from './components/ui/button';
 
-const NAV: NavItem[] = [
-  { id: 'providers', label: 'Providers', icon: Boxes },
-  { id: 'settings', label: 'Settings', icon: SlidersHorizontal },
-  { id: 'connection', label: 'Connection', icon: Plug },
-];
-
-const META: Record<string, { title: string; description: string }> = {
+const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
+  dashboard: { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
+  review: { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
   providers: { title: 'Providers', description: 'LLM & OCR connections and keys' },
   settings: { title: 'Settings', description: 'Processing behaviour & defaults' },
   connection: { title: 'Connection', description: 'Your paperless-ngx instance' },
@@ -23,7 +21,14 @@ const META: Record<string, { title: string; description: string }> = {
 
 export function App() {
   const status = useQuery({ queryKey: ['connection'], queryFn: connectionApi.get });
-  const [view, setView] = useState('providers');
+  const [view, setView] = useState('dashboard');
+  // Drives the live "pending review" badge in the nav; cheap and always-on.
+  const stats = useQuery({
+    queryKey: ['stats'],
+    queryFn: statsApi.get,
+    enabled: status.data?.connected === true,
+    refetchInterval: 8000,
+  });
 
   if (status.isError) {
     return (
@@ -60,15 +65,23 @@ export function App() {
     );
   }
 
-  const meta = META[view] ?? META.providers;
+  const meta = META[view] ?? META.dashboard;
+  const nav: NavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
+    { id: 'providers', label: 'Providers', icon: Boxes },
+    { id: 'settings', label: 'Settings', icon: SlidersHorizontal },
+    { id: 'connection', label: 'Connection', icon: Plug },
+  ];
 
   return (
     <AppShell
-      nav={NAV}
+      nav={nav}
       active={view}
       onNavigate={setView}
       title={meta.title}
       description={meta.description}
+      width={meta.width}
       sidebarFooter={
         <div className="flex items-center gap-2 text-muted-foreground">
           <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
@@ -76,7 +89,11 @@ export function App() {
         </div>
       }
     >
-      {view === 'connection' ? (
+      {view === 'dashboard' ? (
+        <DashboardScreen onReview={() => setView('review')} />
+      ) : view === 'review' ? (
+        <ReviewScreen />
+      ) : view === 'connection' ? (
         <ConnectScreen status={status.data} />
       ) : view === 'settings' ? (
         <SettingsScreen onGoToProviders={() => setView('providers')} />

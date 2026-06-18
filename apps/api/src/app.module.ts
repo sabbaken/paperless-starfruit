@@ -10,6 +10,7 @@ import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { AuditModule } from './audit/audit.module';
 import { ReviewModule } from './review/review.module';
 import { PipelineModule } from './pipeline/pipeline.module';
+import { StatsModule } from './stats/stats.module';
 import { QueueModule } from './queue/queue.module';
 import { PollerModule } from './poller/poller.module';
 import { HealthController } from './health.controller';
@@ -30,6 +31,7 @@ import { HealthController } from './health.controller';
     ReviewModule,
     QueueModule,
     PipelineModule,
+    StatsModule,
     PollerModule,
   ],
   controllers: [HealthController],

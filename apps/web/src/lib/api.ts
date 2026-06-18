@@ -7,8 +7,12 @@ import type {
   ProviderTestInput,
   ProviderTestResult,
   ProviderUpdate,
+  ReviewApprove,
+  ReviewDetail,
+  ReviewItemView,
   Settings,
   SettingsUpdate,
+  Stats,
 } from '@paperless-ai/shared';
 
 /** A request that reached the server but came back non-2xx. */
@@ -105,4 +109,32 @@ export const settingsApi = {
 
   update: (patch: SettingsUpdate) =>
     request<Settings>('/settings', { method: 'PATCH', body: JSON.stringify(patch) }),
+};
+
+export interface BulkResult {
+  id: number;
+  ok: boolean;
+  error?: string;
+}
+
+export const reviewApi = {
+  list: (status = 'pending') =>
+    request<ReviewItemView[]>(`/review?status=${encodeURIComponent(status)}`),
+
+  get: (id: number) => request<ReviewDetail>(`/review/${id}`),
+
+  approve: (id: number, payload: ReviewApprove) =>
+    request<void>(`/review/${id}/approve`, { method: 'POST', body: JSON.stringify(payload) }),
+
+  reject: (id: number) => request<void>(`/review/${id}/reject`, { method: 'POST' }),
+
+  bulkApprove: (ids: number[]) =>
+    request<BulkResult[]>('/review/bulk-approve', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    }),
+};
+
+export const statsApi = {
+  get: () => request<Stats>('/stats'),
 };
