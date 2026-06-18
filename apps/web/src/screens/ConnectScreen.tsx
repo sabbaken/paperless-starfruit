@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, ChevronDown, Eye, EyeOff, Loader2, XCircle } from 'lucide-react';
 import {
   paperlessConnectionInputSchema,
   type ConnectionStatus,
@@ -10,22 +11,20 @@ import {
 } from '@paperless-ai/shared';
 import { connectionApi } from '../lib/api';
 import { cn } from '../lib/cn';
-import { Button, Field, TextInput } from '../components/ui';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
-type Tone = 'standby' | 'probing' | 'online' | 'fault' | 'connected';
-
-const TONE: Record<Tone, { dot: string; text: string; rail: string; label: string }> = {
-  standby: { dot: 'bg-warn', text: 'text-warn', rail: 'border-warn/60', label: 'STANDBY' },
-  probing: { dot: 'bg-warn', text: 'text-warn', rail: 'border-warn/60', label: 'PROBING' },
-  online: { dot: 'bg-signal', text: 'text-signal', rail: 'border-signal/60', label: 'ONLINE' },
-  connected: {
-    dot: 'bg-signal',
-    text: 'text-signal',
-    rail: 'border-signal/60',
-    label: 'CONNECTED',
-  },
-  fault: { dot: 'bg-alert', text: 'text-alert', rail: 'border-alert/60', label: 'FAULT' },
-};
+type Tone = 'standby' | 'probing' | 'online' | 'connected' | 'fault';
 
 export function ConnectScreen({ status }: { status: ConnectionStatus }) {
   const queryClient = useQueryClient();
@@ -49,8 +48,7 @@ export function ConnectScreen({ status }: { status: ConnectionStatus }) {
   const save = useMutation({
     mutationFn: connectionApi.save,
     onSuccess: () => {
-      // Clear any prior Test result so it can't outrank the freshly-saved
-      // CONNECTED state in the readout (computeReadout checks test before status).
+      // Clear any prior Test result so it can't outrank the freshly-saved state.
       test.reset();
       void queryClient.invalidateQueries({ queryKey: ['connection'] });
       form.resetField('token');
@@ -68,8 +66,10 @@ export function ConnectScreen({ status }: { status: ConnectionStatus }) {
 
   const onTest = handleSubmit((values) => test.mutate(values));
   const onSave = handleSubmit((values) => save.mutate(values));
+  const busy = test.isPending || save.isPending || disconnect.isPending;
+  const [showToken, setShowToken] = useState(false);
 
-  const readout = computeReadout({
+  const result = computeStatus({
     status,
     testPending: test.isPending,
     savePending: save.isPending,
@@ -77,164 +77,168 @@ export function ConnectScreen({ status }: { status: ConnectionStatus }) {
     testError: test.error,
     saveError: save.error,
   });
-  const [showToken, setShowToken] = useState(false);
-  const busy = test.isPending || save.isPending || disconnect.isPending;
 
   return (
-    <div className="w-full max-w-xl">
-      <div className="overflow-hidden rounded-xl border border-line bg-ink-900 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-signal/60 to-transparent" />
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle>Connect paperless</CardTitle>
+          {connected && <Badge variant="secondary">Connected</Badge>}
+        </div>
+        <CardDescription>
+          Point Paperless AI at your paperless-ngx instance. Access is verified with a
+          read-only test before anything is stored; the token is encrypted at rest.
+        </CardDescription>
+      </CardHeader>
 
-        <div className="space-y-7 p-7 sm:p-9">
-          <header className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-paper-faint">
-                <span className="inline-block h-1.5 w-1.5 bg-signal" />
-                paperless·ai
-              </span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-paper-faint">
-                setup · 01 connect
-              </span>
-            </div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight text-paper">
-              Connect your archive
-            </h1>
-            <p className="max-w-md text-sm leading-relaxed text-paper-dim">
-              Point Paperless AI at your paperless-ngx instance and verify access with a
-              read-only test before anything is stored. The token is encrypted at rest.
-            </p>
-          </header>
+      <CardContent>
+        <form id="connect-form" onSubmit={onSave} className="space-y-4" noValidate>
+          <div className="space-y-2">
+            <Label htmlFor="baseUrl">Paperless URL</Label>
+            <Input
+              id="baseUrl"
+              placeholder="https://paperless.home.lan"
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={!!formState.errors.baseUrl}
+              {...register('baseUrl')}
+            />
+            {formState.errors.baseUrl && (
+              <p className="text-sm text-destructive">{formState.errors.baseUrl.message}</p>
+            )}
+          </div>
 
-          <form onSubmit={onSave} className="space-y-5" noValidate>
-            <Field
-              label="paperless URL"
-              htmlFor="baseUrl"
-              hint="incl. http(s)://"
-              error={formState.errors.baseUrl?.message}
-            >
-              <TextInput
-                id="baseUrl"
-                placeholder="https://paperless.home.lan"
-                autoComplete="off"
-                spellCheck={false}
-                aria-invalid={!!formState.errors.baseUrl}
-                {...register('baseUrl')}
-              />
-            </Field>
-
-            <Field
-              label="API token"
-              htmlFor="token"
-              hint={
-                <button
-                  type="button"
-                  onClick={() => setShowToken((v) => !v)}
-                  className="uppercase tracking-[0.18em] transition-colors hover:text-paper-dim"
-                >
-                  {showToken ? 'hide' : 'reveal'}
-                </button>
-              }
-              error={formState.errors.token?.message}
-            >
-              <TextInput
+          <div className="space-y-2">
+            <Label htmlFor="token">API token</Label>
+            <div className="relative">
+              <Input
                 id="token"
                 type={showToken ? 'text' : 'password'}
+                className="pr-9"
                 placeholder={connected ? 're-enter to update' : 'paperless API token'}
                 autoComplete="off"
                 spellCheck={false}
                 aria-invalid={!!formState.errors.token}
                 {...register('token')}
               />
-            </Field>
-
-            <details className="group">
-              <summary className="cursor-pointer list-none font-mono text-[11px] uppercase tracking-[0.18em] text-paper-faint transition-colors hover:text-paper-dim">
-                <span className="group-open:hidden">+ advanced</span>
-                <span className="hidden group-open:inline">− advanced</span>
-              </summary>
-              <div className="pt-4">
-                <Field
-                  label="API version"
-                  htmlFor="apiVersion"
-                  hint="blank = auto-detect"
-                  error={formState.errors.apiVersion?.message}
-                >
-                  <TextInput
-                    id="apiVersion"
-                    type="number"
-                    min={1}
-                    placeholder="auto"
-                    className="max-w-28"
-                    aria-invalid={!!formState.errors.apiVersion}
-                    {...register('apiVersion', {
-                      // Empty/blank/non-numeric -> undefined (auto-detect) rather
-                      // than NaN, which would fail validation silently.
-                      setValueAs: (v) => {
-                        if (v === '' || v == null) return undefined;
-                        const n = Number(v);
-                        return Number.isNaN(n) ? undefined : n;
-                      },
-                    })}
-                  />
-                </Field>
-              </div>
-            </details>
-
-            <ReadoutStrip {...readout} />
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={onTest}
-                disabled={busy}
-                className="sm:flex-1"
-              >
-                {test.isPending ? 'Testing…' : 'Test connection'}
-              </Button>
-              <Button type="submit" disabled={busy} className="sm:flex-1">
-                {save.isPending ? 'Saving…' : connected ? 'Save changes' : 'Save & continue'}
-              </Button>
-            </div>
-          </form>
-
-          <footer className="flex items-center justify-between border-t border-line pt-5">
-            <span className="font-mono text-[11px] text-paper-faint">
-              {connected ? 'Providers configured next.' : 'Step 1 of onboarding.'}
-            </span>
-            {connected && (
               <button
                 type="button"
-                onClick={() => disconnect.mutate()}
-                disabled={disconnect.isPending}
-                className="font-mono text-[11px] uppercase tracking-[0.18em] text-paper-faint transition-colors hover:text-alert disabled:opacity-40"
+                tabIndex={-1}
+                onClick={() => setShowToken((v) => !v)}
+                aria-label={showToken ? 'Hide token' : 'Show token'}
+                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
               >
-                {disconnect.isPending ? 'disconnecting…' : 'disconnect'}
+                {showToken ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
               </button>
+            </div>
+            {formState.errors.token && (
+              <p className="text-sm text-destructive">{formState.errors.token.message}</p>
             )}
-          </footer>
+          </div>
+
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+              Advanced
+            </summary>
+            <div className="space-y-2 pt-3">
+              <Label htmlFor="apiVersion">API version</Label>
+              <Input
+                id="apiVersion"
+                type="number"
+                min={1}
+                placeholder="auto-detect"
+                className="max-w-32"
+                aria-invalid={!!formState.errors.apiVersion}
+                {...register('apiVersion', {
+                  // Empty/blank/non-numeric -> undefined (auto-detect from the
+                  // server) rather than NaN, which would fail validation silently.
+                  setValueAs: (v) => {
+                    if (v === '' || v == null) return undefined;
+                    const n = Number(v);
+                    return Number.isNaN(n) ? undefined : n;
+                  },
+                })}
+              />
+              {formState.errors.apiVersion ? (
+                <p className="text-sm text-destructive">
+                  {formState.errors.apiVersion.message}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to detect the server&apos;s API version automatically.
+                </p>
+              )}
+            </div>
+          </details>
+
+          <StatusLine tone={result.tone} message={result.message} />
+        </form>
+      </CardContent>
+
+      <CardFooter className="flex-col gap-2">
+        <div className="flex w-full gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={onTest}
+            disabled={busy}
+          >
+            {test.isPending && <Loader2 className="animate-spin" />}
+            Test connection
+          </Button>
+          <Button type="submit" form="connect-form" className="flex-1" disabled={busy}>
+            {save.isPending && <Loader2 className="animate-spin" />}
+            {connected ? 'Save changes' : 'Save & continue'}
+          </Button>
         </div>
-      </div>
-    </div>
+        {connected && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => disconnect.mutate()}
+            disabled={disconnect.isPending}
+          >
+            {disconnect.isPending && <Loader2 className="animate-spin" />}
+            Disconnect
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
   );
 }
 
-function ReadoutStrip({ tone, detail }: { tone: Tone; detail: string }) {
-  const t = TONE[tone];
+function StatusLine({ tone, message }: { tone: Tone; message: string }) {
+  const icon =
+    tone === 'probing' ? (
+      <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+    ) : tone === 'online' || tone === 'connected' ? (
+      <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-500" />
+    ) : tone === 'fault' ? (
+      <XCircle className="size-4 shrink-0 text-destructive" />
+    ) : (
+      <span className="size-2 shrink-0 rounded-full bg-muted-foreground/60" />
+    );
+
   return (
-    <div className={cn('flex items-center gap-3 rounded-md border-l-2 bg-ink-950 px-4 py-3', t.rail)}>
-      <span
-        className={cn('h-2.5 w-2.5 shrink-0 rounded-full', t.dot, tone === 'probing' && 'animate-pulse')}
-      />
-      <span className={cn('font-mono text-xs font-semibold tracking-[0.18em]', t.text)}>
-        {t.label}
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm',
+        tone === 'fault' && 'border-destructive/40 bg-destructive/5',
+      )}
+    >
+      {icon}
+      <span className={cn('truncate', tone === 'fault' ? 'text-destructive' : 'text-foreground')}>
+        {message}
       </span>
-      <span className="truncate font-mono text-xs text-paper-dim">{detail}</span>
     </div>
   );
 }
 
-function computeReadout({
+function computeStatus({
   status,
   testPending,
   savePending,
@@ -248,25 +252,23 @@ function computeReadout({
   testResult: ConnectionTestResult | undefined;
   testError: Error | null;
   saveError: Error | null;
-}): { tone: Tone; detail: string } {
-  if (testPending) return { tone: 'probing', detail: 'contacting paperless…' };
-  if (savePending) return { tone: 'probing', detail: 'verifying & storing…' };
+}): { tone: Tone; message: string } {
+  if (testPending) return { tone: 'probing', message: 'Contacting paperless…' };
+  if (savePending) return { tone: 'probing', message: 'Verifying & storing…' };
 
-  if (saveError) return { tone: 'fault', detail: saveError.message };
-  // A non-2xx from our own API (500, proxy/network failure) rejects the test
-  // mutation rather than returning { ok:false }; surface it like the save path.
-  if (testError) return { tone: 'fault', detail: testError.message };
+  if (saveError) return { tone: 'fault', message: saveError.message };
+  if (testError) return { tone: 'fault', message: testError.message };
   if (testResult && !testResult.ok) {
-    return { tone: 'fault', detail: testResult.error ?? 'connection failed' };
+    return { tone: 'fault', message: testResult.error ?? 'Connection failed.' };
   }
   if (testResult?.ok) {
-    return { tone: 'online', detail: describeProbe(testResult.documentCount, testResult.version) };
+    return { tone: 'online', message: describeProbe(testResult.documentCount, testResult.version) };
   }
-  if (status.connected) return { tone: 'connected', detail: status.baseUrl };
-  return { tone: 'standby', detail: 'Run a test to verify access.' };
+  if (status.connected) return { tone: 'connected', message: status.baseUrl };
+  return { tone: 'standby', message: 'Not connected yet — run a test to verify access.' };
 }
 
 function describeProbe(count: number | undefined, version: string | undefined): string {
-  const docs = count === undefined ? 'reachable' : `${count.toLocaleString()} documents`;
-  return version ? `${docs} · v${version}` : docs;
+  const docs = count === undefined ? 'Reachable' : `${count.toLocaleString()} documents`;
+  return version ? `${docs} · paperless ${version}` : docs;
 }
