@@ -5,6 +5,11 @@ import { DbModule } from './db/db.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { ConnectionModule } from './connection/connection.module';
 import { ProvidersModule } from './providers/providers.module';
+import { SettingsModule } from './settings/settings.module';
+import { TaxonomyModule } from './taxonomy/taxonomy.module';
+import { AuditModule } from './audit/audit.module';
+import { ReviewModule } from './review/review.module';
+import { PipelineModule } from './pipeline/pipeline.module';
 import { QueueModule } from './queue/queue.module';
 import { PollerModule } from './poller/poller.module';
 import { HealthController } from './health.controller';
@@ -19,7 +24,12 @@ import { HealthController } from './health.controller';
     CryptoModule,
     ConnectionModule,
     ProvidersModule,
+    SettingsModule,
+    TaxonomyModule,
+    AuditModule,
+    ReviewModule,
     QueueModule,
+    PipelineModule,
     PollerModule,
   ],
   controllers: [HealthController],
