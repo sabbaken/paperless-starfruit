@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowLeft,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -27,6 +26,7 @@ import { cn } from '../lib/cn';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 
@@ -40,20 +40,10 @@ export function ApiKeysScreen() {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
   }
 
-  if (form) {
-    return (
-      <CredentialForm
-        key={form.mode === 'edit' ? form.cred.id : form.kind}
-        kind={form.mode === 'edit' ? form.cred.kind : form.kind}
-        cred={form.mode === 'edit' ? form.cred : undefined}
-        onDone={() => setForm(null)}
-      />
-    );
-  }
-
   const list = providers.data ?? [];
   const cloudByKind = new Map(list.filter((p) => p.kind !== PROVIDER_KIND.OPENAI_COMPATIBLE).map((p) => [p.kind, p]));
   const localCreds = list.filter((p) => p.kind === PROVIDER_KIND.OPENAI_COMPATIBLE);
+  const formKind = form ? (form.mode === 'edit' ? form.cred.kind : form.kind) : null;
 
   return (
     <div className="space-y-6">
@@ -137,6 +127,26 @@ export function ApiKeysScreen() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!form}
+        onClose={() => setForm(null)}
+        title={
+          form && formKind
+            ? `${form.mode === 'edit' ? 'Edit' : 'Add'} ${PROVIDER_KIND_META[formKind].label}`
+            : ''
+        }
+        description="Keys are encrypted at rest and never returned to the browser."
+      >
+        {form && formKind && (
+          <CredentialForm
+            key={form.mode === 'edit' ? form.cred.id : form.kind}
+            kind={formKind}
+            cred={form.mode === 'edit' ? form.cred : undefined}
+            onDone={() => setForm(null)}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }
@@ -244,23 +254,8 @@ function CredentialForm({
   const busy = save.isPending || test.isPending;
 
   return (
-    <Card className="mx-auto max-w-xl">
-      <CardHeader>
-        <button
-          type="button"
-          onClick={onDone}
-          className="mb-1 flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back
-        </button>
-        <CardTitle>
-          {editing ? 'Edit' : 'Add'} {meta.label}
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <form id="credential-form" onSubmit={onSave} className="space-y-4" noValidate>
+    <>
+      <form id="credential-form" onSubmit={onSave} className="space-y-4" noValidate>
           {meta.local && (
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
@@ -327,9 +322,11 @@ function CredentialForm({
 
           <TestLine pending={test.isPending} result={testResult} error={test.error} saveError={save.error} />
         </form>
-      </CardContent>
 
-      <div className="flex justify-end gap-2 px-6 pb-6">
+      <div className="mt-5 flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onDone} disabled={busy}>
+          Cancel
+        </Button>
         <Button type="button" variant="outline" onClick={onTest} disabled={busy}>
           {test.isPending && <Loader2 className="animate-spin" />}
           Test
@@ -339,7 +336,7 @@ function CredentialForm({
           {editing ? 'Save' : 'Add key'}
         </Button>
       </div>
-    </Card>
+    </>
   );
 }
 

@@ -76,9 +76,9 @@ export function App() {
       label: 'Settings',
       icon: SlidersHorizontal,
       children: [
-        { to: '/settings/connection', label: 'Connection' },
-        { to: '/settings/api-keys', label: 'API Keys' },
         { to: '/settings/processing', label: 'Processing' },
+        { to: '/settings/api-keys', label: 'API Keys' },
+        { to: '/settings/connection', label: 'Connection' },
       ],
     },
   ];
