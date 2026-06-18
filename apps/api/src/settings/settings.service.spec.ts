@@ -12,15 +12,19 @@ describe('SettingsService', () => {
       language: 'auto',
       ocrEnabled: false,
       correspondentBlacklist: [],
-      defaultProviderId: null,
+      llmProviderId: null,
+      llmModel: null,
+      ocrProviderId: null,
+      ocrModel: null,
     });
   });
 
   it('persists a partial update and leaves other fields untouched', () => {
     const svc = new SettingsService(createTestDb());
-    const updated = svc.update({ autoApply: true, defaultProviderId: 3 });
+    const updated = svc.update({ autoApply: true, llmProviderId: 3, llmModel: 'claude-haiku-4-5' });
     expect(updated.autoApply).toBe(true);
-    expect(updated.defaultProviderId).toBe(3);
+    expect(updated.llmProviderId).toBe(3);
+    expect(updated.llmModel).toBe('claude-haiku-4-5');
     expect(updated.createNewTags).toBe(true);
     // re-read sees the same persisted state
     expect(svc.get().autoApply).toBe(true);

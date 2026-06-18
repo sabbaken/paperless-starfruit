@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { Brain, CheckCircle2, ChevronRight, Loader2, ScanText } from 'lucide-react';
 import type { ProviderConfig, Settings } from '@paperless-ai/shared';
 import { providerApi, settingsApi } from '../lib/api';
+import { ModelPicker } from '../components/model-picker';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Select } from '../components/ui/select';
 import { Switch } from '../components/ui/switch';
 import { Textarea } from '../components/ui/textarea';
 
@@ -20,23 +20,122 @@ export function ProcessingSettings({ onGoToProviders }: { onGoToProviders: () =>
   }
 
   return (
-    <SettingsForm
-      initial={settings.data}
-      providers={providers.data ?? []}
-      onGoToProviders={onGoToProviders}
-    />
+    <div className="space-y-6">
+      <ModelsCard
+        settings={settings.data}
+        providers={providers.data ?? []}
+        onGoToProviders={onGoToProviders}
+      />
+      <ProcessingForm initial={settings.data} />
+    </div>
   );
 }
 
-function SettingsForm({
-  initial,
+type PickerTarget = 'llm' | 'ocr';
+
+function ModelsCard({
+  settings,
   providers,
   onGoToProviders,
 }: {
-  initial: Settings;
+  settings: Settings;
   providers: ProviderConfig[];
   onGoToProviders: () => void;
 }) {
+  const queryClient = useQueryClient();
+  const [picker, setPicker] = useState<PickerTarget | null>(null);
+
+  const update = useMutation({
+    mutationFn: settingsApi.update,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['settings'] }),
+  });
+
+  const providerName = (id: number | null) => providers.find((p) => p.id === id)?.name ?? null;
+  const describe = (id: number | null, model: string | null) =>
+    model ? `${providerName(id) ?? 'Unknown'} · ${model}` : null;
+
+  const onSelect = (providerId: number, model: string) => {
+    update.mutate(
+      picker === 'ocr'
+        ? { ocrProviderId: providerId, ocrModel: model }
+        : { llmProviderId: providerId, llmModel: model },
+    );
+    setPicker(null);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Models</CardTitle>
+        <CardDescription>Choose which model handles extraction and OCR.</CardDescription>
+      </CardHeader>
+      <CardContent className="divide-y">
+        <ModelRow
+          icon={<Brain className="size-4" />}
+          label="Language model"
+          hint="Extracts title, tags, correspondent and date."
+          value={describe(settings.llmProviderId, settings.llmModel)}
+          onClick={() => setPicker('llm')}
+        />
+        <ModelRow
+          icon={<ScanText className="size-4" />}
+          label="OCR model"
+          hint="Reads scanned documents (used when OCR is enabled)."
+          value={describe(settings.ocrProviderId, settings.ocrModel)}
+          onClick={() => setPicker('ocr')}
+        />
+      </CardContent>
+
+      {picker && (
+        <ModelPicker
+          title={picker === 'ocr' ? 'OCR model' : 'Language model'}
+          visionOnly={picker === 'ocr'}
+          selected={
+            picker === 'ocr'
+              ? { providerId: settings.ocrProviderId, model: settings.ocrModel }
+              : { providerId: settings.llmProviderId, model: settings.llmModel }
+          }
+          onSelect={onSelect}
+          onClose={() => setPicker(null)}
+          onAddKey={() => {
+            setPicker(null);
+            onGoToProviders();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function ModelRow({
+  icon,
+  label,
+  hint,
+  value,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+  value: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className="flex w-full items-center gap-3 py-3 text-left">
+      <span className="text-muted-foreground">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="truncate text-xs text-muted-foreground">{hint}</p>
+      </div>
+      <span className={value ? 'truncate font-mono text-xs' : 'text-xs text-muted-foreground'}>
+        {value ?? 'Not set'}
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+    </button>
+  );
+}
+
+function ProcessingForm({ initial }: { initial: Settings }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Settings>(initial);
   const [blacklistText, setBlacklistText] = useState(initial.correspondentBlacklist.join('\n'));
@@ -56,14 +155,13 @@ function SettingsForm({
         autoApply: form.autoApply,
         createNewTags: form.createNewTags,
         language: form.language.trim() || 'auto',
-        defaultProviderId: form.defaultProviderId,
         correspondentBlacklist: blacklistText
           .split('\n')
           .map((s) => s.trim())
           .filter(Boolean),
       }),
     onSuccess: (updated) => {
-      setForm(updated);
+      setForm((f) => ({ ...f, ...updated }));
       setBlacklistText(updated.correspondentBlacklist.join('\n'));
       setDirty(false);
       setSaved(true);
@@ -72,49 +170,19 @@ function SettingsForm({
   });
 
   return (
-    <div className="space-y-6">
+    <>
       <Card>
         <CardHeader>
           <CardTitle>Processing</CardTitle>
           <CardDescription>How documents are picked up and enriched.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="defaultProvider">Default LLM provider</Label>
-            {providers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No providers yet —{' '}
-                <button type="button" className="underline" onClick={onGoToProviders}>
-                  add one
-                </button>{' '}
-                before the pipeline can run.
-              </p>
-            ) : (
-              <Select
-                id="defaultProvider"
-                value={form.defaultProviderId ?? ''}
-                onChange={(e) => set('defaultProviderId', e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">— none selected —</option>
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} · {p.model}
-                  </option>
-                ))}
-              </Select>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Used for metadata extraction on every processed document.
-            </p>
-          </div>
-
           <ToggleRow
             label="Auto-apply suggestions"
             hint="Apply AI suggestions immediately instead of queueing them for review. Documents tagged ai-process-auto always auto-apply."
             checked={form.autoApply}
             onChange={(v) => set('autoApply', v)}
           />
-
           <ToggleRow
             label="Create new tags & correspondents"
             hint="Let the AI create tags/correspondents that don't exist yet. When off, only existing ones are applied."
@@ -177,7 +245,7 @@ function SettingsForm({
           Save changes
         </Button>
       </div>
-    </div>
+    </>
   );
 }
 

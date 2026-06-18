@@ -1,0 +1,394 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  Pencil,
+  Plus,
+  Server,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
+import {
+  CLOUD_PROVIDER_KINDS,
+  PROVIDER_KIND,
+  PROVIDER_KIND_META,
+  type ProviderConfig,
+  type ProviderKind,
+  type ProviderTestResult,
+} from '@paperless-ai/shared';
+import { providerApi } from '../lib/api';
+import { cn } from '../lib/cn';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+
+type FormState = { mode: 'create'; kind: ProviderKind } | { mode: 'edit'; cred: ProviderConfig };
+
+export function ApiKeysScreen() {
+  const providers = useQuery({ queryKey: ['providers'], queryFn: providerApi.list });
+  const [form, setForm] = useState<FormState | null>(null);
+
+  if (providers.isLoading) {
+    return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
+  }
+
+  if (form) {
+    return (
+      <CredentialForm
+        key={form.mode === 'edit' ? form.cred.id : form.kind}
+        kind={form.mode === 'edit' ? form.cred.kind : form.kind}
+        cred={form.mode === 'edit' ? form.cred : undefined}
+        onDone={() => setForm(null)}
+      />
+    );
+  }
+
+  const list = providers.data ?? [];
+  const cloudByKind = new Map(list.filter((p) => p.kind !== PROVIDER_KIND.OPENAI_COMPATIBLE).map((p) => [p.kind, p]));
+  const localCreds = list.filter((p) => p.kind === PROVIDER_KIND.OPENAI_COMPATIBLE);
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">
+        Connect the AI providers you want to use. Keys are encrypted at rest and never returned to
+        the browser. Pick which models to use under Processing.
+      </p>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Cloud providers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="divide-y">
+            {CLOUD_PROVIDER_KINDS.map((kind) => {
+              const cred = cloudByKind.get(kind);
+              const meta = PROVIDER_KIND_META[kind];
+              return (
+                <li key={kind} className="flex items-center gap-3 py-3">
+                  <KeyRound className="size-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{meta.label}</span>
+                      {cred && (
+                        <Badge variant="secondary" className="gap-1">
+                          <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-500" />
+                          Connected
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+                  </div>
+                  {cred ? (
+                    <RowActions
+                      onEdit={() => setForm({ mode: 'edit', cred })}
+                      providerId={cred.id}
+                    />
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setForm({ mode: 'create', kind })}>
+                      <Plus className="size-4" />
+                      Add key
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-sm">Local &amp; OpenAI-compatible</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setForm({ mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE })}
+          >
+            <Plus className="size-4" />
+            Add endpoint
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {localCreds.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">
+              No local endpoints. Add Ollama, LM Studio, vLLM or any OpenAI-compatible server.
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {localCreds.map((cred) => (
+                <li key={cred.id} className="flex items-center gap-3 py-3">
+                  <Server className="size-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium">{cred.name}</span>
+                    <p className="truncate font-mono text-xs text-muted-foreground">{cred.baseUrl}</p>
+                  </div>
+                  <RowActions onEdit={() => setForm({ mode: 'edit', cred })} providerId={cred.id} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function RowActions({ onEdit, providerId }: { onEdit: () => void; providerId: number }) {
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const remove = useMutation({
+    mutationFn: () => providerApi.remove(providerId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['providers'] });
+      void queryClient.invalidateQueries({ queryKey: ['settings'] });
+      void queryClient.invalidateQueries({ queryKey: ['available-models'] });
+    },
+  });
+
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
+          {remove.isPending && <Loader2 className="animate-spin" />}
+          Remove
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1">
+      <Button size="icon" variant="ghost" aria-label="Edit" onClick={onEdit}>
+        <Pencil className="size-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label="Remove"
+        className="text-muted-foreground hover:text-destructive"
+        onClick={() => setConfirming(true)}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+    </div>
+  );
+}
+
+interface FormValues {
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+}
+
+function CredentialForm({
+  kind,
+  cred,
+  onDone,
+}: {
+  kind: ProviderKind;
+  cred?: ProviderConfig;
+  onDone: () => void;
+}) {
+  const editing = !!cred;
+  const meta = PROVIDER_KIND_META[kind];
+  const queryClient = useQueryClient();
+  const [showKey, setShowKey] = useState(false);
+  const [testResult, setTestResult] = useState<ProviderTestResult | null>(null);
+
+  const { register, handleSubmit, formState } = useForm<FormValues>({
+    defaultValues: {
+      name: cred?.name ?? '',
+      baseUrl: cred?.baseUrl ?? '',
+      apiKey: '',
+    },
+  });
+
+  const toInput = (v: FormValues) => ({
+    name: meta.local ? v.name.trim() : meta.label,
+    kind,
+    baseUrl: v.baseUrl.trim() || undefined,
+    apiKey: v.apiKey.trim() || undefined,
+  });
+
+  const onSettled = () => {
+    void queryClient.invalidateQueries({ queryKey: ['providers'] });
+    void queryClient.invalidateQueries({ queryKey: ['available-models'] });
+    onDone();
+  };
+
+  const save = useMutation({
+    mutationFn: (v: FormValues) =>
+      editing ? providerApi.update(cred.id, toInput(v)) : providerApi.create(toInput(v)),
+    onSuccess: onSettled,
+  });
+  const test = useMutation({
+    mutationFn: (v: FormValues) => providerApi.test({ ...toInput(v), id: editing ? cred.id : undefined }),
+    onSuccess: (r) => setTestResult(r),
+  });
+
+  const onSave = handleSubmit((v) => save.mutate(v));
+  const onTest = handleSubmit((v) => {
+    setTestResult(null);
+    test.mutate(v);
+  });
+  const busy = save.isPending || test.isPending;
+
+  return (
+    <Card className="mx-auto max-w-xl">
+      <CardHeader>
+        <button
+          type="button"
+          onClick={onDone}
+          className="mb-1 flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back
+        </button>
+        <CardTitle>
+          {editing ? 'Edit' : 'Add'} {meta.label}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <form id="credential-form" onSubmit={onSave} className="space-y-4" noValidate>
+          {meta.local && (
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="Ollama (laptop)"
+                aria-invalid={!!formState.errors.name}
+                {...register('name', { required: meta.local ? 'Required' : false })}
+              />
+            </div>
+          )}
+
+          {(meta.needsBaseUrl || meta.local) && (
+            <div className="space-y-2">
+              <Label htmlFor="baseUrl">
+                Base URL{' '}
+                <span className="font-normal text-muted-foreground">
+                  {meta.needsBaseUrl ? '(required)' : '(optional)'}
+                </span>
+              </Label>
+              <Input
+                id="baseUrl"
+                placeholder="http://localhost:11434/v1"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={!!formState.errors.baseUrl}
+                {...register('baseUrl', {
+                  validate: (v) => !meta.needsBaseUrl || v.trim().length > 0 || 'Required',
+                })}
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="apiKey">
+              API key{' '}
+              {!meta.keyRequired && <span className="font-normal text-muted-foreground">(optional)</span>}
+            </Label>
+            <div className="relative">
+              <Input
+                id="apiKey"
+                type={showKey ? 'text' : 'password'}
+                className="pr-9"
+                placeholder={editing ? 'leave blank to keep current key' : `${meta.label} API key`}
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={!!formState.errors.apiKey}
+                {...register('apiKey', {
+                  validate: (v) =>
+                    !meta.keyRequired || editing || v.trim().length > 0 || 'Required',
+                })}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowKey((s) => !s)}
+                aria-label={showKey ? 'Hide key' : 'Show key'}
+                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+              >
+                {showKey ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+              </button>
+            </div>
+          </div>
+
+          <TestLine pending={test.isPending} result={testResult} error={test.error} saveError={save.error} />
+        </form>
+      </CardContent>
+
+      <div className="flex justify-end gap-2 px-6 pb-6">
+        <Button type="button" variant="outline" onClick={onTest} disabled={busy}>
+          {test.isPending && <Loader2 className="animate-spin" />}
+          Test
+        </Button>
+        <Button type="submit" form="credential-form" disabled={busy}>
+          {save.isPending && <Loader2 className="animate-spin" />}
+          {editing ? 'Save' : 'Add key'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function TestLine({
+  pending,
+  result,
+  error,
+  saveError,
+}: {
+  pending: boolean;
+  result: ProviderTestResult | null;
+  error: Error | null;
+  saveError: Error | null;
+}) {
+  let tone: 'probing' | 'ok' | 'fault' | null = null;
+  let text = '';
+  if (saveError) {
+    tone = 'fault';
+    text = saveError.message;
+  } else if (pending) {
+    tone = 'probing';
+    text = 'Contacting provider…';
+  } else if (error) {
+    tone = 'fault';
+    text = error.message;
+  } else if (result?.ok) {
+    tone = 'ok';
+    text = `Reachable${result.latencyMs != null ? ` · ${result.latencyMs} ms` : ''}`;
+  } else if (result && !result.ok) {
+    tone = 'fault';
+    text = result.error ?? 'Test failed.';
+  }
+  if (!tone) return null;
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm',
+        tone === 'fault' && 'border-destructive/40 bg-destructive/5 text-destructive',
+      )}
+    >
+      {tone === 'probing' ? (
+        <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+      ) : tone === 'ok' ? (
+        <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-500" />
+      ) : (
+        <XCircle className="size-4 shrink-0 text-destructive" />
+      )}
+      <span className="truncate">{text}</span>
+    </div>
+  );
+}

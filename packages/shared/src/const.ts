@@ -34,6 +34,66 @@ export const PROVIDER_KIND = {
 } as const;
 export type ProviderKind = (typeof PROVIDER_KIND)[keyof typeof PROVIDER_KIND];
 
+/**
+ * Presentation + behaviour metadata per provider kind. `local` distinguishes a
+ * self-hosted OpenAI-compatible endpoint (models discovered live, base URL
+ * required, key optional) from the cloud providers (one slotted key each, models
+ * from the curated catalog).
+ */
+export interface ProviderKindMeta {
+  label: string;
+  description: string;
+  local: boolean;
+  needsBaseUrl: boolean;
+  keyRequired: boolean;
+}
+
+export const PROVIDER_KIND_META: Record<ProviderKind, ProviderKindMeta> = {
+  [PROVIDER_KIND.ANTHROPIC]: {
+    label: 'Anthropic',
+    description: 'Claude models',
+    local: false,
+    needsBaseUrl: false,
+    keyRequired: true,
+  },
+  [PROVIDER_KIND.OPENAI]: {
+    label: 'OpenAI',
+    description: 'GPT / o-series models',
+    local: false,
+    needsBaseUrl: false,
+    keyRequired: true,
+  },
+  [PROVIDER_KIND.GOOGLE]: {
+    label: 'Google',
+    description: 'Gemini models',
+    local: false,
+    needsBaseUrl: false,
+    keyRequired: true,
+  },
+  [PROVIDER_KIND.MISTRAL]: {
+    label: 'Mistral',
+    description: 'Mistral / Pixtral models',
+    local: false,
+    needsBaseUrl: false,
+    keyRequired: true,
+  },
+  [PROVIDER_KIND.OPENAI_COMPATIBLE]: {
+    label: 'OpenAI-compatible',
+    description: 'Local & self-hosted: Ollama, LM Studio, vLLM, OpenRouter',
+    local: true,
+    needsBaseUrl: true,
+    keyRequired: false,
+  },
+};
+
+/** Cloud kinds get a single slotted key each; locals can have many endpoints. */
+export const CLOUD_PROVIDER_KINDS: ProviderKind[] = [
+  PROVIDER_KIND.ANTHROPIC,
+  PROVIDER_KIND.OPENAI,
+  PROVIDER_KIND.GOOGLE,
+  PROVIDER_KIND.MISTRAL,
+];
+
 /** Prompt template keys, one per extracted field (+ ocr). */
 export const PROMPT_KEY = {
   TITLE: 'title',

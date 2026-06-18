@@ -13,6 +13,7 @@ import {
   providerInputSchema,
   providerTestInputSchema,
   providerUpdateSchema,
+  type AvailableModels,
   type ProviderConfig,
   type ProviderInput,
   type ProviderTestInput,
@@ -40,6 +41,12 @@ export class ProviderController {
   @HttpCode(200)
   test(@Body(testPipe) input: ProviderTestInput): Promise<ProviderTestResult> {
     return this.providers.test(input);
+  }
+
+  /** Models offered by every configured credential (before `:id` too). */
+  @Get('models')
+  models(): Promise<AvailableModels> {
+    return this.providers.listAvailableModels();
   }
 
   @Get(':id')
