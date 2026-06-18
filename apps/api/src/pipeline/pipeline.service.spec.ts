@@ -172,14 +172,15 @@ describe('PipelineService.process', () => {
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'skipped' }));
   });
 
-  it('skips an identical review rerun without touching paperless or the queue', async () => {
+  it('skips an identical review rerun: clears the trigger tag, no LLM or review item', async () => {
     const { pipeline, client, llm, review } = makePipeline({
       doc: { tags: [REVIEW_TAG] },
       hasCompleted: true,
     });
     const result = await pipeline.process(JOB);
     expect(result.decision).toBe('skipped');
-    expect(client.patchDocument).not.toHaveBeenCalled();
+    // trigger tag dropped so the document isn't re-polled forever
+    expect(client.patchDocument).toHaveBeenCalledWith(5, { tags: [] });
     expect(llm.generateStructured).not.toHaveBeenCalled();
     expect(review.create).not.toHaveBeenCalled();
   });

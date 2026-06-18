@@ -8,6 +8,8 @@ export interface NavItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  /** Optional count pill (e.g. pending review backlog); hidden when 0. */
+  badge?: number;
 }
 
 interface AppShellProps {
@@ -16,6 +18,8 @@ interface AppShellProps {
   onNavigate: (id: string) => void;
   title: string;
   description?: string;
+  /** Content max-width: 'narrow' for forms, 'wide' for tables/side-by-side. */
+  width?: 'narrow' | 'wide';
   /** Small status block pinned to the bottom of the sidebar. */
   sidebarFooter?: ReactNode;
   children: ReactNode;
@@ -27,6 +31,7 @@ export function AppShell({
   onNavigate,
   title,
   description,
+  width = 'narrow',
   sidebarFooter,
   children,
 }: AppShellProps) {
@@ -56,7 +61,12 @@ export function AppShell({
                 )}
               >
                 <Icon className="size-4 shrink-0" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.badge ? (
+                  <span className="rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground tabular-nums">
+                    {item.badge}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -77,7 +87,9 @@ export function AppShell({
         </header>
 
         <main className="flex-1 overflow-y-auto px-6 py-8">
-          <div className="mx-auto w-full max-w-3xl">{children}</div>
+          <div className={cn('mx-auto w-full', width === 'wide' ? 'max-w-5xl' : 'max-w-3xl')}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

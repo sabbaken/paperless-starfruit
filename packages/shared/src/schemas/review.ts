@@ -36,3 +36,42 @@ export const reviewSuggestionsSchema = z.object({
   current: reviewCurrentSchema,
 });
 export type ReviewSuggestions = z.infer<typeof reviewSuggestionsSchema>;
+
+export const reviewStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+
+/** A review item as listed in the queue (suggestions inlined — they're small). */
+export const reviewItemSchema = z.object({
+  id: z.number().int(),
+  documentId: z.number().int(),
+  status: reviewStatusSchema,
+  createdAt: z.number().int(),
+  suggestions: reviewSuggestionsSchema,
+});
+export type ReviewItemView = z.infer<typeof reviewItemSchema>;
+
+/** A single item plus a live text preview of the document. */
+export const reviewDetailSchema = reviewItemSchema.extend({
+  documentContent: z.string().nullable(),
+});
+export type ReviewDetail = z.infer<typeof reviewDetailSchema>;
+
+/**
+ * The user-confirmed values to apply. `tagNames` are merged with the document's
+ * existing (non-trigger) tags; an empty/blank correspondent or date leaves that
+ * field unchanged.
+ */
+export const reviewApproveSchema = z.object({
+  title: z.string().min(1),
+  tagNames: z.array(z.string()),
+  correspondentName: z.string().nullable(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD')
+    .nullable(),
+});
+export type ReviewApprove = z.infer<typeof reviewApproveSchema>;
+
+export const reviewBulkApproveSchema = z.object({
+  ids: z.array(z.number().int()).min(1),
+});
+export type ReviewBulkApprove = z.infer<typeof reviewBulkApproveSchema>;

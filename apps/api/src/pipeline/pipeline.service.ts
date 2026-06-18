@@ -14,6 +14,7 @@ import { LlmService } from '../providers/llm.service';
 import { buildLanguageModel, type ResolvedProvider } from '../providers/model.factory';
 import { SettingsService } from '../settings/settings.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
+import { mergeTagIds } from '../taxonomy/tags';
 import { ReviewService } from '../review/review.service';
 import { QueueService } from '../queue/queue.service';
 import { AuditService } from '../audit/audit.service';
@@ -72,10 +73,11 @@ export class PipelineService {
     const { reviewTagId, autoTagId } = await this.taxonomy.resolveTriggerTags(client);
 
     // Skip a byte-for-byte-identical rerun (same text + same config fingerprint).
+    // An identical result was already produced, so just clear the trigger tag so
+    // the document isn't re-polled forever. No pending review item can exist at
+    // this point — the poller's pending-check guards against re-enqueuing one.
     if (this.queue.hasCompletedWithHash(job.documentId, hash)) {
-      if (doc.tags.includes(autoTagId)) {
-        await this.dropTriggerTags(client, doc, reviewTagId, autoTagId);
-      }
+      await this.dropTriggerTags(client, doc, reviewTagId, autoTagId);
       this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
       return { contentHash: hash, cost: null, decision: 'skipped' };
     }
@@ -166,7 +168,7 @@ export class PipelineService {
       title: s.extraction.title,
       // Merge suggested tags with the current ones and drop the trigger tags in
       // the same PATCH — tag-replace semantics, never a blind overwrite.
-      tags: mergeTags(doc.tags, addIds, [reviewTagId, autoTagId]),
+      tags: mergeTagIds(doc.tags, addIds, [reviewTagId, autoTagId]),
     };
     if (s.resolvedCorrespondent?.id != null) patch.correspondent = s.resolvedCorrespondent.id;
     if (s.extraction.date) patch.created = `${s.extraction.date}T00:00:00Z`;
@@ -182,12 +184,4 @@ export class PipelineService {
     const tags = doc.tags.filter((id) => id !== reviewTagId && id !== autoTagId);
     if (tags.length !== doc.tags.length) await client.patchDocument(doc.id, { tags });
   }
-}
-
-/** current ∪ add, minus the trigger tags — order-stable, de-duplicated. */
-function mergeTags(current: number[], add: number[], remove: number[]): number[] {
-  const removeSet = new Set(remove);
-  const result = new Set(current.filter((id) => !removeSet.has(id)));
-  for (const id of add) result.add(id);
-  return [...result];
 }
