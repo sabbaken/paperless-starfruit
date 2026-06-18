@@ -11,10 +11,13 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
     "@paperless-ai/shared": "workspace:*",
     "@tanstack/react-query": "^5.62.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.79.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

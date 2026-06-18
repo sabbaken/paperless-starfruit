@@ -1,1 +1,52 @@
 @import 'tailwindcss';
+
+/*
+ * "Archive intake terminal" — a warm-ink instrument panel.
+ * Green = connected / go. Amber = standby / needs action. Red = fault.
+ * Prose is Space Grotesk; every piece of data (URLs, tokens, counts, status)
+ * is JetBrains Mono — the type treatment is the through-line.
+ */
+@theme {
+  --color-ink-950: #0c110f;
+  --color-ink-900: #111815;
+  --color-ink-850: #161f1a;
+  --color-ink-800: #1b2620;
+  --color-line: #273229;
+  --color-line-bright: #3a4d42;
+  --color-paper: #e9efe9;
+  --color-paper-dim: #9aa89f;
+  --color-paper-faint: #69776e;
+  --color-signal: #46c08a;
+  --color-signal-bright: #62d8a2;
+  --color-warn: #e0a458;
+  --color-alert: #e8716b;
+
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-ink-950);
+    color: var(--color-paper);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

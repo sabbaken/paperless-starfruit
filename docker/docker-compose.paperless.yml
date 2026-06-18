@@ -1,0 +1,48 @@
+# Local dev paperless-ngx — a real instance to develop Paperless AI against.
+# NOT for production: it runs paperless on SQLite + Redis with a default admin
+# login, which is fine for a throwaway dev box and nothing else.
+#
+#   docker compose -f docker/docker-compose.paperless.yml up -d
+#   # first boot takes ~30-60s (migrations + superuser); then:
+#   open http://localhost:8000          # login: admin / admin
+#
+# Develop Paperless AI on the host (`pnpm dev`) and point its connection at
+# http://localhost:8000. Get an API token with `pnpm paperless:token` (or in
+# the UI: top-right user menu -> My Profile -> API Auth Token).
+#
+# Drop PDFs/images into ./paperless-consume (host) to have them ingested.
+services:
+  broker:
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
+  paperless:
+    # Pin a known-good version for reproducible API testing; bump deliberately.
+    image: ghcr.io/paperless-ngx/paperless-ngx:2.14
+    restart: unless-stopped
+    depends_on:
+      - broker
+    ports:
+      - "8000:8000"
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_URL: http://localhost:8000
+      PAPERLESS_SECRET_KEY: dev-secret-not-for-production
+      PAPERLESS_TIME_ZONE: Europe/Stockholm
+      PAPERLESS_OCR_LANGUAGE: eng
+      PAPERLESS_WEBSERVER_WORKERS: "1"
+      # Superuser is created on first boot only (when no users exist yet).
+      PAPERLESS_ADMIN_USER: admin
+      PAPERLESS_ADMIN_PASSWORD: admin
+      # No PAPERLESS_DBHOST -> paperless uses its built-in SQLite database.
+    volumes:
+      - data:/usr/src/paperless/data
+      - media:/usr/src/paperless/media
+      - ./paperless-consume:/usr/src/paperless/consume
+
+volumes:
+  redisdata:
+  data:
+  media:
