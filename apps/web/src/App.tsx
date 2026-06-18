@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Boxes, Inbox, LayoutDashboard, Loader2, Plug, SlidersHorizontal } from 'lucide-react';
+import { Inbox, LayoutDashboard, Loader2, SlidersHorizontal } from 'lucide-react';
 import { connectionApi, statsApi } from './lib/api';
 import { AppShell, type NavItem } from './components/app-shell';
 import { ConnectScreen } from './screens/ConnectScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
 import { ProvidersScreen } from './screens/ProvidersScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
+import { ProcessingSettings } from './screens/ProcessingSettings';
 import { ThemeToggle } from './components/theme-toggle';
 import { Button } from './components/ui/button';
 
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
   dashboard: { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
   review: { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
-  providers: { title: 'Providers', description: 'LLM & OCR connections and keys' },
-  settings: { title: 'Settings', description: 'Processing behaviour & defaults' },
   connection: { title: 'Connection', description: 'Your paperless-ngx instance' },
+  providers: { title: 'Providers', description: 'LLM & OCR connections and keys' },
+  processing: { title: 'Processing', description: 'How documents are picked up and enriched' },
 };
 
 export function App() {
@@ -69,9 +69,16 @@ export function App() {
   const nav: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
-    { id: 'providers', label: 'Providers', icon: Boxes },
-    { id: 'settings', label: 'Settings', icon: SlidersHorizontal },
-    { id: 'connection', label: 'Connection', icon: Plug },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: SlidersHorizontal,
+      children: [
+        { id: 'connection', label: 'Connection' },
+        { id: 'providers', label: 'Providers' },
+        { id: 'processing', label: 'Processing' },
+      ],
+    },
   ];
 
   return (
@@ -95,10 +102,10 @@ export function App() {
         <ReviewScreen />
       ) : view === 'connection' ? (
         <ConnectScreen status={status.data} />
-      ) : view === 'settings' ? (
-        <SettingsScreen onGoToProviders={() => setView('providers')} />
-      ) : (
+      ) : view === 'providers' ? (
         <ProvidersScreen />
+      ) : (
+        <ProcessingSettings onGoToProviders={() => setView('providers')} />
       )}
     </AppShell>
   );
