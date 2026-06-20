@@ -13,13 +13,16 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@paperless-ai/shared": "workspace:*",
+    "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-query": "^5.62.7",
     "clsx": "^2.1.1",
     "lucide-react": "^1.21.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.79.0",
+    "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.0",
+    "redux-persist": "^6.0.0",
     "tailwind-merge": "^3.6.0",
     "zod": "^3.25.76"
   },
