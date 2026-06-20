@@ -15,4 +15,6 @@ export interface NavItem {
   badge?: number;
   /** Nested destinations shown beneath this item when its section is active. */
   children?: SubNavItem[];
+  /** Start the section expanded even when none of its children is the active route. */
+  defaultOpen?: boolean;
 }

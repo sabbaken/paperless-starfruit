@@ -62,6 +62,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       to: '/settings',
       label: 'Settings',
       icon: SlidersHorizontal,
+      defaultOpen: true,
       children: [
         { to: '/settings/general', label: 'General' },
         { to: '/settings/processing', label: 'Processing' },
@@ -163,7 +164,7 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
     item.to === pathname ||
     children.some((c) => c.to === pathname) ||
     pathname.startsWith(`${item.to}/`);
-  const [open, setOpen] = useState(sectionActive);
+  const [open, setOpen] = useState(item.defaultOpen || sectionActive);
   const firstChild = children[0]?.to ?? item.to;
 
   return (
