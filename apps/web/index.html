@@ -6,8 +6,10 @@
     <title>Paperless AI</title>
     <script>
       // Apply the saved/system theme before paint to avoid a flash.
+      // Reads the redux-persist blob written by the settings slice.
       try {
-        var t = localStorage.getItem('paperless-ai-theme') || 'system';
+        var raw = localStorage.getItem('persist:root');
+        var t = (raw && JSON.parse(JSON.parse(raw).settings || '{}').theme) || 'system';
         var dark =
           t === 'dark' ||
           (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
