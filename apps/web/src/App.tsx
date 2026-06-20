@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Inbox, LayoutDashboard, Loader2, SlidersHorizontal } from 'lucide-react';
 import { connectionApi, statsApi } from './lib/api';
-import { AppShell, type NavItem } from './components/app-shell';
+import { MainLayout, type NavItem } from './layouts/main-layout';
 import { ConnectScreen } from './screens/ConnectScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
@@ -84,7 +84,7 @@ export function App() {
   ];
 
   return (
-    <AppShell
+    <MainLayout
       nav={nav}
       activePath={pathname}
       onNavigate={(to) => navigate(to)}
@@ -111,7 +111,7 @@ export function App() {
         />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-    </AppShell>
+    </MainLayout>
   );
 }
 
