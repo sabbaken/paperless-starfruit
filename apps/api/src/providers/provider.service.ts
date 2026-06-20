@@ -141,6 +141,7 @@ export class ProviderService {
           id: m.id,
           label: m.label,
           vision: m.vision,
+          intelligence: m.intelligence,
         }));
         api.push({ providerId: c.id, providerName: c.name, kind, manual: false, models });
       }
@@ -172,7 +173,8 @@ export class ProviderService {
       .map((d) => d.id)
       .filter((id): id is string => !!id)
       // Local model vision support is unknown; assume capable (user's own model).
-      .map((id) => ({ id, label: id, vision: true }));
+      // Intelligence isn't knowable for arbitrary local models.
+      .map((id) => ({ id, label: id, vision: true, intelligence: null }));
   }
 
   private resolveFromInput(input: ProviderTestInput): ResolvedCredential {
