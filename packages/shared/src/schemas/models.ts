@@ -5,6 +5,8 @@ export const modelInfoSchema = z.object({
   id: z.string(),
   label: z.string(),
   vision: z.boolean(),
+  /** Coarse 0–5 "how smart" rating; null when unknown (e.g. local endpoints). */
+  intelligence: z.number().min(0).max(5).nullable(),
 });
 export type ModelInfo = z.infer<typeof modelInfoSchema>;
 
