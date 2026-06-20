@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Brain, CheckCircle2, ChevronRight, Loader2, ScanText } from 'lucide-react';
+import { Brain, CheckCircle2, Loader2, ScanText } from 'lucide-react';
 import type { ProviderConfig, Settings } from '@paperless-ai/shared';
 import { providerApi, settingsApi } from '../lib/api';
 import { ModelPicker } from '../components/model-picker';
@@ -8,8 +8,9 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Switch } from '../components/ui/switch';
+import { SelectRow } from '../components/ui/select-row';
 import { Textarea } from '../components/ui/textarea';
+import { SwitchRow } from '../components/ui/switch-row';
 
 export function ProcessingSettings({ onGoToProviders }: { onGoToProviders: () => void }) {
   const settings = useQuery({ queryKey: ['settings'], queryFn: settingsApi.get });
@@ -70,14 +71,14 @@ function ModelsCard({
         <CardDescription>Choose which model handles extraction and OCR.</CardDescription>
       </CardHeader>
       <CardContent className="divide-y">
-        <ModelRow
+        <SelectRow
           icon={<Brain className="size-4" />}
           label="Language model"
           hint="Extracts title, tags, correspondent and date."
           value={describe(settings.llmProviderId, settings.llmModel)}
           onClick={() => setPicker('llm')}
         />
-        <ModelRow
+        <SelectRow
           icon={<ScanText className="size-4" />}
           label="OCR model"
           hint="Reads scanned documents (used when OCR is enabled)."
@@ -104,34 +105,6 @@ function ModelsCard({
         />
       )}
     </Card>
-  );
-}
-
-function ModelRow({
-  icon,
-  label,
-  hint,
-  value,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  hint: string;
-  value: string | null;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" onClick={onClick} className="flex w-full items-center gap-3 py-3 text-left">
-      <span className="text-muted-foreground">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="truncate text-xs text-muted-foreground">{hint}</p>
-      </div>
-      <span className={value ? 'truncate font-mono text-xs' : 'text-xs text-muted-foreground'}>
-        {value ?? 'Not set'}
-      </span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-    </button>
   );
 }
 
@@ -177,17 +150,17 @@ function ProcessingForm({ initial }: { initial: Settings }) {
           <CardDescription>How documents are picked up and enriched.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <ToggleRow
+          <SwitchRow
             label="Auto-apply suggestions"
             hint="Apply AI suggestions immediately instead of queueing them for review. Documents tagged ai-process-auto always auto-apply."
             checked={form.autoApply}
-            onChange={(v) => set('autoApply', v)}
+            onCheckedChange={(v) => set('autoApply', v)}
           />
-          <ToggleRow
+          <SwitchRow
             label="Create new tags & correspondents"
             hint="Let the AI create tags/correspondents that don't exist yet. When off, only existing ones are applied."
             checked={form.createNewTags}
-            onChange={(v) => set('createNewTags', v)}
+            onCheckedChange={(v) => set('createNewTags', v)}
           />
 
           <div className="grid grid-cols-2 gap-4">
@@ -246,27 +219,5 @@ function ProcessingForm({ initial }: { initial: Settings }) {
         </Button>
       </div>
     </>
-  );
-}
-
-function ToggleRow({
-  label,
-  hint,
-  checked,
-  onChange,
-}: {
-  label: string;
-  hint: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
   );
 }

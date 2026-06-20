@@ -19,7 +19,7 @@ export function Checkbox({ checked, onCheckedChange, id, ...rest }: CheckboxProp
       aria-label={rest['aria-label']}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        'flex size-4 shrink-0 items-center justify-center rounded border outline-none transition-colors',
+        'flex size-4 shrink-0 cursor-pointer items-center justify-center rounded border outline-none transition-colors',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px]',
         checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
       )}
