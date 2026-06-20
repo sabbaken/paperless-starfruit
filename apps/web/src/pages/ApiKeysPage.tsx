@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Eye,
@@ -21,19 +20,25 @@ import {
   type ProviderKind,
   type ProviderTestResult,
 } from '@paperless-ai/shared';
-import { providerApi } from '../lib/api';
-import { cn } from '../lib/cn';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Dialog } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import {
+  useCreateProvider,
+  useDeleteProvider,
+  useProviders,
+  useTestProvider,
+  useUpdateProvider,
+} from '@/api/providers';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type FormState = { mode: 'create'; kind: ProviderKind } | { mode: 'edit'; cred: ProviderConfig };
 
-export function ApiKeysScreen() {
-  const providers = useQuery({ queryKey: ['providers'], queryFn: providerApi.list });
+export function ApiKeysPage() {
+  const providers = useProviders();
   const [form, setForm] = useState<FormState | null>(null);
 
   if (providers.isLoading) {
@@ -152,21 +157,13 @@ export function ApiKeysScreen() {
 }
 
 function RowActions({ onEdit, providerId }: { onEdit: () => void; providerId: number }) {
-  const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
-  const remove = useMutation({
-    mutationFn: () => providerApi.remove(providerId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['providers'] });
-      void queryClient.invalidateQueries({ queryKey: ['settings'] });
-      void queryClient.invalidateQueries({ queryKey: ['available-models'] });
-    },
-  });
+  const remove = useDeleteProvider();
 
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="destructive" onClick={() => remove.mutate()} disabled={remove.isPending}>
+        <Button size="sm" variant="destructive" onClick={() => remove.mutate(providerId)} disabled={remove.isPending}>
           {remove.isPending && <Loader2 className="animate-spin" />}
           Remove
         </Button>
@@ -211,7 +208,6 @@ function CredentialForm({
 }) {
   const editing = !!cred;
   const meta = PROVIDER_KIND_META[kind];
-  const queryClient = useQueryClient();
   const [showKey, setShowKey] = useState(false);
   const [testResult, setTestResult] = useState<ProviderTestResult | null>(null);
 
@@ -223,6 +219,11 @@ function CredentialForm({
     },
   });
 
+  const create = useCreateProvider();
+  const update = useUpdateProvider();
+  const test = useTestProvider();
+  const save = editing ? update : create;
+
   const toInput = (v: FormValues) => ({
     name: meta.local ? v.name.trim() : meta.label,
     kind,
@@ -230,26 +231,19 @@ function CredentialForm({
     apiKey: v.apiKey.trim() || undefined,
   });
 
-  const onSettled = () => {
-    void queryClient.invalidateQueries({ queryKey: ['providers'] });
-    void queryClient.invalidateQueries({ queryKey: ['available-models'] });
-    onDone();
-  };
-
-  const save = useMutation({
-    mutationFn: (v: FormValues) =>
-      editing ? providerApi.update(cred.id, toInput(v)) : providerApi.create(toInput(v)),
-    onSuccess: onSettled,
+  const onSave = handleSubmit((v) => {
+    if (editing && cred) {
+      update.mutate({ id: cred.id, input: toInput(v) }, { onSuccess: onDone });
+    } else {
+      create.mutate(toInput(v), { onSuccess: onDone });
+    }
   });
-  const test = useMutation({
-    mutationFn: (v: FormValues) => providerApi.test({ ...toInput(v), id: editing ? cred.id : undefined }),
-    onSuccess: (r) => setTestResult(r),
-  });
-
-  const onSave = handleSubmit((v) => save.mutate(v));
   const onTest = handleSubmit((v) => {
     setTestResult(null);
-    test.mutate(v);
+    test.mutate(
+      { ...toInput(v), id: editing && cred ? cred.id : undefined },
+      { onSuccess: (r) => setTestResult(r) },
+    );
   });
   const busy = save.isPending || test.isPending;
 

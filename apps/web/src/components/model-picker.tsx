@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Check, Eye, Loader2, X } from 'lucide-react';
 import { PROVIDER_KIND_META, type ProviderModels } from '@paperless-ai/shared';
-import { providerApi } from '../lib/api';
-import { cn } from '../lib/cn';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { useAvailableModels } from '@/api/providers';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface ModelPickerProps {
   title: string;
@@ -28,7 +27,7 @@ export function ModelPicker({
   onClose,
   onAddKey,
 }: ModelPickerProps) {
-  const models = useQuery({ queryKey: ['available-models'], queryFn: providerApi.models });
+  const models = useAvailableModels();
   const [tab, setTab] = useState<Tab>('api');
 
   // Close on Escape.
