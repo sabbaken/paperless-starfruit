@@ -31,7 +31,13 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -133,24 +139,27 @@ export function ApiKeysPage() {
         </CardContent>
       </Card>
 
-      <Dialog
-        open={!!form}
-        onClose={() => setForm(null)}
-        title={
-          form && formKind
-            ? `${form.mode === 'edit' ? 'Edit' : 'Add'} ${PROVIDER_KIND_META[formKind].label}`
-            : ''
-        }
-        description="Keys are encrypted at rest and never returned to the browser."
-      >
-        {form && formKind && (
-          <CredentialForm
-            key={form.mode === 'edit' ? form.cred.id : form.kind}
-            kind={formKind}
-            cred={form.mode === 'edit' ? form.cred : undefined}
-            onDone={() => setForm(null)}
-          />
-        )}
+      <Dialog open={!!form} onOpenChange={(open) => !open && setForm(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {form && formKind
+                ? `${form.mode === 'edit' ? 'Edit' : 'Add'} ${PROVIDER_KIND_META[formKind].label}`
+                : ''}
+            </DialogTitle>
+            <DialogDescription>
+              Keys are encrypted at rest and never returned to the browser.
+            </DialogDescription>
+          </DialogHeader>
+          {form && formKind && (
+            <CredentialForm
+              key={form.mode === 'edit' ? form.cred.id : form.kind}
+              kind={formKind}
+              cred={form.mode === 'edit' ? form.cred : undefined}
+              onDone={() => setForm(null)}
+            />
+          )}
+        </DialogContent>
       </Dialog>
     </div>
   );
