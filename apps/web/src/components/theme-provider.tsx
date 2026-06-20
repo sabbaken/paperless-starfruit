@@ -1,15 +1,15 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useEffect, useState, type ReactNode } from 'react';
 
-type Theme = 'dark' | 'light' | 'system';
+export type Theme = 'dark' | 'light' | 'system';
 
-type ThemeProviderState = {
+export type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
 };
 
 const STORAGE_KEY = 'paperless-ai-theme';
 
-const ThemeProviderContext = createContext<ThemeProviderState>({
+export const ThemeProviderContext = createContext<ThemeProviderState>({
   theme: 'system',
   setTheme: () => undefined,
 });
@@ -45,8 +45,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       {children}
     </ThemeProviderContext.Provider>
   );
-}
-
-export function useTheme(): ThemeProviderState {
-  return useContext(ThemeProviderContext);
 }

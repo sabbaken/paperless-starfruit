@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, ChevronDown, Eye, EyeOff, Loader2, XCircle } from 'lucide-react';
 import {
   paperlessConnectionInputSchema,
@@ -9,10 +8,10 @@ import {
   type ConnectionTestResult,
   type PaperlessConnectionInput,
 } from '@paperless-ai/shared';
-import { connectionApi } from '../lib/api';
-import { cn } from '../lib/cn';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
+import { useConnection, useDisconnect, useSaveConnection, useTestConnection } from '@/api/connection';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -20,15 +19,15 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type Tone = 'standby' | 'probing' | 'online' | 'connected' | 'fault';
 
-export function ConnectScreen({ status }: { status: ConnectionStatus }) {
-  const queryClient = useQueryClient();
-  const connected = status.connected;
+export function ConnectionPage() {
+  const connection = useConnection();
+  const status = connection.data;
 
   const form = useForm<PaperlessConnectionInput>({
     resolver: zodResolver(paperlessConnectionInputSchema),
@@ -39,35 +38,39 @@ export function ConnectScreen({ status }: { status: ConnectionStatus }) {
   // Prefill from the stored connection once it loads; token is never returned,
   // so it stays blank and must be re-entered to save changes.
   useEffect(() => {
-    if (status.connected) {
+    if (status?.connected) {
       reset({ baseUrl: status.baseUrl, token: '', apiVersion: status.apiVersion });
     }
   }, [status, reset]);
 
-  const test = useMutation({ mutationFn: connectionApi.test });
-  const save = useMutation({
-    mutationFn: connectionApi.save,
-    onSuccess: () => {
-      // Clear any prior Test result so it can't outrank the freshly-saved state.
-      test.reset();
-      void queryClient.invalidateQueries({ queryKey: ['connection'] });
-      form.resetField('token');
-    },
-  });
-  const disconnect = useMutation({
-    mutationFn: connectionApi.remove,
-    onSuccess: () => {
-      test.reset();
-      save.reset();
-      reset({ baseUrl: '', token: '', apiVersion: undefined });
-      void queryClient.invalidateQueries({ queryKey: ['connection'] });
-    },
-  });
+  const test = useTestConnection();
+  const save = useSaveConnection();
+  const disconnect = useDisconnect();
 
   const onTest = handleSubmit((values) => test.mutate(values));
-  const onSave = handleSubmit((values) => save.mutate(values));
+  const onSave = handleSubmit((values) =>
+    save.mutate(values, {
+      onSuccess: () => {
+        // Clear any prior Test result so it can't outrank the freshly-saved state.
+        test.reset();
+        form.resetField('token');
+      },
+    }),
+  );
+  const onDisconnect = () =>
+    disconnect.mutate(undefined, {
+      onSuccess: () => {
+        test.reset();
+        save.reset();
+        reset({ baseUrl: '', token: '', apiVersion: undefined });
+      },
+    });
+
   const busy = test.isPending || save.isPending || disconnect.isPending;
   const [showToken, setShowToken] = useState(false);
+
+  if (!status) return null;
+  const connected = status.connected;
 
   const result = computeStatus({
     status,
@@ -199,7 +202,7 @@ export function ConnectScreen({ status }: { status: ConnectionStatus }) {
             variant="ghost"
             size="sm"
             className="text-muted-foreground"
-            onClick={() => disconnect.mutate()}
+            onClick={onDisconnect}
             disabled={disconnect.isPending}
           >
             {disconnect.isPending && <Loader2 className="animate-spin" />}

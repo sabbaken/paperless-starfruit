@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Brain, CheckCircle2, Loader2, ScanText } from 'lucide-react';
 import type { ProviderConfig, Settings } from '@paperless-ai/shared';
-import { providerApi, settingsApi } from '../lib/api';
-import { ModelPicker } from '../components/model-picker';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { SelectRow } from '../components/ui/select-row';
-import { Textarea } from '../components/ui/textarea';
-import { SwitchRow } from '../components/ui/switch-row';
+import { useProviders } from '@/api/providers';
+import { useSettings, useUpdateSettings } from '@/api/settings';
+import { ModelPicker } from '@/components/model-picker';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SelectRow } from '@/components/ui/select-row';
+import { Textarea } from '@/components/ui/textarea';
+import { SwitchRow } from '@/components/ui/switch-row';
 
-export function ProcessingSettings({ onGoToProviders }: { onGoToProviders: () => void }) {
-  const settings = useQuery({ queryKey: ['settings'], queryFn: settingsApi.get });
-  const providers = useQuery({ queryKey: ['providers'], queryFn: providerApi.list });
+export function ProcessingPage() {
+  const navigate = useNavigate();
+  const settings = useSettings();
+  const providers = useProviders();
 
   if (settings.isLoading || providers.isLoading || !settings.data) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
@@ -25,7 +27,7 @@ export function ProcessingSettings({ onGoToProviders }: { onGoToProviders: () =>
       <ModelsCard
         settings={settings.data}
         providers={providers.data ?? []}
-        onGoToProviders={onGoToProviders}
+        onGoToProviders={() => navigate('/settings/api-keys')}
       />
       <ProcessingForm initial={settings.data} />
     </div>
@@ -43,13 +45,9 @@ function ModelsCard({
   providers: ProviderConfig[];
   onGoToProviders: () => void;
 }) {
-  const queryClient = useQueryClient();
   const [picker, setPicker] = useState<PickerTarget | null>(null);
 
-  const update = useMutation({
-    mutationFn: settingsApi.update,
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['settings'] }),
-  });
+  const update = useUpdateSettings();
 
   const providerName = (id: number | null) => providers.find((p) => p.id === id)?.name ?? null;
   const describe = (id: number | null, model: string | null) =>
@@ -109,7 +107,6 @@ function ModelsCard({
 }
 
 function ProcessingForm({ initial }: { initial: Settings }) {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<Settings>(initial);
   const [blacklistText, setBlacklistText] = useState(initial.correspondentBlacklist.join('\n'));
   const [dirty, setDirty] = useState(false);
@@ -121,9 +118,11 @@ function ProcessingForm({ initial }: { initial: Settings }) {
     setSaved(false);
   };
 
-  const save = useMutation({
-    mutationFn: () =>
-      settingsApi.update({
+  const save = useUpdateSettings();
+
+  const onSave = () =>
+    save.mutate(
+      {
         pollIntervalSec: form.pollIntervalSec,
         autoApply: form.autoApply,
         createNewTags: form.createNewTags,
@@ -132,15 +131,16 @@ function ProcessingForm({ initial }: { initial: Settings }) {
           .split('\n')
           .map((s) => s.trim())
           .filter(Boolean),
-      }),
-    onSuccess: (updated) => {
-      setForm((f) => ({ ...f, ...updated }));
-      setBlacklistText(updated.correspondentBlacklist.join('\n'));
-      setDirty(false);
-      setSaved(true);
-      void queryClient.invalidateQueries({ queryKey: ['settings'] });
-    },
-  });
+      },
+      {
+        onSuccess: (updated) => {
+          setForm((f) => ({ ...f, ...updated }));
+          setBlacklistText(updated.correspondentBlacklist.join('\n'));
+          setDirty(false);
+          setSaved(true);
+        },
+      },
+    );
 
   return (
     <>
@@ -213,7 +213,7 @@ function ProcessingForm({ initial }: { initial: Settings }) {
             {save.error instanceof Error ? save.error.message : 'Save failed'}
           </span>
         )}
-        <Button onClick={() => save.mutate()} disabled={!dirty || save.isPending}>
+        <Button onClick={onSave} disabled={!dirty || save.isPending}>
           {save.isPending && <Loader2 className="animate-spin" />}
           Save changes
         </Button>

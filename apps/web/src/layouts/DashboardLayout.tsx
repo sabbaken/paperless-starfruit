@@ -1,50 +1,48 @@
-import type { LucideIcon } from 'lucide-react';
-import { FileStack } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
-import { cn } from '../lib/cn';
-import { ThemeToggle } from '../components/theme-toggle';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FileStack, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
+import { useConnection } from '@/api/connection';
+import { useStats } from '@/api/stats';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { cn } from '@/lib/utils';
+import type { NavItem } from '@/types/nav';
 
-export interface SubNavItem {
-  /** Route path this item navigates to. */
-  to: string;
-  label: string;
-}
+const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
+  '/dashboard': { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
+  '/review': { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
+  '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
+  '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
+  '/settings/processing': { title: 'Processing', description: 'Models & how documents are enriched' },
+};
 
-export interface NavItem {
-  /** Route path this item navigates to (the parent of a section may redirect). */
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  /** Optional count pill (e.g. pending review backlog); hidden when 0. */
-  badge?: number;
-  /** Nested destinations shown beneath this item when its section is active. */
-  children?: SubNavItem[];
-}
+/** The connected app chrome: sidebar nav + page header. Wraps the routed pages. */
+export function DashboardLayout({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const connection = useConnection();
+  // Drives the live "pending review" badge in the nav; cheap and always-on.
+  const stats = useStats({ refetchInterval: 8000 });
 
-interface MainLayoutProps {
-  nav: NavItem[];
-  /** Current route pathname, used to highlight the active item. */
-  activePath: string;
-  onNavigate: (to: string) => void;
-  title: string;
-  description?: string;
-  /** Content max-width: 'narrow' for forms, 'wide' for tables/side-by-side. */
-  width?: 'narrow' | 'wide';
-  /** Small status block pinned to the bottom of the sidebar. */
-  sidebarFooter?: ReactNode;
-  children: ReactNode;
-}
+  const meta = META[pathname] ?? META['/dashboard'];
+  const width = meta.width ?? 'narrow';
+  const conn = connection.data;
+  const baseUrl = conn && conn.connected ? conn.baseUrl : null;
 
-export function MainLayout({
-  nav,
-  activePath,
-  onNavigate,
-  title,
-  description,
-  width = 'narrow',
-  sidebarFooter,
-  children,
-}: MainLayoutProps) {
+  const nav: NavItem[] = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
+    {
+      to: '/settings',
+      label: 'Settings',
+      icon: SlidersHorizontal,
+      children: [
+        { to: '/settings/processing', label: 'Processing' },
+        { to: '/settings/api-keys', label: 'API Keys' },
+        { to: '/settings/connection', label: 'Connection' },
+      ],
+    },
+  ];
+
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r bg-card/40">
@@ -60,17 +58,17 @@ export function MainLayout({
             // A parent with children is a section header, not a destination of
             // its own; clicking it opens its first child.
             const sectionActive =
-              item.to === activePath ||
-              childPaths.includes(activePath) ||
-              activePath.startsWith(`${item.to}/`);
-            const leafActive = !item.children && item.to === activePath;
+              item.to === pathname ||
+              childPaths.includes(pathname) ||
+              pathname.startsWith(`${item.to}/`);
+            const leafActive = !item.children && item.to === pathname;
             const target = item.children?.[0]?.to ?? item.to;
             return (
               <Fragment key={item.to}>
                 <button
                   type="button"
-                  onClick={() => onNavigate(target)}
-                  aria-current={item.to === activePath ? 'page' : undefined}
+                  onClick={() => navigate(target)}
+                  aria-current={item.to === pathname ? 'page' : undefined}
                   className={cn(
                     'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     leafActive
@@ -95,11 +93,11 @@ export function MainLayout({
                       <button
                         key={child.to}
                         type="button"
-                        onClick={() => onNavigate(child.to)}
-                        aria-current={child.to === activePath ? 'page' : undefined}
+                        onClick={() => navigate(child.to)}
+                        aria-current={child.to === pathname ? 'page' : undefined}
                         className={cn(
                           'rounded-md px-2.5 py-1.5 text-left text-sm transition-colors',
-                          child.to === activePath
+                          child.to === pathname
                             ? 'bg-accent font-medium text-accent-foreground'
                             : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                         )}
@@ -114,15 +112,22 @@ export function MainLayout({
           })}
         </nav>
 
-        {sidebarFooter && <div className="border-t px-4 py-3 text-xs">{sidebarFooter}</div>}
+        {baseUrl && (
+          <div className="border-t px-4 py-3 text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
+              <span className="truncate">{baseUrl}</span>
+            </div>
+          </div>
+        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-4 border-b px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold tracking-tight">{title}</h1>
-            {description && (
-              <p className="truncate text-xs text-muted-foreground">{description}</p>
+            <h1 className="truncate text-sm font-semibold tracking-tight">{meta.title}</h1>
+            {meta.description && (
+              <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
             )}
           </div>
           <ThemeToggle />

@@ -1,5 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/lib/utils';
 
 const VARIANTS = {
   default: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90',

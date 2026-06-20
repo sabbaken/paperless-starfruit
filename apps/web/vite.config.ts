@@ -8,12 +8,14 @@ import { defineConfig } from 'vite';
 // exports through CJS `export *` chains — bundling the ESM source sidesteps
 // that and means web dev needs no prebuild of `shared`.
 const sharedSrc = fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url));
+const srcDir = fileURLToPath(new URL('./src', import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@paperless-ai/shared': sharedSrc,
+      '@': srcDir,
     },
   },
   server: {

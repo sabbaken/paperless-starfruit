@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import type { JobSummary } from '@paperless-ai/shared';
-import { statsApi } from '../lib/api';
-import { cn } from '../lib/cn';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { useStats } from '@/api/stats';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const STATUS_TONE: Record<JobSummary['status'], string> = {
   queued: 'text-muted-foreground',
@@ -14,8 +14,9 @@ const STATUS_TONE: Record<JobSummary['status'], string> = {
   failed: 'text-destructive',
 };
 
-export function DashboardScreen({ onReview }: { onReview: () => void }) {
-  const stats = useQuery({ queryKey: ['stats'], queryFn: statsApi.get, refetchInterval: 5000 });
+export function DashboardPage() {
+  const navigate = useNavigate();
+  const stats = useStats({ refetchInterval: 5000 });
 
   if (stats.isLoading || !stats.data) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
@@ -31,7 +32,7 @@ export function DashboardScreen({ onReview }: { onReview: () => void }) {
         <Stat
           label="Awaiting review"
           value={pendingReview}
-          action={pendingReview > 0 ? <Button size="sm" variant="outline" onClick={onReview}>Review</Button> : undefined}
+          action={pendingReview > 0 ? <Button size="sm" variant="outline" onClick={() => navigate('/review')}>Review</Button> : undefined}
         />
         <Stat label="Processed" value={queue.done} hint={queue.failed ? `${queue.failed} failed` : undefined} hintTone={queue.failed ? 'fault' : undefined} />
         <Stat label="Tokens used" value={tokenSpend.toLocaleString()} />

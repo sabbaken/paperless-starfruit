@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, Loader2, Sparkles, X } from 'lucide-react';
 import type { ReviewDetail, ReviewItemView } from '@paperless-ai/shared';
-import { reviewApi } from '../lib/api';
-import { cn } from '../lib/cn';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Checkbox } from '../components/ui/checkbox';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import {
+  useApproveReview,
+  useBulkApproveReview,
+  useRejectReview,
+  useReviewDetail,
+  useReviewList,
+} from '@/api/review';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-export function ReviewScreen() {
-  const items = useQuery({
-    queryKey: ['review', 'pending'],
-    queryFn: () => reviewApi.list('pending'),
-    refetchInterval: 5000,
-  });
+export function ReviewPage() {
+  const items = useReviewList('pending');
   const [openId, setOpenId] = useState<number | null>(null);
 
   if (items.isLoading) {
@@ -30,17 +31,9 @@ export function ReviewScreen() {
 }
 
 function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: number) => void }) {
-  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
-  const bulk = useMutation({
-    mutationFn: (ids: number[]) => reviewApi.bulkApprove(ids),
-    onSuccess: () => {
-      setSelected(new Set());
-      void queryClient.invalidateQueries({ queryKey: ['review'] });
-      void queryClient.invalidateQueries({ queryKey: ['stats'] });
-    },
-  });
+  const bulk = useBulkApproveReview();
 
   const toggle = (id: number) =>
     setSelected((s) => {
@@ -73,7 +66,11 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
               Clear
             </Button>
-            <Button size="sm" onClick={() => bulk.mutate([...selected])} disabled={bulk.isPending}>
+            <Button
+              size="sm"
+              onClick={() => bulk.mutate([...selected], { onSuccess: () => setSelected(new Set()) })}
+              disabled={bulk.isPending}
+            >
               {bulk.isPending && <Loader2 className="animate-spin" />}
               Approve {selected.size} selected
             </Button>
@@ -118,7 +115,7 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
 }
 
 function ReviewDetailView({ id, onClose }: { id: number; onClose: () => void }) {
-  const detail = useQuery({ queryKey: ['review', id], queryFn: () => reviewApi.get(id) });
+  const detail = useReviewDetail(id);
 
   if (detail.isLoading || !detail.data) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
@@ -127,7 +124,6 @@ function ReviewDetailView({ id, onClose }: { id: number; onClose: () => void }) 
 }
 
 function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () => void }) {
-  const queryClient = useQueryClient();
   const s = detail.suggestions;
 
   const [title, setTitle] = useState(s.title);
@@ -137,24 +133,24 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
   );
   const [date, setDate] = useState(s.date ?? '');
 
-  const onResolved = () => {
-    void queryClient.invalidateQueries({ queryKey: ['review'] });
-    void queryClient.invalidateQueries({ queryKey: ['stats'] });
-    onClose();
-  };
-
-  const approve = useMutation({
-    mutationFn: () =>
-      reviewApi.approve(detail.id, {
-        title: title.trim(),
-        tagNames: [...tags],
-        correspondentName: correspondent.trim() || null,
-        date: date || null,
-      }),
-    onSuccess: onResolved,
-  });
-  const reject = useMutation({ mutationFn: () => reviewApi.reject(detail.id), onSuccess: onResolved });
+  const approve = useApproveReview();
+  const reject = useRejectReview();
   const busy = approve.isPending || reject.isPending;
+
+  const onApprove = () =>
+    approve.mutate(
+      {
+        id: detail.id,
+        payload: {
+          title: title.trim(),
+          tagNames: [...tags],
+          correspondentName: correspondent.trim() || null,
+          date: date || null,
+        },
+      },
+      { onSuccess: onClose },
+    );
+  const onReject = () => reject.mutate(detail.id, { onSuccess: onClose });
 
   const toggleTag = (name: string) =>
     setTags((cur) => {
@@ -257,11 +253,11 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
       )}
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => reject.mutate()} disabled={busy}>
+        <Button variant="outline" onClick={onReject} disabled={busy}>
           {reject.isPending && <Loader2 className="animate-spin" />}
           Reject
         </Button>
-        <Button onClick={() => approve.mutate()} disabled={busy || !title.trim()}>
+        <Button onClick={onApprove} disabled={busy || !title.trim()}>
           {approve.isPending && <Loader2 className="animate-spin" />}
           Approve & apply
         </Button>
