@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { FileStack } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
-import { ThemeToggle } from './theme-toggle';
+import { ThemeToggle } from '../components/theme-toggle';
 
 export interface SubNavItem {
   /** Route path this item navigates to. */
@@ -21,7 +21,7 @@ export interface NavItem {
   children?: SubNavItem[];
 }
 
-interface AppShellProps {
+interface MainLayoutProps {
   nav: NavItem[];
   /** Current route pathname, used to highlight the active item. */
   activePath: string;
@@ -35,7 +35,7 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-export function AppShell({
+export function MainLayout({
   nav,
   activePath,
   onNavigate,
@@ -44,7 +44,7 @@ export function AppShell({
   width = 'narrow',
   sidebarFooter,
   children,
-}: AppShellProps) {
+}: MainLayoutProps) {
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r bg-card/40">
