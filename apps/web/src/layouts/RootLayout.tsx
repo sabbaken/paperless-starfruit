@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useConnection } from '@/api/connection';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { ConnectionPage } from '@/pages/ConnectionPage';
 
@@ -48,9 +47,8 @@ export function RootLayout({ children }: { children: ReactNode }) {
 function Centered({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between px-6 py-4">
+      <header className="flex items-center px-6 py-4">
         <span className="text-sm font-semibold tracking-tight">Paperless AI</span>
-        <ThemeToggle />
       </header>
       <main className="flex flex-1 items-center justify-center px-6 pb-16">{children}</main>
     </div>

@@ -79,3 +79,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Cross-fade the whole page when switching colour themes (driven by use-theme.ts). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 280ms;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
