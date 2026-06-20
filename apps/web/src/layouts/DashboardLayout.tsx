@@ -1,8 +1,9 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FileStack, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, FileStack, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useStats } from '@/api/stats';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
@@ -13,6 +14,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -90,47 +92,23 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {nav.map((item) => {
+                  // A parent with children is a collapsible section, handled by NavGroup:
+                  // the row navigates to the first child, the chevron toggles the sub-list.
+                  if (item.children) {
+                    return <NavGroup key={item.to} item={item} pathname={pathname} />;
+                  }
+
                   const Icon = item.icon;
-                  const childPaths = item.children?.map((c) => c.to) ?? [];
-                  // A parent with children is a section header, not a destination of
-                  // its own; clicking it opens its first child.
-                  const sectionActive =
-                    item.to === pathname ||
-                    childPaths.includes(pathname) ||
-                    pathname.startsWith(`${item.to}/`);
-                  const leafActive = !item.children && item.to === pathname;
-                  const target = item.children?.[0]?.to ?? item.to;
+                  const active = item.to === pathname;
                   return (
                     <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={leafActive || sectionActive}
-                        tooltip={item.label}
-                      >
-                        <Link to={target} aria-current={item.to === pathname ? 'page' : undefined}>
+                      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
+                        <Link to={item.to} aria-current={active ? 'page' : undefined}>
                           <Icon />
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
-
                       {item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
-
-                      {item.children && sectionActive && (
-                        <SidebarMenuSub>
-                          {item.children.map((child) => (
-                            <SidebarMenuSubItem key={child.to}>
-                              <SidebarMenuSubButton asChild isActive={child.to === pathname}>
-                                <Link
-                                  to={child.to}
-                                  aria-current={child.to === pathname ? 'page' : undefined}
-                                >
-                                  <span>{child.label}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      )}
                     </SidebarMenuItem>
                   );
                 })}
@@ -170,5 +148,63 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+/**
+ * A collapsible nav section (a parent item with children). The row itself is a link
+ * that always navigates to the first child and expands the group; the chevron is a
+ * separate action that toggles the sub-list independently.
+ */
+function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
+  const Icon = item.icon;
+  const children = item.children ?? [];
+  const sectionActive =
+    item.to === pathname ||
+    children.some((c) => c.to === pathname) ||
+    pathname.startsWith(`${item.to}/`);
+  const [open, setOpen] = useState(sectionActive);
+  const firstChild = children[0]?.to ?? item.to;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} asChild className="group/collapsible">
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={sectionActive} tooltip={item.label}>
+          <Link
+            to={firstChild}
+            onClick={(e) => {
+              if (open) {
+                // Already expanded → a second click collapses instead of navigating.
+                e.preventDefault();
+                setOpen(false);
+              } else {
+                setOpen(true);
+              }
+            }}
+          >
+            <Icon />
+            <span>{item.label}</span>
+          </Link>
+        </SidebarMenuButton>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuAction aria-label={`Toggle ${item.label}`} className="data-[state=open]:rotate-90">
+            <ChevronRight />
+          </SidebarMenuAction>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {children.map((child) => (
+              <SidebarMenuSubItem key={child.to}>
+                <SidebarMenuSubButton asChild isActive={child.to === pathname}>
+                  <Link to={child.to} aria-current={child.to === pathname ? 'page' : undefined}>
+                    <span>{child.label}</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
   );
 }
