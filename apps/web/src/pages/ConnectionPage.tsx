@@ -139,6 +139,8 @@ export function ConnectionPage() {
             )}
           </div>
 
+          <StatusLine tone={result.tone} message={result.message} />
+
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
               <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
@@ -174,8 +176,6 @@ export function ConnectionPage() {
               )}
             </div>
           </details>
-
-          <StatusLine tone={result.tone} message={result.message} />
         </form>
       </CardContent>
 
