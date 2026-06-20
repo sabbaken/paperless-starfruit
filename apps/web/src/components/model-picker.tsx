@@ -1,8 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronsUpDown, ChevronUp, Eye, Loader2, Lock, Search } from 'lucide-react';
 import {
-  CLOUD_PROVIDER_KINDS,
-  MODEL_CATALOG,
   PROVIDER_KIND_META,
   type ModelInfo,
   type ProviderKind,
@@ -20,7 +18,19 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ProviderLogo } from '@/components/ui/provider-logo';
-import { SignalBars } from '@/components/ui/signal-bars';
+import { Switch } from '@/components/ui/switch';
+
+/**
+ * Substrings, per vendor, that bury a model from the default shortlist. Any model
+ * whose id or name contains one of these is hidden from the reduced view, but
+ * still appears when "Show all models" is on. Edit freely to drop irrelevant models.
+ */
+const SHORTLIST_EXCLUDE: Partial<Record<ProviderKind, string[]>> = {
+  openai: ['codex', 'oss', 'instruct', 'instant', 'realtime', 'audio', 'search', 'deep-research'],
+  google: ['image', 'gemma', 'preview'],
+  // anthropic: [],
+  // mistral: [],
+};
 
 interface ModelPickerProps {
   title: string;
@@ -55,12 +65,42 @@ interface ModelRow {
   kind: ProviderKind;
   model: ModelInfo;
   locked: boolean;
+  /** Estimated cost to process one page with this model (null when unpriced). */
+  perPage: number | null;
 }
 
-type SortKey = 'model' | 'provider' | 'intelligence';
+type SortKey = 'model' | 'provider' | 'input' | 'output' | 'perPage';
 interface Sort {
   key: SortKey;
   dir: 'asc' | 'desc';
+}
+
+/** USD-per-token → a compact "$X.XX" per 1M tokens. */
+function formatPrice(perToken: number): string {
+  return `$${(perToken * 1_000_000).toFixed(2)}`;
+}
+
+/**
+ * Rough tokens-per-page used to anchor the cost estimate. Real usage swings with
+ * document size, layout and language — this is only a relative comparison number.
+ * cost = tokensIn × priceIn + tokensOut × priceOut.
+ */
+const PER_PAGE_TOKENS = {
+  ocr: { in: 3000, out: 900 },
+  analysis: { in: 1300, out: 500 },
+} as const;
+
+function perPageCost(pricing: ModelInfo['pricing'], ocr: boolean): number | null {
+  if (!pricing) return null;
+  const t = ocr ? PER_PAGE_TOKENS.ocr : PER_PAGE_TOKENS.analysis;
+  return t.in * pricing.input + t.out * pricing.output;
+}
+
+/** Format a tiny per-page dollar amount keeping ~2 significant figures. */
+function formatPerPage(cost: number): string {
+  if (cost <= 0) return '$0';
+  const decimals = Math.min(6, Math.max(2, -Math.floor(Math.log10(cost)) + 1));
+  return `$${cost.toFixed(decimals)}`;
 }
 
 const fromConnected = (g: ProviderModels): DisplayGroup => ({
@@ -73,7 +113,7 @@ const fromConnected = (g: ProviderModels): DisplayGroup => ({
   locked: false,
 });
 
-function buildRows(groups: DisplayGroup[]): ModelRow[] {
+function buildRows(groups: DisplayGroup[], ocr: boolean): ModelRow[] {
   return groups.flatMap((g) => {
     const company = PROVIDER_KIND_META[g.kind].label;
     const account = g.name && g.name !== company ? g.name : null;
@@ -85,25 +125,60 @@ function buildRows(groups: DisplayGroup[]): ModelRow[] {
       kind: g.kind,
       model: m,
       locked: g.locked,
+      perPage: perPageCost(m.pricing, ocr),
     }));
   });
 }
 
 function compareRows(a: ModelRow, b: ModelRow, sort: Sort): number {
-  let r = 0;
-  switch (sort.key) {
-    case 'model':
-      r = a.model.label.localeCompare(b.model.label);
-      break;
-    case 'provider':
-      r = a.company.localeCompare(b.company) || a.model.label.localeCompare(b.model.label);
-      break;
-    case 'intelligence':
-      // Unknown ratings (local models) sort to the bottom.
-      r = (a.model.intelligence ?? -1) - (b.model.intelligence ?? -1);
-      break;
+  const byLabel = a.model.label.localeCompare(b.model.label);
+  if (sort.key === 'input' || sort.key === 'output' || sort.key === 'perPage') {
+    const av = sort.key === 'perPage' ? a.perPage : (a.model.pricing?.[sort.key] ?? null);
+    const bv = sort.key === 'perPage' ? b.perPage : (b.model.pricing?.[sort.key] ?? null);
+    // Unpriced models (e.g. local) always sort last, regardless of direction.
+    if (av == null || bv == null) return av == null ? (bv == null ? byLabel : 1) : -1;
+    const r = av - bv || byLabel;
+    return sort.dir === 'asc' ? r : -r;
   }
+  const r = sort.key === 'provider' ? a.company.localeCompare(b.company) || byLabel : byLabel;
   return sort.dir === 'asc' ? r : -r;
+}
+
+/** A model "line", ignoring version numbers — e.g. `claude-3-haiku` and
+ *  `claude-haiku-4.5` both reduce to `claude-haiku`. */
+function familyKey(id: string): string {
+  return id
+    .toLowerCase()
+    .replace(/\d+(\.\d+)?/g, ' ') // drop version numbers wherever they sit
+    .replace(/[^a-z]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .join('-');
+}
+
+/** Highest version number in an id (ignoring date/size-like values). */
+function versionOf(id: string): number {
+  const nums = (id.match(/\d+(\.\d+)?/g) ?? []).map(Number).filter((n) => n < 100);
+  return nums.length ? Math.max(...nums) : 0;
+}
+
+/** True when a model is buried from the shortlist by SHORTLIST_EXCLUDE. */
+function excludedFromShortlist(r: ModelRow): boolean {
+  const patterns = SHORTLIST_EXCLUDE[r.kind];
+  if (!patterns?.length) return false;
+  const hay = `${r.model.id} ${r.model.label}`.toLowerCase();
+  return patterns.some((p) => hay.includes(p.toLowerCase()));
+}
+
+/** Keep only the newest model in each line (per provider), preserving order. */
+function latestPerFamily(rows: ModelRow[]): ModelRow[] {
+  const best = new Map<string, ModelRow>();
+  for (const r of rows) {
+    const fam = `${r.kind}:${familyKey(r.model.id)}`;
+    const cur = best.get(fam);
+    if (!cur || versionOf(r.model.id) > versionOf(cur.model.id)) best.set(fam, r);
+  }
+  return rows.filter((r) => best.get(`${r.kind}:${familyKey(r.model.id)}`) === r);
 }
 
 export function ModelPicker({
@@ -116,32 +191,40 @@ export function ModelPicker({
 }: ModelPickerProps) {
   const models = useAvailableModels();
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<Sort>({ key: 'intelligence', dir: 'desc' });
+  const [showAll, setShowAll] = useState(false);
+  const [sort, setSort] = useState<Sort>({ key: 'provider', dir: 'asc' });
+
+  // The OCR picker (visionOnly) costs more per page than plain text analysis.
+  const ocr = !!visionOnly;
+  const perPageTooltip = ocr
+    ? 'Rough estimate — ~3,000 input + 900 output tokens per page (OCR). Varies with the document.'
+    : 'Rough estimate — ~1,300 input + 500 output tokens per page (analysis). Varies with the document.';
 
   const connectedApi = models.data?.api ?? [];
   const local = models.data?.local ?? [];
+  const catalog = models.data?.catalog ?? {};
 
-  // Cloud kinds without a configured credential — previewed as locked rows so users
-  // can see what exists and that adding a key unlocks it.
+  // Supported vendors without a configured credential — previewed as locked rows
+  // so users can see what exists and that adding a key unlocks it.
   const connectedKinds = new Set(connectedApi.map((g) => g.kind));
-  const lockedGroups: DisplayGroup[] = CLOUD_PROVIDER_KINDS.filter(
-    (kind) => !connectedKinds.has(kind) && MODEL_CATALOG[kind].length > 0,
-  ).map((kind) => ({
-    id: `locked-${kind}`,
-    name: PROVIDER_KIND_META[kind].label,
-    kind,
-    providerId: null,
-    manual: false,
-    models: MODEL_CATALOG[kind],
-    locked: true,
-  }));
+  const lockedGroups: DisplayGroup[] = (Object.keys(catalog) as ProviderKind[])
+    .filter((kind) => !connectedKinds.has(kind) && catalog[kind].length > 0)
+    .map((kind) => ({
+      id: `locked-${kind}`,
+      name: PROVIDER_KIND_META[kind].label,
+      kind,
+      providerId: null,
+      manual: false,
+      models: catalog[kind],
+      locked: true,
+    }));
 
   const allGroups = [...connectedApi.map(fromConnected), ...lockedGroups, ...local.map(fromConnected)];
   // Endpoints we couldn't list need a free-text model id, so they can't be table rows.
   const manualGroups = allGroups.filter((g) => g.manual);
 
   const q = search.trim().toLowerCase();
-  const rows = buildRows(allGroups.filter((g) => !g.manual))
+  const matched = buildRows(allGroups.filter((g) => !g.manual), ocr)
     .filter((r) => !visionOnly || PROVIDER_KIND_META[r.kind].local || r.model.vision)
     .filter(
       (r) =>
@@ -150,15 +233,14 @@ export function ModelPicker({
         r.model.id.toLowerCase().includes(q) ||
         r.company.toLowerCase().includes(q) ||
         (r.account?.toLowerCase().includes(q) ?? false),
-    )
-    .sort((a, b) => compareRows(a, b, sort));
+    );
+  // Default to one (newest) model per line, minus buried models; the toggle reveals everything.
+  const rows = (
+    showAll ? matched : latestPerFamily(matched.filter((r) => !excludedFromShortlist(r)))
+  ).sort((a, b) => compareRows(a, b, sort));
 
   const onSort = (key: SortKey) =>
-    setSort((s) =>
-      s.key === key
-        ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' }
-        : { key, dir: key === 'intelligence' ? 'desc' : 'asc' },
-    );
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -180,6 +262,10 @@ export function ModelPicker({
               className="pl-8"
             />
           </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap text-muted-foreground">
+            <Switch checked={showAll} onCheckedChange={setShowAll} />
+            Show all models
+          </label>
           <Button variant="outline" size="sm" onClick={onAddKey}>
             Add API key
           </Button>
@@ -205,8 +291,18 @@ export function ModelPicker({
                         Provider
                       </Th>
                       <Th className="w-20">Vision</Th>
-                      <Th sortKey="intelligence" sort={sort} onSort={onSort} className="w-44">
-                        Intelligence
+                      {showAll && (
+                        <>
+                          <Th sortKey="input" sort={sort} onSort={onSort} className="w-28">
+                            Input <span className="font-normal text-muted-foreground/70">$/1M</span>
+                          </Th>
+                          <Th sortKey="output" sort={sort} onSort={onSort} className="w-28">
+                            Output <span className="font-normal text-muted-foreground/70">$/1M</span>
+                          </Th>
+                        </>
+                      )}
+                      <Th sortKey="perPage" sort={sort} onSort={onSort} className="w-28" title={perPageTooltip}>
+                        Est. <span className="font-normal text-muted-foreground/70">/page</span>
                       </Th>
                       <Th className="w-12" />
                     </tr>
@@ -262,9 +358,27 @@ export function ModelPicker({
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5">
-                            {r.model.intelligence != null ? (
-                              <SignalBars value={r.model.intelligence} />
+                          {showAll && (
+                            <>
+                              <td className="px-3 py-2.5 tabular-nums">
+                                {r.model.pricing ? (
+                                  formatPrice(r.model.pricing.input)
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2.5 tabular-nums">
+                                {r.model.pricing ? (
+                                  formatPrice(r.model.pricing.output)
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </td>
+                            </>
+                          )}
+                          <td className="px-3 py-2.5 tabular-nums">
+                            {r.perPage != null ? (
+                              formatPerPage(r.perPage)
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
@@ -314,17 +428,20 @@ function Th({
   sortKey,
   sort,
   onSort,
+  title,
 }: {
   children?: ReactNode;
   className?: string;
   sortKey?: SortKey;
   sort?: Sort;
   onSort?: (key: SortKey) => void;
+  title?: string;
 }) {
   const active = !!sortKey && sort?.key === sortKey;
   const Icon = !active ? ChevronsUpDown : sort!.dir === 'asc' ? ChevronUp : ChevronDown;
   return (
     <th
+      title={title}
       className={cn(
         'sticky top-0 z-10 border-b bg-muted px-3 py-2 text-left text-xs font-medium text-muted-foreground',
         className,

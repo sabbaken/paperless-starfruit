@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq, or } from 'drizzle-orm';
 import {
+  CLOUD_PROVIDER_KINDS,
   defaultModelFor,
   MODEL_CATALOG,
   PROVIDER_KIND_META,
@@ -25,6 +26,26 @@ import {
   defaultCaps,
   type ResolvedCredential,
 } from './model.factory';
+
+/** Vendors (by `owned_by`) the app has a provider kind for. */
+const SUPPORTED_VENDORS = new Set<string>(CLOUD_PROVIDER_KINDS);
+
+/** Shape of a model entry from the Vercel AI Gateway `/v1/models` response. */
+interface GatewayModel {
+  id: string;
+  name?: string;
+  owned_by?: string;
+  type?: string;
+  tags?: string[];
+  pricing?: { input?: string; output?: string };
+}
+
+/** Parse the gateway's per-token price strings; null unless both are present. */
+function parsePricing(p?: { input?: string; output?: string }): ModelInfo['pricing'] {
+  const input = Number(p?.input);
+  const output = Number(p?.output);
+  return p && Number.isFinite(input) && Number.isFinite(output) ? { input, output } : null;
+}
 
 /**
  * Owns provider credentials (API keys / local endpoints) with the key encrypted
@@ -125,9 +146,11 @@ export class ProviderService {
     };
   }
 
-  /** Models offered by every configured credential, split into API vs local. */
+  /** Models offered by every configured credential, split into API vs local,
+   *  plus the full supported-vendor catalog for previewing unconnected providers. */
   async listAvailableModels(): Promise<AvailableModels> {
     const creds = this.db.select().from(provider).orderBy(provider.id).all();
+    const catalog = await this.gatewayCatalog();
     const api: ProviderModels[] = [];
     const local: ProviderModels[] = [];
 
@@ -137,17 +160,59 @@ export class ProviderService {
       if (meta?.local) {
         local.push(await this.localModels(c, kind));
       } else {
-        const models: ModelInfo[] = (MODEL_CATALOG[kind] ?? []).map((m) => ({
-          id: m.id,
-          label: m.label,
-          vision: m.vision,
-          intelligence: m.intelligence,
-        }));
+        const models = catalog[kind] ?? [];
         api.push({ providerId: c.id, providerName: c.name, kind, manual: false, models });
       }
     }
-    return { api, local };
+    return { api, local, catalog };
   }
+
+  /**
+   * Live model list for the supported cloud vendors, sourced from the Vercel AI
+   * Gateway and cached in memory. Intelligence is a placeholder (0) until a
+   * dedicated ratings source is wired in. Falls back to the bundled catalog when
+   * the gateway is unreachable so the picker keeps working offline.
+   */
+  private async gatewayCatalog(): Promise<Record<string, ModelInfo[]>> {
+    const TTL = 6 * 60 * 60 * 1000;
+    if (this.gatewayCache && Date.now() - this.gatewayCache.at < TTL) {
+      return this.gatewayCache.catalog;
+    }
+    try {
+      const res = await fetch('https://ai-gateway.vercel.sh/v1/models');
+      if (!res.ok) throw new Error(`Gateway models endpoint responded ${res.status}.`);
+      const json = (await res.json()) as { data?: GatewayModel[] };
+      const catalog: Record<string, ModelInfo[]> = {};
+      for (const m of json.data ?? []) {
+        // Only chat models from vendors we have a provider kind for.
+        if (m.type !== 'language' || !m.owned_by || !SUPPORTED_VENDORS.has(m.owned_by)) continue;
+        const id = m.id.includes('/') ? m.id.slice(m.id.indexOf('/') + 1) : m.id;
+        (catalog[m.owned_by] ??= []).push({
+          id,
+          label: m.name || id,
+          vision: m.tags?.includes('vision') ?? false,
+          intelligence: 0,
+          pricing: parsePricing(m.pricing),
+        });
+      }
+      this.gatewayCache = { at: Date.now(), catalog };
+      return catalog;
+    } catch {
+      const fallback: Record<string, ModelInfo[]> = {};
+      for (const kind of Object.keys(MODEL_CATALOG) as ProviderKind[]) {
+        if (PROVIDER_KIND_META[kind].local || MODEL_CATALOG[kind].length === 0) continue;
+        fallback[kind] = MODEL_CATALOG[kind].map((m) => ({
+          id: m.id,
+          label: m.label,
+          vision: m.vision,
+          intelligence: 0,
+          pricing: null,
+        }));
+      }
+      return fallback;
+    }
+  }
+  private gatewayCache: { at: number; catalog: Record<string, ModelInfo[]> } | null = null;
 
   private async localModels(c: Provider, kind: ProviderKind): Promise<ProviderModels> {
     const base = { providerId: c.id, providerName: c.name, kind };
@@ -173,8 +238,8 @@ export class ProviderService {
       .map((d) => d.id)
       .filter((id): id is string => !!id)
       // Local model vision support is unknown; assume capable (user's own model).
-      // Intelligence isn't knowable for arbitrary local models.
-      .map((id) => ({ id, label: id, vision: true, intelligence: null }));
+      // Intelligence and pricing aren't knowable for arbitrary local models.
+      .map((id) => ({ id, label: id, vision: true, intelligence: null, pricing: null }));
   }
 
   private resolveFromInput(input: ProviderTestInput): ResolvedCredential {
