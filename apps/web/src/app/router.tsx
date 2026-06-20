@@ -4,6 +4,7 @@ import { RootLayout } from '@/layouts/RootLayout';
 import { ApiKeysPage } from '@/pages/ApiKeysPage';
 import { ConnectionPage } from '@/pages/ConnectionPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { GeneralPage } from '@/pages/GeneralPage';
 import { ProcessingPage } from '@/pages/ProcessingPage';
 import { ReviewPage } from '@/pages/ReviewPage';
 
@@ -16,7 +17,8 @@ export function AppRouter() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/review" element={<ReviewPage />} />
-            <Route path="/settings" element={<Navigate to="/settings/connection" replace />} />
+            <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
+            <Route path="/settings/general" element={<GeneralPage />} />
             <Route path="/settings/connection" element={<ConnectionPage />} />
             <Route path="/settings/api-keys" element={<ApiKeysPage />} />
             <Route path="/settings/processing" element={<ProcessingPage />} />

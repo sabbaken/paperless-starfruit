@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FileStack, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useStats } from '@/api/stats';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/types/nav';
 
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
   '/dashboard': { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
   '/review': { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
+  '/settings/general': { title: 'General', description: 'Theme and app preferences' },
   '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
   '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
   '/settings/processing': { title: 'Processing', description: 'Models & how documents are enriched' },
@@ -36,6 +36,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       label: 'Settings',
       icon: SlidersHorizontal,
       children: [
+        { to: '/settings/general', label: 'General' },
         { to: '/settings/processing', label: 'Processing' },
         { to: '/settings/api-keys', label: 'API Keys' },
         { to: '/settings/connection', label: 'Connection' },
@@ -130,7 +131,6 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
             )}
           </div>
-          <ThemeToggle />
         </header>
 
         <main className="flex-1 overflow-y-auto px-6 py-8">
