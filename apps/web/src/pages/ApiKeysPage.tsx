@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Pencil, Plus, Server, Trash2, XCircle,} from 'lucide-react';
 import {
@@ -24,6 +24,11 @@ type FormState = { mode: 'create'; kind: ProviderKind } | { mode: 'edit'; cred: 
 export function ApiKeysPage() {
   const providers = useProviders();
   const [form, setForm] = useState<FormState | null>(null);
+  // Keep the last form around so the dialog body stays rendered through the
+  // close animation instead of collapsing the instant `form` clears.
+  const lastForm = useRef<FormState | null>(null);
+  if (form) lastForm.current = form;
+  const shown = form ?? lastForm.current;
 
   if (providers.isLoading) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground"/>;
@@ -32,7 +37,7 @@ export function ApiKeysPage() {
   const list = providers.data ?? [];
   const cloudByKind = new Map(list.filter((p) => p.kind !== PROVIDER_KIND.OPENAI_COMPATIBLE).map((p) => [p.kind, p]));
   const localCreds = list.filter((p) => p.kind === PROVIDER_KIND.OPENAI_COMPATIBLE);
-  const formKind = form ? (form.mode === 'edit' ? form.cred.kind : form.kind) : null;
+  const shownKind = shown ? (shown.mode === 'edit' ? shown.cred.kind : shown.kind) : null;
 
   return (
     <div className="space-y-6">
@@ -137,19 +142,19 @@ export function ApiKeysPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {form && formKind
-                ? `${form.mode === 'edit' ? 'Edit' : 'Add'} ${PROVIDER_KIND_META[formKind].label}`
+              {shown && shownKind
+                ? `${shown.mode === 'edit' ? 'Edit' : 'Add'} ${PROVIDER_KIND_META[shownKind].label}`
                 : ''}
             </DialogTitle>
             <DialogDescription>
               Keys are encrypted at rest and never returned to the browser.
             </DialogDescription>
           </DialogHeader>
-          {form && formKind && (
+          {shown && shownKind && (
             <CredentialForm
-              key={form.mode === 'edit' ? form.cred.id : form.kind}
-              kind={formKind}
-              cred={form.mode === 'edit' ? form.cred : undefined}
+              key={shown.mode === 'edit' ? shown.cred.id : shown.kind}
+              kind={shownKind}
+              cred={shown.mode === 'edit' ? shown.cred : undefined}
               onDone={() => setForm(null)}
             />
           )}
