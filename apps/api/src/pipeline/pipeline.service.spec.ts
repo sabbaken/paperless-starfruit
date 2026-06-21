@@ -7,6 +7,7 @@ import type { ConnectionService } from '../connection/connection.service';
 import type { ProviderService } from '../providers/provider.service';
 import type { SettingsService } from '../settings/settings.service';
 import type { LlmService } from '../providers/llm.service';
+import type { OcrService } from '../providers/ocr.service';
 import type { TaxonomyService } from '../taxonomy/taxonomy.service';
 import type { ReviewService } from '../review/review.service';
 import type { QueueService } from '../queue/queue.service';
@@ -53,6 +54,8 @@ interface Overrides {
   resolvedTags?: { id: number | null; name: string; isNew: boolean }[];
   resolvedCorrespondent?: { id: number | null; name: string; isNew: boolean } | null;
   credential?: unknown;
+  /** OCR output text (when `settings.ocrEnabled`); '' / whitespace simulates a blank scan. */
+  ocrText?: string;
 }
 
 function makePipeline(o: Overrides = {}) {
@@ -60,6 +63,9 @@ function makePipeline(o: Overrides = {}) {
   const client = {
     getDocument: vi.fn().mockResolvedValue(doc),
     patchDocument: vi.fn().mockResolvedValue(doc),
+    downloadOriginal: vi
+      .fn()
+      .mockResolvedValue({ data: Buffer.from('%PDF-1.4 bytes'), contentType: 'application/pdf' }),
   };
   const connection = { getClient: () => client } as unknown as ConnectionService;
 
@@ -79,6 +85,13 @@ function makePipeline(o: Overrides = {}) {
       usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
     }),
   } as unknown as LlmService & { generateStructured: ReturnType<typeof vi.fn> };
+
+  const ocr = {
+    ocr: vi.fn().mockResolvedValue({
+      text: o.ocrText ?? 'OCR text of the document',
+      usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+    }),
+  } as unknown as OcrService & { ocr: ReturnType<typeof vi.fn> };
 
   const taxonomy = {
     resolveTriggerTags: vi.fn().mockResolvedValue({ reviewTagId: REVIEW_TAG, autoTagId: AUTO_TAG }),
@@ -108,9 +121,16 @@ function makePipeline(o: Overrides = {}) {
   } as unknown as QueueService;
   const audit = { record: vi.fn() } as unknown as AuditService & { record: ReturnType<typeof vi.fn> };
 
-  const pipeline = new PipelineService(connection, providers, settings, llm, taxonomy, review, queue, audit);
-  return { pipeline, client, llm, review, audit };
+  const pipeline = new PipelineService(connection, providers, settings, llm, ocr, taxonomy, review, queue, audit);
+  return { pipeline, client, llm, ocr, review, audit };
 }
+
+/** Settings that turn OCR on, pointing it at a (mocked) credential + model. */
+const OCR_ON: Partial<Settings> = {
+  ocrEnabled: true,
+  ocrProviderId: 9,
+  ocrModel: 'claude-haiku-4-5',
+};
 
 describe('PipelineService.process', () => {
   it('auto-applies when the document carries the auto tag', async () => {
@@ -202,5 +222,122 @@ describe('PipelineService.process', () => {
   it('fails when the selected provider has been deleted', async () => {
     const { pipeline } = makePipeline({ credential: null });
     await expect(pipeline.process(JOB)).rejects.toThrow(/no longer exists/i);
+  });
+});
+
+describe('PipelineService.process — OCR (M5)', () => {
+  it('OCRs the original and folds the text into the auto PATCH (one re-index)', async () => {
+    const { pipeline, client, ocr } = makePipeline({
+      doc: { tags: [9, AUTO_TAG], content: 'stale tesseract text' },
+      settings: OCR_ON,
+      ocrText: 'Fresh OCR — Invoice from ACME total 42 dated 2024-03-02',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(ocr.ocr).toHaveBeenCalledOnce();
+    expect(client.downloadOriginal).toHaveBeenCalledWith(5);
+    expect(result.decision).toBe('auto-applied');
+    // Single PATCH carries the OCR write-back alongside the metadata.
+    expect(client.patchDocument).toHaveBeenCalledOnce();
+    const [, patch] = client.patchDocument.mock.calls[0];
+    expect(patch.content).toBe('Fresh OCR — Invoice from ACME total 42 dated 2024-03-02');
+    // cost = extraction (15) + vision-LLM OCR (150)
+    expect(result.cost).toBe(165);
+  });
+
+  it('writes OCR text back immediately in review mode, before approval', async () => {
+    const { pipeline, client, review } = makePipeline({
+      doc: { tags: [REVIEW_TAG], content: 'stale' },
+      settings: OCR_ON,
+      ocrText: 'newly recognised text',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('review-queued');
+    // Content is not a reviewable suggestion — write it back now, on its own PATCH.
+    expect(client.patchDocument).toHaveBeenCalledWith(5, { content: 'newly recognised text' });
+    expect(review.create).toHaveBeenCalledOnce();
+  });
+
+  it('does not PATCH content when OCR output matches the existing text', async () => {
+    const { pipeline, client } = makePipeline({
+      doc: { tags: [REVIEW_TAG], content: 'identical text' },
+      settings: OCR_ON,
+      ocrText: 'identical text',
+    });
+
+    await pipeline.process(JOB);
+    // Review mode + unchanged content ⇒ no PATCH at all (avoids a needless re-index).
+    expect(client.patchDocument).not.toHaveBeenCalled();
+  });
+
+  it('feeds the OCR text (not the stale paperless text) into extraction', async () => {
+    const { pipeline, llm } = makePipeline({
+      doc: { tags: [REVIEW_TAG], content: 'stale' },
+      settings: OCR_ON,
+      ocrText: 'the real recognised content',
+    });
+
+    await pipeline.process(JOB);
+
+    const [args] = llm.generateStructured.mock.calls[0];
+    expect(args.prompt).toContain('the real recognised content');
+    expect(args.prompt).not.toContain('stale');
+  });
+
+  it('fails (not defers) when OCR returns no text — a blank/unreadable original', async () => {
+    const { pipeline } = makePipeline({
+      doc: { tags: [REVIEW_TAG] },
+      settings: OCR_ON,
+      ocrText: '   ',
+    });
+    await expect(pipeline.process(JOB)).rejects.toThrow(/blank or unreadable/i);
+  });
+
+  it('fails when OCR is enabled but no OCR model is selected', async () => {
+    const { pipeline } = makePipeline({
+      settings: { ocrEnabled: true, ocrProviderId: null, ocrModel: null },
+    });
+    await expect(pipeline.process(JOB)).rejects.toThrow(/no OCR model/i);
+  });
+
+  it('reuses the OCR result across a retry, then re-OCRs after the job succeeds', async () => {
+    const { pipeline, client, ocr, llm } = makePipeline({
+      doc: { tags: [REVIEW_TAG], content: 'stale' },
+      settings: OCR_ON,
+      ocrText: 'recognised text',
+    });
+
+    // First attempt: OCR succeeds, then a downstream step (extraction) fails.
+    llm.generateStructured.mockRejectedValueOnce(new Error('LLM 500'));
+    await expect(pipeline.process(JOB)).rejects.toThrow(/LLM 500/);
+    expect(ocr.ocr).toHaveBeenCalledTimes(1);
+    expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
+
+    // Retry (same job): the OCR result is reused from cache — no re-download, no re-bill.
+    await pipeline.process(JOB);
+    expect(ocr.ocr).toHaveBeenCalledTimes(1);
+    expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
+
+    // After the job settles the cache is evicted, so an explicit reprocess OCRs afresh.
+    await pipeline.process(JOB);
+    expect(ocr.ocr).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports the OCR tokens spent on a skipped identical rerun', async () => {
+    const { pipeline, llm } = makePipeline({
+      doc: { tags: [9, AUTO_TAG] },
+      settings: OCR_ON,
+      hasCompleted: true,
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('skipped');
+    // OCR ran (to compute the hash) but extraction was skipped.
+    expect(result.cost).toBe(150);
+    expect(llm.generateStructured).not.toHaveBeenCalled();
   });
 });

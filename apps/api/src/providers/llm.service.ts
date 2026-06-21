@@ -120,7 +120,7 @@ export class LlmService {
 }
 
 /** Coalesce the SDK's `number | undefined` token counts into a stable shape. */
-function normaliseUsage(usage: {
+export function normaliseUsage(usage: {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
