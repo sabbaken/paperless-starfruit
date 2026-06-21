@@ -17,7 +17,7 @@ import {
   type ReviewDetail,
   type ReviewItemView,
   type ReviewStatus,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { ReviewService, type BulkResult } from './review.service';
 

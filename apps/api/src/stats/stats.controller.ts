@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import type { Stats } from '@paperless-ai/shared';
+import type { Stats } from '@paperless-starfruit/shared';
 import { StatsService } from './stats.service';
 
 @Controller('stats')

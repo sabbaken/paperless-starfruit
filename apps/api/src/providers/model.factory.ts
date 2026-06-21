@@ -4,7 +4,7 @@ import { createMistral } from '@ai-sdk/mistral';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
-import { PROVIDER_KIND, type ProviderCaps, type ProviderKind } from '@paperless-ai/shared';
+import { PROVIDER_KIND, type ProviderCaps, type ProviderKind } from '@paperless-starfruit/shared';
 
 /** A credential with its secret resolved — never persisted or serialised. */
 export interface ResolvedCredential {

@@ -4,7 +4,7 @@ import {
   type Extraction,
   type ResolvedTag,
   type ReviewSuggestions,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import type { Job } from '../db/schema';
 import type { DocumentPatch, PaperlessClient } from '../paperless/paperless.client';
 import type { PaperlessDocument } from '../paperless/paperless.schemas';

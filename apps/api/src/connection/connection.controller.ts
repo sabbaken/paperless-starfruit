@@ -4,7 +4,7 @@ import {
   type ConnectionStatus,
   type ConnectionTestResult,
   type PaperlessConnectionInput,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { ConnectionService } from './connection.service';
 

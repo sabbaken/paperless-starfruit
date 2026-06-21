@@ -47,8 +47,9 @@ export function RootLayout({ children }: { children: ReactNode }) {
 function Centered({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center px-6 py-4">
-        <span className="text-sm font-semibold tracking-tight">Paperless AI</span>
+      <header className="flex items-center gap-2 px-6 py-4">
+        <img src="/paperless-starfruit.png" alt="" className="size-5 shrink-0" />
+        <span className="text-sm font-semibold tracking-tight">Paperless Starfruit</span>
       </header>
       <main className="flex flex-1 items-center justify-center px-6 pb-16">{children}</main>
     </div>

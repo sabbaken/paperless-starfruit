@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import type { JobSummary } from '@paperless-ai/shared';
+import type { JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';

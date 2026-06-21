@@ -1,4 +1,4 @@
-# Local dev paperless-ngx — a real instance to develop Paperless AI against.
+# Local dev paperless-ngx — a real instance to develop Paperless Starfruit against.
 # NOT for production: it runs paperless on SQLite + Redis with a default admin
 # login, which is fine for a throwaway dev box and nothing else.
 #
@@ -6,7 +6,7 @@
 #   # first boot takes ~30-60s (migrations + superuser); then:
 #   open http://localhost:8000          # login: admin / admin
 #
-# Develop Paperless AI on the host (`pnpm dev`) and point its connection at
+# Develop Paperless Starfruit on the host (`pnpm dev`) and point its connection at
 # http://localhost:8000. Get an API token with `pnpm paperless:token` (or in
 # the UI: top-right user menu -> My Profile -> API Auth Token).
 #

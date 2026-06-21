@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_KIND } from '@paperless-ai/shared';
+import { PROVIDER_KIND } from '@paperless-starfruit/shared';
 import { buildLanguageModel, defaultCaps, type ResolvedProvider } from './model.factory';
 
 const base = { name: 'p', apiKey: 'sk-test', model: 'some-model' };

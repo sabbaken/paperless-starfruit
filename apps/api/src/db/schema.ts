@@ -6,7 +6,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import { JOB_STATUS } from '@paperless-ai/shared';
+import { JOB_STATUS } from '@paperless-starfruit/shared';
 
 const timestamp = (name: string) =>
   integer(name, { mode: 'timestamp' })

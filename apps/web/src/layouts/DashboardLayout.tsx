@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, FileStack, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useStats } from '@/api/stats';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -24,6 +24,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
@@ -81,9 +82,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex h-8 items-center gap-2 px-1">
-            <FileStack className="size-5 shrink-0 text-primary" />
+            <img src="/paperless-starfruit.png" alt="" className="size-5 shrink-0" />
             <span className="text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
-              Paperless AI
+              Paperless Starfruit
             </span>
           </div>
         </SidebarHeader>
@@ -103,13 +104,22 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   const active = item.to === pathname;
                   return (
                     <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.label}
+                        className="data-[active=true]:bg-brand/20 data-[active=true]:text-foreground"
+                      >
                         <Link to={item.to} aria-current={active ? 'page' : undefined}>
                           <Icon />
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
-                      {item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
+                      {item.badge ? (
+                        <SidebarMenuBadge className="bg-brand text-brand-foreground">
+                          {item.badge}
+                        </SidebarMenuBadge>
+                      ) : null}
                     </SidebarMenuItem>
                   );
                 })}
@@ -167,10 +177,23 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
   const [open, setOpen] = useState(item.defaultOpen || sectionActive);
   const firstChild = children[0]?.to ?? item.to;
 
+  // The sub-items only render when the group is expanded AND the sidebar isn't collapsed to
+  // icons (the mobile sheet always shows full-width content, so icon-collapse never hides them
+  // there). Highlight the parent only when its active child is hidden — when the child is
+  // visible it already carries the active marker, so lighting up the parent too is redundant.
+  const { state, isMobile } = useSidebar();
+  const childrenVisible = open && (isMobile || state === 'expanded');
+  const highlightParent = sectionActive && !childrenVisible;
+
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild className="group/collapsible">
       <SidebarMenuItem>
-        <SidebarMenuButton asChild isActive={sectionActive} tooltip={item.label}>
+        <SidebarMenuButton
+          asChild
+          isActive={highlightParent}
+          tooltip={item.label}
+          className="data-[active=true]:bg-brand/20 data-[active=true]:text-foreground"
+        >
           <Link
             to={firstChild}
             onClick={(e) => {
@@ -196,7 +219,11 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
           <SidebarMenuSub>
             {children.map((child) => (
               <SidebarMenuSubItem key={child.to}>
-                <SidebarMenuSubButton asChild isActive={child.to === pathname}>
+                <SidebarMenuSubButton
+                  asChild
+                  isActive={child.to === pathname}
+                  className="data-[active=true]:bg-brand/20 data-[active=true]:text-foreground"
+                >
                   <Link to={child.to} aria-current={child.to === pathname ? 'page' : undefined}>
                     <span>{child.label}</span>
                   </Link>

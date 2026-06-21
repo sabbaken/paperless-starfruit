@@ -1,4 +1,4 @@
-import type { Settings, SettingsUpdate } from '@paperless-ai/shared';
+import type { Settings, SettingsUpdate } from '@paperless-starfruit/shared';
 import { http } from '@/api/http';
 
 export const settingsApi = {

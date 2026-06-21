@@ -8,7 +8,7 @@ import {
   type ProviderConfig,
   type ProviderKind,
   type ProviderTestResult,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import {useCreateProvider, useDeleteProvider, useProviders, useTestProvider, useUpdateProvider,} from '@/api/providers';
 import {cn} from '@/lib/utils';
 import {Badge} from '@/components/ui/badge';

@@ -5,7 +5,7 @@ import type {
   ProviderConfig,
   Settings,
   SettingsUpdate,
-} from "@paperless-ai/shared";
+} from "@paperless-starfruit/shared";
 import { useProviders } from "@/api/providers";
 import { useSettings, useUpdateSettings } from "@/api/settings";
 import { ModelPicker } from "@/components/model-picker";
@@ -88,18 +88,18 @@ function ModelsCard({
       </CardHeader>
       <CardContent className="divide-y">
         <SelectRow
-          icon={<Brain className="size-4" />}
-          label="Language model"
-          hint="Extracts title, tags, correspondent and date."
-          value={describe(settings.llmProviderId, settings.llmModel)}
-          onClick={() => setPicker("llm")}
-        />
-        <SelectRow
           icon={<ScanText className="size-4" />}
           label="OCR model"
           hint="Reads scanned documents (used when OCR is enabled)."
           value={describe(settings.ocrProviderId, settings.ocrModel)}
           onClick={() => setPicker("ocr")}
+        />
+        <SelectRow
+          icon={<Brain className="size-4" />}
+          label="Language model"
+          hint="Extracts title, tags, correspondent and date."
+          value={describe(settings.llmProviderId, settings.llmModel)}
+          onClick={() => setPicker("llm")}
         />
       </CardContent>
 

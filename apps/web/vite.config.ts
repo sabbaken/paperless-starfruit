@@ -14,7 +14,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@paperless-ai/shared': sharedSrc,
+      '@paperless-starfruit/shared': sharedSrc,
       '@': srcDir,
     },
   },

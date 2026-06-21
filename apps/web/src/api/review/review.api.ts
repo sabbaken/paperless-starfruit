@@ -1,4 +1,4 @@
-import type { ReviewApprove, ReviewDetail, ReviewItemView } from '@paperless-ai/shared';
+import type { ReviewApprove, ReviewDetail, ReviewItemView } from '@paperless-starfruit/shared';
 import { http } from '@/api/http';
 
 /** Outcome of a single item inside a bulk-approve request. */

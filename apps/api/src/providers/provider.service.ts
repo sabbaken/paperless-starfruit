@@ -15,7 +15,7 @@ import {
   type ProviderTestInput,
   type ProviderTestResult,
   type ProviderUpdate,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { provider, settings, type Provider } from '../db/schema';

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Settings } from '@paperless-ai/shared';
+import type { Settings } from '@paperless-starfruit/shared';
 import type { Job } from '../db/schema';
 import type { PaperlessDocument } from '../paperless/paperless.schemas';
 import type { ConnectionService } from '../connection/connection.service';
