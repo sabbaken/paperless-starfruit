@@ -16,6 +16,28 @@ describe('buildLanguageModel', () => {
     expect(modelId({ ...base, kind: PROVIDER_KIND.MISTRAL })).toBe('some-model');
   });
 
+  it('normalises dotted Anthropic ids from the gateway catalog to native dashes', () => {
+    // The gateway lists `claude-sonnet-4.6`; Anthropic's API wants `claude-sonnet-4-6`.
+    expect(modelId({ ...base, kind: PROVIDER_KIND.ANTHROPIC, model: 'claude-sonnet-4.6' })).toBe(
+      'claude-sonnet-4-6',
+    );
+    expect(modelId({ ...base, kind: PROVIDER_KIND.ANTHROPIC, model: 'claude-haiku-4.5' })).toBe(
+      'claude-haiku-4-5',
+    );
+    // Already-native ids are unchanged (idempotent — no dots to convert).
+    expect(modelId({ ...base, kind: PROVIDER_KIND.ANTHROPIC, model: 'claude-haiku-4-5' })).toBe(
+      'claude-haiku-4-5',
+    );
+  });
+
+  it('leaves dotted ids untouched for providers whose API uses dots natively', () => {
+    // OpenAI/Google/Mistral native ids keep dots (gpt-4.1, gemini-2.5-pro).
+    expect(modelId({ ...base, kind: PROVIDER_KIND.OPENAI, model: 'gpt-4.1' })).toBe('gpt-4.1');
+    expect(modelId({ ...base, kind: PROVIDER_KIND.GOOGLE, model: 'gemini-2.5-pro' })).toBe(
+      'gemini-2.5-pro',
+    );
+  });
+
   it('resolves an openai-compatible provider when a baseUrl is given', () => {
     const m = buildLanguageModel({
       ...base,
