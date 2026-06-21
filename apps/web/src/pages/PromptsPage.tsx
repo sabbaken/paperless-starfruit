@@ -22,6 +22,7 @@ import {
   useUpdatePrompt,
 } from '@/api/prompts';
 import { cn } from '@/lib/utils';
+import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { toastSave } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -82,13 +83,12 @@ function PromptList({
             type="button"
             onClick={() => onSelect(p.key)}
             aria-current={isActive ? 'true' : undefined}
-            // Match the sidebar's active item exactly: brand-tinted background,
-            // foreground text, and the icon inherits that colour (black) — not brand.
+            // Same brand-tint source of truth as the sidebar (see lib/nav). The
+            // icon inherits the text colour (black when active), never brand.
+            data-active={isActive}
             className={cn(
-              'flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors lg:flex-none',
-              isActive
-                ? 'bg-brand/20 text-foreground'
-                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+              'flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground lg:flex-none',
+              ACTIVE_NAV_ITEM,
             )}
           >
             <Icon className="size-4 shrink-0" />
