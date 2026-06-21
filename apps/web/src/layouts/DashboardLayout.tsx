@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Inbox, LayoutDashboard, LogOut, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, Coffee, Inbox, LayoutDashboard, LogOut, SlidersHorizontal } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useLogout } from '@/api/auth';
 import { useStats } from '@/api/stats';
@@ -141,6 +141,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           )}
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Support on Ko-fi">
+                <a href="https://ko-fi.com/sabbaken" target="_blank" rel="noreferrer">
+                  <Coffee />
+                  <span>Support on Ko-fi</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={logout} tooltip="Sign out">
                 <LogOut />
