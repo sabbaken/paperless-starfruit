@@ -11,7 +11,6 @@ import {
   type OcrResult,
 } from './ocr.types';
 import { mistralOcr, MISTRAL_OCR_MODEL_PREFIX } from './mistral-ocr.client';
-import { OCR_SYSTEM, ocrInstruction } from './ocr.prompt';
 
 /** A dense multi-page scan can transcribe to a lot of text. */
 const OCR_MAX_OUTPUT_TOKENS = 8_000;
@@ -81,17 +80,25 @@ export class OcrService {
       ? { type: 'image', image: input.data, mediaType }
       : { type: 'file', data: input.data, mediaType, filename: filenameFor(mediaType) };
 
+    // The user-editable OCR prompt (M6) carries all the transcription instructions
+    // and goes in the user message alongside the file — so what the user edits is
+    // exactly what the model receives. Fall back to a built-in instruction when no
+    // prompt is supplied (the pipeline always renders one; this guards tests).
+    const instruction = opts.prompt ?? fallbackOcrPrompt(opts.language);
     const result = await generateTextFn({
       model: buildLanguageModel(provider),
-      system: OCR_SYSTEM,
-      messages: [
-        { role: 'user', content: [{ type: 'text', text: ocrInstruction(opts.language) }, docPart] },
-      ],
+      messages: [{ role: 'user', content: [{ type: 'text', text: instruction }, docPart] }],
       maxOutputTokens: OCR_MAX_OUTPUT_TOKENS,
       abortSignal: opts.signal,
     });
     return { text: result.text, usage: normaliseUsage(result.usage) };
   }
+}
+
+/** Minimal default instruction when no rendered prompt is provided. */
+function fallbackOcrPrompt(language: string): string {
+  const hint = language && language !== 'auto' ? ` The document is mainly in ${language}.` : '';
+  return `Transcribe all text from the attached document verbatim. Output only the document text — no preamble or commentary.${hint}`;
 }
 
 function isMistralOcr(p: ResolvedProvider): boolean {

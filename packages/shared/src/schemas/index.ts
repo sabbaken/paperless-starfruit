@@ -3,5 +3,6 @@ export * from './extraction';
 export * from './config';
 export * from './job';
 export * from './models';
+export * from './prompts';
 export * from './review';
 export * from './stats';

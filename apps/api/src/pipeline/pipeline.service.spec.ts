@@ -12,6 +12,7 @@ import type { TaxonomyService } from '../taxonomy/taxonomy.service';
 import type { ReviewService } from '../review/review.service';
 import type { QueueService } from '../queue/queue.service';
 import type { AuditService } from '../audit/audit.service';
+import type { PromptsService } from '../prompts/prompts.service';
 import { PipelineService } from './pipeline.service';
 
 const REVIEW_TAG = 100;
@@ -121,8 +122,25 @@ function makePipeline(o: Overrides = {}) {
   } as unknown as QueueService;
   const audit = { record: vi.fn() } as unknown as AuditService & { record: ReturnType<typeof vi.fn> };
 
-  const pipeline = new PipelineService(connection, providers, settings, llm, ocr, taxonomy, review, queue, audit);
-  return { pipeline, client, llm, ocr, review, audit };
+  // The real PromptsService renders a template; for the pipeline we only care that
+  // the document vars (notably `content`) reach the prompt, so stringify them.
+  const prompts = {
+    render: vi.fn((_key: string, vars: Record<string, string>) => JSON.stringify(vars)),
+  } as unknown as PromptsService & { render: ReturnType<typeof vi.fn> };
+
+  const pipeline = new PipelineService(
+    connection,
+    providers,
+    settings,
+    llm,
+    ocr,
+    taxonomy,
+    review,
+    queue,
+    audit,
+    prompts,
+  );
+  return { pipeline, client, llm, ocr, review, audit, prompts };
 }
 
 /** Settings that turn OCR on, pointing it at a (mocked) credential + model. */

@@ -10,6 +10,12 @@ export interface OcrInput {
 export interface OcrOptions {
   /** Output-language hint from settings ('auto' or a language name). */
   language: string;
+  /**
+   * The rendered, user-editable OCR prompt (M6) sent as the instruction text for
+   * vision-LLM OCR. The dedicated Mistral OCR endpoint ignores it. Falls back to a
+   * built-in instruction when omitted (e.g. in unit tests).
+   */
+  prompt?: string;
   signal?: AbortSignal;
 }
 
