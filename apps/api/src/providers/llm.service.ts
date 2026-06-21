@@ -2,7 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   generateObject,
   generateText,
+  JSONParseError,
   NoObjectGeneratedError,
+  TypeValidationError,
   type LanguageModel,
 } from 'ai';
 import type { z } from 'zod';
@@ -78,16 +80,14 @@ export class LlmService {
       return await this.run(args);
     } catch (err) {
       if (!NoObjectGeneratedError.isInstance(err)) throw err;
-      this.logger.warn('structured output unparseable; retrying with stricter instruction');
+      // The SDK wraps the real cause: a JSONParseError (bad JSON) or a
+      // TypeValidationError (valid JSON, wrong shape). Feed the right hint back
+      // — a "no markdown" nudge is useless when the JSON parsed but mis-matched.
+      const hint = retryHint(err.cause);
+      this.logger.warn(hint.log);
       return this.run({
         ...args,
-        system: [
-          args.system,
-          'Your previous response could not be parsed. Respond with ONLY a single ' +
-            'JSON object that matches the schema — no prose, no markdown, no code fences.',
-        ]
-          .filter(Boolean)
-          .join('\n\n'),
+        system: [args.system, hint.instruction].filter(Boolean).join('\n\n'),
       });
     }
   }
@@ -134,11 +134,64 @@ function normaliseUsage(usage: {
   };
 }
 
-/** Extract the first `{ … }` block, dropping code fences / prose around it. */
+/**
+ * Extract the first balanced `{ … }` object, dropping code fences / prose
+ * around it. A brace-depth scan (ignoring braces inside string literals) beats
+ * `lastIndexOf('}')`, which would swallow trailing prose containing a `}`.
+ */
 function repairJsonText({ text }: { text: string }): Promise<string | null> {
   const cleaned = text.replace(/```(?:json)?/gi, '').trim();
   const start = cleaned.indexOf('{');
-  const end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1 || end <= start) return Promise.resolve(null);
-  return Promise.resolve(cleaned.slice(start, end + 1));
+  if (start === -1) return Promise.resolve(null);
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) {
+      return Promise.resolve(cleaned.slice(start, i + 1));
+    }
+  }
+  return Promise.resolve(null);
+}
+
+/** The stricter-retry instruction + log line, tailored to why parsing failed. */
+function retryHint(cause: unknown): { log: string; instruction: string } {
+  if (TypeValidationError.isInstance(cause)) {
+    return {
+      log: 'structured output failed schema validation; retrying with the validation detail',
+      instruction:
+        'Your previous response was valid JSON but did not match the required schema. ' +
+        `Fix these problems and respond with ONLY a single matching JSON object: ${cause.message}`,
+    };
+  }
+  if (JSONParseError.isInstance(cause)) {
+    return {
+      log: 'structured output was not valid JSON; retrying with a stricter instruction',
+      instruction:
+        'Your previous response was not valid JSON. Respond with ONLY a single JSON object ' +
+        'that matches the schema — no prose, no markdown, no code fences.',
+    };
+  }
+  return {
+    log: 'structured output unparseable; retrying with a stricter instruction',
+    instruction:
+      'Your previous response could not be parsed. Respond with ONLY a single JSON object ' +
+      'that matches the schema — no prose, no markdown, no code fences.',
+  };
 }

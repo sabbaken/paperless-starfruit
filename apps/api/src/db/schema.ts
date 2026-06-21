@@ -13,6 +13,18 @@ const timestamp = (name: string) =>
     .notNull()
     .default(sql`(unixepoch())`);
 
+/**
+ * The single admin account. Created once via the first-run setup (no account →
+ * registration is open; once one exists it's closed). Password stored as a
+ * salted scrypt hash, never plaintext.
+ */
+export const user = sqliteTable('user', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  username: text('username').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at'),
+});
+
 /** Connection to the paperless-ngx instance (single row in practice). */
 export const paperlessConnection = sqliteTable('paperless_connection', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -128,6 +140,7 @@ export const auditLog = sqliteTable('audit_log', {
   createdAt: timestamp('created_at'),
 });
 
+export type User = typeof user.$inferSelect;
 export type Job = typeof job.$inferSelect;
 export type NewJob = typeof job.$inferInsert;
 export type Provider = typeof provider.$inferSelect;

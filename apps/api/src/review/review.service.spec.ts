@@ -96,7 +96,7 @@ describe('ReviewService', () => {
       title: 'ACME Invoice',
       tags: [9, 7, 55], // keeps 9, drops trigger 100, adds resolved 7 + 55
       correspondent: 3,
-      created: '2024-03-02T00:00:00Z',
+      created: '2024-03-02', // date-only — no UTC-midnight day shift
     });
     expect(service.list('pending')).toHaveLength(0);
     expect(service.list('approved')).toHaveLength(1);

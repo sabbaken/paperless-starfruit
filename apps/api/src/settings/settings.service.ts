@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { Settings, SettingsUpdate } from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
-import { settings, type SettingsRow } from '../db/schema';
+import { provider, settings, type SettingsRow } from '../db/schema';
 
 const SETTINGS_ID = 1;
 
@@ -18,10 +18,37 @@ export class SettingsService {
 
   update(patch: SettingsUpdate): Settings {
     this.ensureRow();
-    if (Object.keys(patch).length > 0) {
-      this.db.update(settings).set(patch).where(eq(settings.id, SETTINGS_ID)).run();
+    const coerced = this.coerceProviderRefs(patch);
+    if (Object.keys(coerced).length > 0) {
+      this.db.update(settings).set(coerced).where(eq(settings.id, SETTINGS_ID)).run();
     }
     return this.get();
+  }
+
+  /**
+   * Don't persist a model whose provider credential doesn't exist (mirrors
+   * `ProviderService.remove`'s cleanup): a stale id would make the pipeline
+   * throw on every run. Drop the id and its model together; only touch a
+   * field the caller actually set to a non-null value.
+   */
+  private coerceProviderRefs(patch: SettingsUpdate): SettingsUpdate {
+    const next = { ...patch };
+    if (next.llmProviderId != null && !this.providerExists(next.llmProviderId)) {
+      next.llmProviderId = null;
+      next.llmModel = null;
+    }
+    if (next.ocrProviderId != null && !this.providerExists(next.ocrProviderId)) {
+      next.ocrProviderId = null;
+      next.ocrModel = null;
+    }
+    return next;
+  }
+
+  private providerExists(id: number): boolean {
+    return (
+      this.db.select({ id: provider.id }).from(provider).where(eq(provider.id, id)).limit(1).all()
+        .length > 0
+    );
   }
 
   private ensureRow(): SettingsRow {

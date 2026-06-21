@@ -1,3 +1,5 @@
+import { getToken, setToken } from '@/lib/auth-token';
+
 /** A request that reached the server but came back non-2xx. */
 export class ApiError extends Error {
   constructor(
@@ -10,12 +12,20 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`/api${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
 
   if (!res.ok) {
+    // Expired/invalid session — drop the token so the auth gate flips to login
+    // instead of every page surfacing a 401.
+    if (res.status === 401) setToken(null);
     throw new ApiError(await errorMessage(res), res.status);
   }
   if (res.status === 204) return undefined as T;

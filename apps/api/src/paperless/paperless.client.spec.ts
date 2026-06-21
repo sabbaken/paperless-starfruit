@@ -61,6 +61,37 @@ describe('PaperlessClient', () => {
     expect(url).toContain('page_size=50');
   });
 
+  it('follows "next" across pages when listing documents', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        json({
+          count: 3,
+          next: 'http://internal-paperless:8000/api/documents/?page=2&page_size=200',
+          previous: null,
+          results: [
+            { id: 1, title: 'a', content: '', tags: [], correspondent: null, created: '2024-01-01T00:00:00Z' },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        json({
+          count: 3,
+          next: null,
+          previous: null,
+          results: [
+            { id: 2, title: 'b', content: '', tags: [], correspondent: null, created: '2024-01-01T00:00:00Z' },
+            { id: 3, title: 'c', content: '', tags: [], correspondent: null, created: '2024-01-01T00:00:00Z' },
+          ],
+        }),
+      );
+
+    const { count, results } = await client().listDocuments({ tagIds: [100] });
+    expect(count).toBe(3);
+    expect(results.map((d) => d.id)).toEqual([1, 2, 3]);
+    // Page 2 re-anchors to the verified host, not paperless's advertised internal one.
+    expect(fetchMock.mock.calls[1][0]).toBe('http://pl.local/api/documents/?page=2&page_size=200');
+  });
+
   it('creates a tag with a JSON body', async () => {
     fetchMock.mockResolvedValue(json({ id: 7, name: 'ai-process' }, { status: 201 }));
 

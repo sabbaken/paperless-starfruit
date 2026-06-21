@@ -106,12 +106,23 @@ export class PaperlessClient {
   async listDocuments(
     params: ListDocumentsParams = {},
   ): Promise<{ count: number; results: PaperlessDocument[] }> {
-    const query = this.buildDocumentQuery(params);
-    const { data } = await this.request(
-      `/api/documents/?${query}`,
-      paginatedSchema(paperlessDocumentSchema),
-    );
-    return { count: data.count, results: data.results };
+    const schema = paginatedSchema(paperlessDocumentSchema);
+    const results: PaperlessDocument[] = [];
+    let count = 0;
+    // Follow `next` across pages — a single page would starve documents past
+    // the first (pending-review docs accumulate at the head of `ordering=added`).
+    let next: string | null = `/api/documents/?${this.buildDocumentQuery(params)}`;
+    let firstPage = true;
+    while (next) {
+      const page: Paginated<PaperlessDocument> = (await this.request(next, schema)).data;
+      if (firstPage) {
+        count = page.count;
+        firstPage = false;
+      }
+      results.push(...page.results);
+      next = page.next ? toRelativeUrl(page.next) : null;
+    }
+    return { count, results };
   }
 
   async getDocument(id: number): Promise<PaperlessDocument> {
@@ -168,7 +179,7 @@ export class PaperlessClient {
     const sp = new URLSearchParams();
     if (p.tagIds?.length) sp.set('tags__id__in', p.tagIds.join(','));
     sp.set('ordering', p.ordering ?? 'added');
-    sp.set('page_size', String(p.pageSize ?? 100));
+    sp.set('page_size', String(p.pageSize ?? PAGE_SIZE));
     if (p.page) sp.set('page', String(p.page));
     return sp.toString();
   }

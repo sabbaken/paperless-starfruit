@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_BYTES = 12;
@@ -42,6 +42,17 @@ export class CryptoService {
     const decipher = createDecipheriv(ALGORITHM, this.key(), iv);
     decipher.setAuthTag(authTag);
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+  }
+
+  /**
+   * Derive a separate-purpose 32-byte key from the master key via HKDF, so
+   * other subsystems (e.g. session-token signing) don't reuse the encryption
+   * key directly. Deterministic — survives restarts; rotating `ENCRYPTION_KEY`
+   * rotates derived keys too (invalidating old sessions, which is acceptable).
+   */
+  deriveKey(purpose: string, length = 32): Buffer {
+    const salt = Buffer.from('paperless-starfruit');
+    return Buffer.from(hkdfSync('sha256', this.key(), salt, Buffer.from(purpose), length));
   }
 
   private key(): Buffer {

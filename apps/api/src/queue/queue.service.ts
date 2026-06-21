@@ -87,6 +87,49 @@ export class QueueService {
   }
 
   /**
+   * Drop a job so it isn't retried this round but isn't counted as a failure
+   * either — used when the document simply isn't ready yet (e.g. paperless
+   * hasn't OCR'd it). Deleting it frees the active-per-doc slot so the next poll
+   * re-enqueues a fresh job, "waiting for the next poll" without consuming an
+   * attempt. At ~7 docs/day the lost row carries no history worth keeping.
+   */
+  defer(id: number): void {
+    this.db.delete(job).where(eq(job.id, id)).run();
+  }
+
+  /**
+   * Reset jobs left `running` by a crash (the process died before complete/fail
+   * ran). Re-queue while attempts remain, else fail — the same cap as `fail()`,
+   * and attempts was already incremented at claim time, so a poison job can't
+   * loop. Call once at boot, before the first claim. Returns the rows recovered.
+   */
+  recoverRunning(): number {
+    const recovered = this.db
+      .update(job)
+      .set({
+        status: sql`case when ${job.attempts} < ${job.maxAttempts} then ${JOB_STATUS.QUEUED} else ${JOB_STATUS.FAILED} end`,
+        error: 'recovered after an interrupted run',
+        updatedAt: sql`(unixepoch())`,
+      })
+      .where(eq(job.status, JOB_STATUS.RUNNING))
+      .returning({ id: job.id })
+      .all();
+    return recovered.length;
+  }
+
+  /** Has this document already failed terminally (attempts exhausted)? */
+  hasTerminalFailure(documentId: number): boolean {
+    const rows = this.db
+      .select({ id: job.id })
+      .from(job)
+      .where(and(eq(job.documentId, documentId), eq(job.status, JOB_STATUS.FAILED)))
+      .limit(1)
+      .all();
+
+    return rows.length > 0;
+  }
+
+  /**
    * Has this document already been processed with identical input + config?
    * Used by the pipeline (post-OCR) to skip a byte-for-byte-identical rerun.
    */

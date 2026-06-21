@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Inbox, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, Inbox, LayoutDashboard, LogOut, SlidersHorizontal } from 'lucide-react';
 import { useConnection } from '@/api/connection';
+import { useLogout } from '@/api/auth';
 import { useStats } from '@/api/stats';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
@@ -50,6 +51,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   // survives reloads (the component's built-in cookie is never read in this SPA).
   const sidebarOpen = useAppSelector(selectSidebarOpen);
   const dispatch = useAppDispatch();
+  const logout = useLogout();
 
   const meta = META[pathname] ?? META['/dashboard'];
   const width = meta.width ?? 'narrow';
@@ -128,14 +130,22 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           </SidebarGroup>
         </SidebarContent>
 
-        {baseUrl && (
-          <SidebarFooter>
+        <SidebarFooter>
+          {baseUrl && (
             <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
               <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
               <span className="truncate group-data-[collapsible=icon]:hidden">{baseUrl}</span>
             </div>
-          </SidebarFooter>
-        )}
+          )}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={logout} tooltip="Sign out">
+                <LogOut />
+                <span>Sign out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
 
         <SidebarRail />
       </Sidebar>

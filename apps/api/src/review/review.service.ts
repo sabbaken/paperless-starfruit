@@ -163,7 +163,8 @@ export class ReviewService {
       title: payload.title,
       tags: mergeTagIds(doc.tags, addIds, [reviewTagId, autoTagId]),
       ...(correspondent?.id != null ? { correspondent: correspondent.id } : {}),
-      ...(payload.date ? { created: `${payload.date}T00:00:00Z` } : {}),
+      // Date-only — a UTC-midnight datetime shifts a day on UTC-behind servers.
+      ...(payload.date ? { created: payload.date } : {}),
     };
     await client.patchDocument(doc.id, patch);
   }

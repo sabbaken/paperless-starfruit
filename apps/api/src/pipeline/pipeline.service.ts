@@ -19,6 +19,7 @@ import { ReviewService } from '../review/review.service';
 import { QueueService } from '../queue/queue.service';
 import { AuditService } from '../audit/audit.service';
 import { configFingerprint, contentHash } from './fingerprint';
+import { DeferJobError } from './defer-job.error';
 import {
   buildExtractionPrompt,
   EXTRACTION_SCHEMA_DESCRIPTION,
@@ -54,7 +55,7 @@ export class PipelineService {
     private readonly audit: AuditService,
   ) {}
 
-  async process(job: Job): Promise<ProcessResult> {
+  async process(job: Job, signal?: AbortSignal): Promise<ProcessResult> {
     const client = this.connection.getClient();
     if (!client) throw new Error('No paperless connection is configured.');
 
@@ -65,7 +66,11 @@ export class PipelineService {
     // M3 relies on paperless's existing OCR text; OCR write-back lands in M5.
     const text = (doc.content ?? '').trim();
     if (!text) {
-      throw new Error('Document has no text yet — enable OCR or wait for paperless to OCR it.');
+      // Not a failure — paperless likely hasn't OCR'd it yet. Defer so we don't
+      // burn every attempt back-to-back before the text exists (see worker).
+      throw new DeferJobError(
+        'Document has no text yet — enable OCR or wait for paperless to OCR it.',
+      );
     }
 
     const fingerprint = configFingerprint({ providerKind: provider.kind, model: provider.model });
@@ -98,6 +103,7 @@ export class PipelineService {
       schemaDescription: EXTRACTION_SCHEMA_DESCRIPTION,
       system,
       prompt,
+      abortSignal: signal,
     });
     const cost = usage.totalTokens;
 
@@ -171,7 +177,9 @@ export class PipelineService {
       tags: mergeTagIds(doc.tags, addIds, [reviewTagId, autoTagId]),
     };
     if (s.resolvedCorrespondent?.id != null) patch.correspondent = s.resolvedCorrespondent.id;
-    if (s.extraction.date) patch.created = `${s.extraction.date}T00:00:00Z`;
+    // Send a date-only value: a UTC-midnight datetime would render a day early
+    // on UTC-behind servers (paperless stores `created` in the server timezone).
+    if (s.extraction.date) patch.created = s.extraction.date;
     await client.patchDocument(doc.id, patch);
   }
 

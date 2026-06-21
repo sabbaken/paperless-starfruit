@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTestDb } from '../../test/db';
+import { provider } from '../db/schema';
 import { SettingsService } from './settings.service';
 
 describe('SettingsService', () => {
@@ -20,7 +21,9 @@ describe('SettingsService', () => {
   });
 
   it('persists a partial update and leaves other fields untouched', () => {
-    const svc = new SettingsService(createTestDb());
+    const db = createTestDb();
+    db.insert(provider).values({ id: 3, name: 'p', kind: 'anthropic', apiKeyEncrypted: 'enc' }).run();
+    const svc = new SettingsService(db);
     const updated = svc.update({ autoApply: true, llmProviderId: 3, llmModel: 'claude-haiku-4-5' });
     expect(updated.autoApply).toBe(true);
     expect(updated.llmProviderId).toBe(3);
@@ -28,6 +31,13 @@ describe('SettingsService', () => {
     expect(updated.createNewTags).toBe(true);
     // re-read sees the same persisted state
     expect(svc.get().autoApply).toBe(true);
+  });
+
+  it('coerces a model whose provider credential does not exist to null', () => {
+    const svc = new SettingsService(createTestDb());
+    const updated = svc.update({ llmProviderId: 99, llmModel: 'claude-haiku-4-5' });
+    expect(updated.llmProviderId).toBeNull();
+    expect(updated.llmModel).toBeNull();
   });
 
   it('treats an empty patch as a no-op', () => {

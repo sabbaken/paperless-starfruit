@@ -6,16 +6,39 @@ import { LlmService } from './llm.service';
 
 // Mock the AI SDK so no network call happens; `vi.hoisted` makes the spies
 // available to the (hoisted) factory below.
-const { generateObjectMock, generateTextMock, FakeNoObjectError } = vi.hoisted(() => {
+const {
+  generateObjectMock,
+  generateTextMock,
+  FakeNoObjectError,
+  FakeJSONParseError,
+  FakeTypeValidationError,
+} = vi.hoisted(() => {
   class FakeNoObjectError extends Error {
+    cause?: unknown;
+    constructor(message: string, cause?: unknown) {
+      super(message);
+      this.cause = cause;
+    }
     static isInstance(e: unknown): e is FakeNoObjectError {
       return e instanceof FakeNoObjectError;
+    }
+  }
+  class FakeJSONParseError extends Error {
+    static isInstance(e: unknown): e is FakeJSONParseError {
+      return e instanceof FakeJSONParseError;
+    }
+  }
+  class FakeTypeValidationError extends Error {
+    static isInstance(e: unknown): e is FakeTypeValidationError {
+      return e instanceof FakeTypeValidationError;
     }
   }
   return {
     generateObjectMock: vi.fn(),
     generateTextMock: vi.fn(),
     FakeNoObjectError,
+    FakeJSONParseError,
+    FakeTypeValidationError,
   };
 });
 
@@ -23,6 +46,8 @@ vi.mock('ai', () => ({
   generateObject: generateObjectMock,
   generateText: generateTextMock,
   NoObjectGeneratedError: FakeNoObjectError,
+  JSONParseError: FakeJSONParseError,
+  TypeValidationError: FakeTypeValidationError,
 }));
 
 const schema = z.object({ title: z.string() });
@@ -73,6 +98,21 @@ describe('LlmService.generateStructured', () => {
     const retrySystem = generateObjectMock.mock.calls[1][0].system as string;
     expect(retrySystem).toContain('base system');
     expect(retrySystem).toMatch(/ONLY a single/i);
+  });
+
+  it('feeds the validation detail back when the cause is a schema mismatch', async () => {
+    generateObjectMock
+      .mockRejectedValueOnce(
+        new FakeNoObjectError('no object', new FakeTypeValidationError('title: expected string')),
+      )
+      .mockResolvedValueOnce({ object: { title: 'ok' }, usage: {} });
+
+    const out = await new LlmService().generateStructured({ model, schema, prompt: 'p' });
+
+    expect(out.object).toEqual({ title: 'ok' });
+    const retrySystem = generateObjectMock.mock.calls[1][0].system as string;
+    expect(retrySystem).toMatch(/did not match the required schema/i);
+    expect(retrySystem).toContain('title: expected string');
   });
 
   it('does not retry on an unrelated error', async () => {
