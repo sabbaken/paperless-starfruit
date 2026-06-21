@@ -4,7 +4,7 @@ import type {
   ConnectionStatus,
   ConnectionTestResult,
   PaperlessConnectionInput,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { paperlessConnection } from '../db/schema';

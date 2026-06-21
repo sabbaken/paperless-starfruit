@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ProviderInput, ProviderUpdate } from '@paperless-ai/shared';
+import type { ProviderInput, ProviderUpdate } from '@paperless-starfruit/shared';
 import { settingsKeys } from '@/api/settings';
 import { providersApi } from './providers.api';
 import { providerKeys } from './providers.keys';

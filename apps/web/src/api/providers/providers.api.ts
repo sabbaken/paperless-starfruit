@@ -5,7 +5,7 @@ import type {
   ProviderTestInput,
   ProviderTestResult,
   ProviderUpdate,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { http } from '@/api/http';
 
 export const providersApi = {

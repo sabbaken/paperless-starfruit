@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Check, Loader2, Sparkles, X } from 'lucide-react';
-import type { ReviewDetail, ReviewItemView } from '@paperless-ai/shared';
+import type { ReviewDetail, ReviewItemView } from '@paperless-starfruit/shared';
 import {
   useApproveReview,
   useBulkApproveReview,

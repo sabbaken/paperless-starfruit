@@ -18,7 +18,7 @@ export function GeneralPage() {
       <Card>
         <CardHeader>
           <CardTitle>Appearance</CardTitle>
-          <CardDescription>Choose how Paperless AI looks on this device.</CardDescription>
+          <CardDescription>Choose how Paperless Starfruit looks on this device.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-start justify-between gap-4">

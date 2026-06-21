@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ReviewApprove } from '@paperless-ai/shared';
+import type { ReviewApprove } from '@paperless-starfruit/shared';
 import { statsKeys } from '@/api/stats';
 import { reviewApi } from './review.api';
 import { reviewKeys } from './review.keys';

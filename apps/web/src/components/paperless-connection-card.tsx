@@ -16,11 +16,10 @@ import {
   type ConnectionStatus,
   type ConnectionTestResult,
   type PaperlessConnectionInput,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { useConnection, useDisconnect, useSaveConnection, useTestConnection } from '@/api/connection';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,

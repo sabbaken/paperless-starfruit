@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { ACTIVE_JOB_STATUSES, JOB_STATUS } from '@paperless-ai/shared';
+import { ACTIVE_JOB_STATUSES, JOB_STATUS } from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { job, type Job } from '../db/schema';

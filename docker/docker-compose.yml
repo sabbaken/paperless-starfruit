@@ -1,18 +1,18 @@
-# Standalone compose for Paperless AI. To run it alongside an existing
+# Standalone compose for Paperless Starfruit. To run it alongside an existing
 # paperless-ngx stack, attach this service to that stack's network instead.
 services:
-  paperless-ai:
+  paperless-starfruit:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - paperless_ai_data:/data
+      - paperless_starfruit_data:/data
     environment:
       DATABASE_PATH: /data/app.db
       # paperless connection + provider keys are configured from the web UI.
     restart: unless-stopped
 
 volumes:
-  paperless_ai_data:
+  paperless_starfruit_data:

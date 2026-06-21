@@ -5,7 +5,7 @@ import {
   type ModelInfo,
   type ProviderKind,
   type ProviderModels,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { useAvailableModels } from '@/api/providers';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

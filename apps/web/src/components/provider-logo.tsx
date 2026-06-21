@@ -1,5 +1,5 @@
 import { Server } from 'lucide-react';
-import { PROVIDER_KIND, type ProviderKind } from '@paperless-ai/shared';
+import { PROVIDER_KIND, type ProviderKind } from '@paperless-starfruit/shared';
 import { cn } from '@/lib/utils.ts';
 
 /**

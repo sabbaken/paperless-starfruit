@@ -2,7 +2,7 @@ import type {
   ConnectionStatus,
   ConnectionTestResult,
   PaperlessConnectionInput,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { http } from '@/api/http';
 
 export const connectionApi = {

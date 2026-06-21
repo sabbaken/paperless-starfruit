@@ -1,5 +1,5 @@
 {
-  "name": "paperless-ai",
+  "name": "paperless-starfruit",
   "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@10.11.0",
@@ -12,8 +12,8 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "db:generate": "pnpm --filter @paperless-ai/api db:generate",
-    "db:migrate": "pnpm --filter @paperless-ai/api db:migrate",
+    "db:generate": "pnpm --filter @paperless-starfruit/api db:generate",
+    "db:migrate": "pnpm --filter @paperless-starfruit/api db:migrate",
     "paperless:up": "docker compose -f docker/docker-compose.paperless.yml up -d",
     "paperless:down": "docker compose -f docker/docker-compose.paperless.yml down",
     "paperless:logs": "docker compose -f docker/docker-compose.paperless.yml logs -f paperless",

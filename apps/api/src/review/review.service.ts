@@ -8,7 +8,7 @@ import {
   type ReviewItemView,
   type ReviewStatus,
   type ReviewSuggestions,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { reviewItem, type ReviewItem } from '../db/schema';

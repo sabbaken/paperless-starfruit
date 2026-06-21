@@ -20,7 +20,7 @@ export function Switch({ checked, onCheckedChange, id, disabled }: SwitchProps) 
       className={cn(
         'inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors outline-none',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-        checked ? 'bg-primary' : 'bg-input dark:bg-input/50',
+        checked ? 'bg-brand' : 'bg-input dark:bg-input/50',
       )}
     >
       <span

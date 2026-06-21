@@ -19,7 +19,7 @@ import {
   type ProviderTestInput,
   type ProviderTestResult,
   type ProviderUpdate,
-} from '@paperless-ai/shared';
+} from '@paperless-starfruit/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { ProviderService } from './provider.service';
 

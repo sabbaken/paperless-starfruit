@@ -1,4 +1,4 @@
-import type { Stats } from '@paperless-ai/shared';
+import type { Stats } from '@paperless-starfruit/shared';
 import { http } from '@/api/http';
 
 export const statsApi = {

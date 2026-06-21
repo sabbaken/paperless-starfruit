@@ -1,7 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { PROVIDER_KIND } from '@paperless-ai/shared';
+import { PROVIDER_KIND } from '@paperless-starfruit/shared';
 import { createTestDb } from '../../test/db';
 import { provider, settings } from '../db/schema';
 import { CryptoService } from '../crypto/crypto.service';

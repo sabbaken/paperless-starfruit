@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import type { Settings, SettingsUpdate } from '@paperless-ai/shared';
+import type { Settings, SettingsUpdate } from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { settings, type SettingsRow } from '../db/schema';

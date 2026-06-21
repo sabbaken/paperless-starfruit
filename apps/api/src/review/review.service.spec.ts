@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ReviewSuggestions } from '@paperless-ai/shared';
+import type { ReviewSuggestions } from '@paperless-starfruit/shared';
 import { createTestDb } from '../../test/db';
 import { job } from '../db/schema';
 import type { ConnectionService } from '../connection/connection.service';

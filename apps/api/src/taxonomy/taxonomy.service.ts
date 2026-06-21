@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DEFAULT_TRIGGER_TAGS, type ResolvedTag } from '@paperless-ai/shared';
+import { DEFAULT_TRIGGER_TAGS, type ResolvedTag } from '@paperless-starfruit/shared';
 import type { PaperlessClient } from '../paperless/paperless.client';
 import type { PaperlessCorrespondent, PaperlessTag } from '../paperless/paperless.schemas';
 

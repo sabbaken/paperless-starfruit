@@ -1,5 +1,5 @@
 {
-  "name": "@paperless-ai/web",
+  "name": "@paperless-starfruit/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
-    "@paperless-ai/shared": "workspace:*",
+    "@paperless-starfruit/shared": "workspace:*",
     "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-query": "^5.62.7",
     "class-variance-authority": "^0.7.1",

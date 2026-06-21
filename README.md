@@ -1,4 +1,4 @@
-# Paperless AI
+# Paperless Starfruit
 
 A self-hosted, bring-your-own-keys AI companion for [paperless-ngx](https://docs.paperless-ngx.com/):
 better OCR and automatic metadata (title, tags, correspondent, date), all configured from a web UI.
@@ -43,7 +43,7 @@ pnpm paperless:logs     # tail paperless logs
 pnpm paperless:down     # stop it
 ```
 
-Then in the Paperless AI onboarding screen use `http://localhost:8000` and the
+Then in the Paperless Starfruit onboarding screen use `http://localhost:8000` and the
 token. Leave **API version** blank — it's auto-detected from the server. Drop
 PDFs/images into `docker/paperless-consume/` to have paperless ingest them.
 

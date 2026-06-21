@@ -1,5 +1,5 @@
 {
-  "name": "@paperless-ai/api",
+  "name": "@paperless-starfruit/api",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -24,7 +24,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^5.0.1",
-    "@paperless-ai/shared": "workspace:*",
+    "@paperless-starfruit/shared": "workspace:*",
     "ai": "^6.0.208",
     "better-sqlite3": "^11.7.0",
     "drizzle-orm": "^0.38.3",

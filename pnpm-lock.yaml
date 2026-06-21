@@ -59,7 +59,7 @@ importers:
       '@nestjs/schedule':
         specifier: ^5.0.1
         version: 5.0.1(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27)
-      '@paperless-ai/shared':
+      '@paperless-starfruit/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       ai:
@@ -114,7 +114,7 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.79.0(react@19.2.7))
-      '@paperless-ai/shared':
+      '@paperless-starfruit/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@reduxjs/toolkit':
