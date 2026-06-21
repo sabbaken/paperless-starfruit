@@ -161,6 +161,15 @@ function ProcessingForm({ initial }: { initial: Settings }) {
       </CardHeader>
       <CardContent className="space-y-5">
         <SwitchRow
+          label="Run OCR before extraction"
+          hint="Re-OCR each document's original with the selected OCR model and write the text back to paperless. When off, paperless's existing text is reused (free)."
+          checked={form.ocrEnabled}
+          onCheckedChange={(v) => {
+            setForm((f) => ({ ...f, ocrEnabled: v }));
+            commit({ ocrEnabled: v });
+          }}
+        />
+        <SwitchRow
           label="Auto-apply suggestions"
           hint="Apply AI suggestions immediately instead of queueing them for review. Documents tagged ai-process-auto always auto-apply."
           checked={form.autoApply}

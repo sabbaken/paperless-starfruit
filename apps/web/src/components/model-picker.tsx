@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronsUpDown, ChevronUp, Eye, Loader2, Lock, Search } from 'lucide-react';
 import {
+  OCR_MODELS,
   PROVIDER_KIND_META,
   type ModelInfo,
   type ProviderKind,
@@ -46,7 +47,9 @@ const SHORTLIST: Partial<Record<ProviderKind, string[]>> = {
   anthropic: ['claude-opus', 'claude-sonnet', 'claude-haiku'],
   google: ['gemini-pro', 'gemini-flash', 'gemini-flash-lite'],
   openai: ['gpt-pro', 'gpt', 'gpt-mini', 'gpt-nano'],
-  mistral: ['mistral-large', 'pixtral-large', 'mistral-medium', 'mistral-small'],
+  // `mistral-ocr` only ever appears in the OCR picker (injected below), so listing
+  // it here surfaces it by default without affecting the language-model picker.
+  mistral: ['mistral-large', 'pixtral-large', 'mistral-medium', 'mistral-small', 'mistral-ocr'],
 };
 
 const SHORTLIST_EXCLUDE: Partial<Record<ProviderKind, string[]>> = {
@@ -136,6 +139,15 @@ const fromConnected = (g: ProviderModels): DisplayGroup => ({
   models: g.models,
   locked: false,
 });
+
+/** Append this kind's dedicated OCR models, skipping any the group already lists. */
+function withOcrModels(g: DisplayGroup): DisplayGroup {
+  const extra = OCR_MODELS[g.kind];
+  if (!extra?.length) return g;
+  const have = new Set(g.models.map((m) => m.id));
+  const add = extra.filter((m) => !have.has(m.id));
+  return add.length ? { ...g, models: [...g.models, ...add] } : g;
+}
 
 function buildRows(groups: DisplayGroup[], ocr: boolean): ModelRow[] {
   return groups.flatMap((g) => {
@@ -257,18 +269,21 @@ export function ModelPicker({
     }));
 
   const allGroups = [...connectedApi.map(fromConnected), ...lockedGroups, ...local.map(fromConnected)];
+  // In OCR mode, surface dedicated OCR models (e.g. Mistral OCR) per provider kind —
+  // they aren't language models, so they never come from the catalog/`/models` probe.
+  const displayGroups = ocr ? allGroups.map(withOcrModels) : allGroups;
   // Endpoints we couldn't list need a free-text model id, so they can't be table rows.
-  const manualGroups = allGroups.filter((g) => g.manual);
+  const manualGroups = displayGroups.filter((g) => g.manual);
 
   // Debug: log every available model (full set, before any shortlist/search/vision filtering).
   useEffect(() => {
-    const names = allGroups.flatMap((g) => g.models.map((m) => m.label));
+    const names = displayGroups.flatMap((g) => g.models.map((m) => m.label));
     console.log(`[ModelPicker] ${names.length} models:`, names);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [models.data]);
 
   const q = search.trim().toLowerCase();
-  const matched = buildRows(allGroups.filter((g) => !g.manual), ocr)
+  const matched = buildRows(displayGroups.filter((g) => !g.manual), ocr)
     .filter((r) => !visionOnly || PROVIDER_KIND_META[r.kind].local || r.model.vision)
     .filter(
       (r) =>
