@@ -57,6 +57,8 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
     );
   }
 
+  const failures = bulk.data?.filter((r) => !r.ok) ?? [];
+
   return (
     <div className="space-y-4">
       <div className="flex h-8 items-center justify-between">
@@ -68,7 +70,14 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
             </Button>
             <Button
               size="sm"
-              onClick={() => bulk.mutate([...selected], { onSuccess: () => setSelected(new Set()) })}
+              onClick={() =>
+                bulk.mutate([...selected], {
+                  // Keep only the items that failed selected, so the user can
+                  // see them, retry, or open one — a full success clears all.
+                  onSuccess: (results) =>
+                    setSelected(new Set(results.filter((r) => !r.ok).map((r) => r.id))),
+                })
+              }
               disabled={bulk.isPending}
             >
               {bulk.isPending && <Loader2 className="animate-spin" />}
@@ -77,6 +86,18 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
           </div>
         )}
       </div>
+
+      {bulk.error && (
+        <p className="text-sm text-destructive">
+          {bulk.error instanceof Error ? bulk.error.message : 'Bulk approve failed'}
+        </p>
+      )}
+      {failures.length > 0 && (
+        <p className="text-sm text-destructive">
+          {failures.length} of {bulk.data!.length} could not be approved
+          {failures[0].error ? `: ${failures[0].error}` : ''}
+        </p>
+      )}
 
       <ul className="space-y-2">
         {items.map((item) => (

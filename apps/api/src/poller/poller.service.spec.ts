@@ -9,10 +9,16 @@ import { PollerService } from './poller.service';
 interface Fakes {
   client: { listDocuments: ReturnType<typeof vi.fn> } | null;
   hasPending?: (id: number) => boolean;
+  hasTerminalFailure?: (id: number) => boolean;
   enqueue?: (id: number) => boolean;
 }
 
-function makePoller({ client, hasPending = () => false, enqueue = () => true }: Fakes) {
+function makePoller({
+  client,
+  hasPending = () => false,
+  hasTerminalFailure = () => false,
+  enqueue = () => true,
+}: Fakes) {
   const connection = { getClient: () => client } as unknown as ConnectionService;
   const settings = { get: () => ({ pollIntervalSec: 60 }) } as unknown as SettingsService;
   const taxonomy = {
@@ -20,7 +26,10 @@ function makePoller({ client, hasPending = () => false, enqueue = () => true }: 
   } as unknown as TaxonomyService;
   const review = { hasPending: vi.fn(hasPending) } as unknown as ReviewService;
   const enqueueMock = vi.fn(enqueue);
-  const queue = { enqueue: enqueueMock } as unknown as QueueService;
+  const queue = {
+    enqueue: enqueueMock,
+    hasTerminalFailure: vi.fn(hasTerminalFailure),
+  } as unknown as QueueService;
   return { poller: new PollerService(connection, settings, taxonomy, review, queue), enqueueMock };
 }
 
@@ -48,6 +57,16 @@ describe('PollerService.pollOnce', () => {
     const { poller, enqueueMock } = makePoller({
       client: docs([1, 2]),
       hasPending: (id) => id === 2,
+    });
+    expect(await poller.pollOnce()).toBe(1);
+    expect(enqueueMock).toHaveBeenCalledTimes(1);
+    expect(enqueueMock).toHaveBeenCalledWith(1);
+  });
+
+  it('skips documents with a terminal failed job (no re-poll churn)', async () => {
+    const { poller, enqueueMock } = makePoller({
+      client: docs([1, 2]),
+      hasTerminalFailure: (id) => id === 2,
     });
     expect(await poller.pollOnce()).toBe(1);
     expect(enqueueMock).toHaveBeenCalledTimes(1);

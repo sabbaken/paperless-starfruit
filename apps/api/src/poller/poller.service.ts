@@ -62,6 +62,10 @@ export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
       // A pending review item means we already processed it and are waiting on
       // the user — don't re-enqueue (the trigger tag stays until they decide).
       if (this.review.hasPending(doc.id)) continue;
+      // A terminally-failed job keeps its trigger tag too; without this guard
+      // we'd re-enqueue (and re-spend on the LLM) every cycle forever. Re-tag
+      // the doc in paperless to force a fresh reprocess after fixing the cause.
+      if (this.queue.hasTerminalFailure(doc.id)) continue;
       if (this.queue.enqueue(doc.id)) enqueued++;
     }
     if (enqueued > 0) this.logger.log(`enqueued ${enqueued} document(s)`);

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Settings } from '@paperless-starfruit/shared';
 import type { Job } from '../db/schema';
+import { DeferJobError } from './defer-job.error';
 import type { PaperlessDocument } from '../paperless/paperless.schemas';
 import type { ConnectionService } from '../connection/connection.service';
 import type { ProviderService } from '../providers/provider.service';
@@ -126,7 +127,7 @@ describe('PipelineService.process', () => {
       title: 'ACME Invoice',
       tags: [9, 7], // keeps existing 9, drops trigger 101, adds suggested 7
       correspondent: 3,
-      created: '2024-03-02T00:00:00Z',
+      created: '2024-03-02', // date-only — no UTC-midnight day shift
     });
     expect(review.create).not.toHaveBeenCalled();
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'auto-applied' }));
@@ -188,9 +189,9 @@ describe('PipelineService.process', () => {
     expect(review.create).not.toHaveBeenCalled();
   });
 
-  it('fails when the document has no text', async () => {
+  it('defers (does not fail) when the document has no text yet', async () => {
     const { pipeline } = makePipeline({ doc: { content: '   ' } });
-    await expect(pipeline.process(JOB)).rejects.toThrow(/no text/i);
+    await expect(pipeline.process(JOB)).rejects.toBeInstanceOf(DeferJobError);
   });
 
   it('fails when no model is selected', async () => {

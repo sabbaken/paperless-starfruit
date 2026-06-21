@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DbModule } from './db/db.module';
 import { CryptoModule } from './crypto/crypto.module';
+import { AuthModule } from './auth/auth.module';
 import { ConnectionModule } from './connection/connection.module';
 import { ProvidersModule } from './providers/providers.module';
 import { SettingsModule } from './settings/settings.module';
@@ -23,6 +24,7 @@ import { HealthController } from './health.controller';
     ScheduleModule.forRoot(),
     DbModule,
     CryptoModule,
+    AuthModule,
     ConnectionModule,
     ProvidersModule,
     SettingsModule,
