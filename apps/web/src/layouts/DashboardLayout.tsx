@@ -30,6 +30,7 @@ import {
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
 import { cn } from '@/lib/utils';
+import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import type { NavItem } from '@/types/nav';
 
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
@@ -112,7 +113,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                         asChild
                         isActive={active}
                         tooltip={item.label}
-                        className="data-[active=true]:bg-brand/20 data-[active=true]:text-foreground"
+                        className={ACTIVE_NAV_ITEM}
                       >
                         <Link to={item.to} aria-current={active ? 'page' : undefined}>
                           <Icon />
@@ -204,7 +205,7 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
           asChild
           isActive={highlightParent}
           tooltip={item.label}
-          className="data-[active=true]:bg-brand/20 data-[active=true]:text-foreground"
+          className={ACTIVE_NAV_ITEM}
         >
           <Link
             to={firstChild}
@@ -234,7 +235,7 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
                 <SidebarMenuSubButton
                   asChild
                   isActive={child.to === pathname}
-                  className="data-[active=true]:bg-brand/20 data-[active=true]:text-foreground"
+                  className={ACTIVE_NAV_ITEM}
                 >
                   <Link to={child.to} aria-current={child.to === pathname ? 'page' : undefined}>
                     <span>{child.label}</span>
