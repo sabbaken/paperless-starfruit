@@ -29,7 +29,7 @@ export function buildLanguageModel(p: ResolvedProvider): LanguageModel {
   const baseURL = p.baseUrl ?? undefined;
   switch (p.kind) {
     case PROVIDER_KIND.ANTHROPIC:
-      return createAnthropic({ apiKey: p.apiKey, baseURL })(p.model);
+      return createAnthropic({ apiKey: p.apiKey, baseURL })(toAnthropicModelId(p.model));
     case PROVIDER_KIND.OPENAI:
       return createOpenAI({ apiKey: p.apiKey, baseURL })(p.model);
     case PROVIDER_KIND.GOOGLE:
@@ -49,6 +49,17 @@ export function buildLanguageModel(p: ResolvedProvider): LanguageModel {
       // Exhaustiveness guard — a new kind must extend this switch.
       throw new Error(`Unsupported provider kind: ${String(p.kind)}`);
   }
+}
+
+/**
+ * The live model catalog (Vercel AI Gateway) lists Claude versions with dots —
+ * `claude-sonnet-4.6`, `claude-haiku-4.5` — but Anthropic's own API, which we call
+ * directly with the user's key, uses dashes: `claude-sonnet-4-6`. Native Anthropic
+ * ids never contain dots, so normalising dots→dashes is safe (a no-op for an
+ * already-native id) and fixes a model id picked from the gateway catalog.
+ */
+function toAnthropicModelId(model: string): string {
+  return model.replace(/\./g, '-');
 }
 
 /**
