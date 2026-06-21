@@ -39,6 +39,7 @@ const META: Record<string, { title: string; description: string; width?: 'narrow
   '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
   '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
   '/settings/processing': { title: 'Processing', description: 'Models & how documents are enriched' },
+  '/settings/prompts': { title: 'Prompts', description: 'Customise what each model is asked', width: 'wide' },
 };
 
 /** The connected app chrome: shadcn sidebar nav + page header. Wraps the routed pages. */
@@ -69,6 +70,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       children: [
         { to: '/settings/general', label: 'General' },
         { to: '/settings/processing', label: 'Processing' },
+        { to: '/settings/prompts', label: 'Prompts' },
         { to: '/settings/api-keys', label: 'API Keys' },
         { to: '/settings/connection', label: 'Connection' },
       ],

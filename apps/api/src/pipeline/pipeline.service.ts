@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  EXTRACTION_SCHEMA_DESCRIPTION,
+  EXTRACTION_SCHEMA_NAME,
+  PROMPT_KEY,
   extractionSchema,
   type Extraction,
   type ResolvedTag,
@@ -21,11 +24,8 @@ import { QueueService } from '../queue/queue.service';
 import { AuditService } from '../audit/audit.service';
 import { configFingerprint, contentHash } from './fingerprint';
 import { DeferJobError } from './defer-job.error';
-import {
-  buildExtractionPrompt,
-  EXTRACTION_SCHEMA_DESCRIPTION,
-  EXTRACTION_SCHEMA_NAME,
-} from './prompt';
+import { PromptsService } from '../prompts/prompts.service';
+import { extractionVars, ocrVars } from '../prompts/render';
 
 export type Decision = 'auto-applied' | 'review-queued' | 'skipped';
 
@@ -64,6 +64,7 @@ export class PipelineService {
     private readonly review: ReviewService,
     private readonly queue: QueueService,
     private readonly audit: AuditService,
+    private readonly prompts: PromptsService,
   ) {}
 
   async process(job: Job, signal?: AbortSignal): Promise<ProcessResult> {
@@ -93,10 +94,14 @@ export class PipelineService {
         ocrUsage = cached.usage;
       } else {
         const file = await client.downloadOriginal(job.documentId);
+        const ocrPrompt = this.prompts.render(
+          PROMPT_KEY.OCR,
+          ocrVars({ language: settings.language, filename: doc.original_file_name ?? null }),
+        );
         const result = await this.ocr.ocr(
           ocrProvider,
           { data: file.data, contentType: file.contentType },
-          { language: settings.language, signal },
+          { language: settings.language, prompt: ocrPrompt, signal },
         );
         text = result.text.trim();
         ocrUsage = result.usage;
@@ -145,19 +150,31 @@ export class PipelineService {
 
     const snap = await this.taxonomy.getSnapshot(client);
     const isTrigger = (id: number) => id === reviewTagId || id === autoTagId;
-    const { system, prompt } = buildExtractionPrompt({
-      content: text,
-      language: settings.language,
-      tags: snap.tags.filter((t) => !isTrigger(t.id)).map((t) => t.name),
-      correspondents: snap.correspondents.map((c) => c.name),
-    });
+    const tagName = (id: number) => snap.tags.find((t) => t.id === id)?.name;
+    const prompt = this.prompts.render(
+      PROMPT_KEY.EXTRACTION,
+      extractionVars({
+        content: text,
+        language: settings.language,
+        allTags: snap.tags.filter((t) => !isTrigger(t.id)).map((t) => t.name),
+        allCorrespondents: snap.correspondents.map((c) => c.name),
+        currentTitle: doc.title,
+        currentTags: doc.tags
+          .filter((id) => !isTrigger(id))
+          .map(tagName)
+          .filter((n): n is string => !!n),
+        currentCorrespondent:
+          snap.correspondents.find((c) => c.id === doc.correspondent)?.name ?? null,
+        created: doc.created ? doc.created.slice(0, 10) : null,
+        filename: doc.original_file_name ?? null,
+      }),
+    );
 
     const { object: extraction, usage } = await this.llm.generateStructured<Extraction>({
       model: buildLanguageModel(provider),
       schema: extractionSchema,
       schemaName: EXTRACTION_SCHEMA_NAME,
       schemaDescription: EXTRACTION_SCHEMA_DESCRIPTION,
-      system,
       prompt,
       abortSignal: signal,
     });
@@ -180,7 +197,7 @@ export class PipelineService {
     const auditBase = {
       jobId: job.id,
       documentId: job.documentId,
-      prompt: `${system}\n\n${prompt}`,
+      prompt,
       rawOutput: JSON.stringify(extraction),
       result: extraction,
       tokensCost: cost,

@@ -5,6 +5,7 @@ import { ConnectionPage } from '@/pages/ConnectionPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { GeneralPage } from '@/pages/GeneralPage';
 import { ProcessingPage } from '@/pages/ProcessingPage';
+import { PromptsPage } from '@/pages/PromptsPage';
 import { ReviewPage } from '@/pages/ReviewPage';
 
 export function AppRouter() {
@@ -25,6 +26,7 @@ export function AppRouter() {
           <Route path="/settings/connection" element={<ConnectionPage />} />
           <Route path="/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="/settings/processing" element={<ProcessingPage />} />
+          <Route path="/settings/prompts" element={<PromptsPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

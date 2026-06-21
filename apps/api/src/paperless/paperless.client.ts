@@ -125,6 +125,17 @@ export class PaperlessClient {
     return { count, results };
   }
 
+  /**
+   * Most-recently-added documents, a single page (no `next` following) — for the
+   * "test on a document" picker, where a short, fast list beats every document.
+   */
+  async listRecentDocuments(limit = 20): Promise<PaperlessDocument[]> {
+    const schema = paginatedSchema(paperlessDocumentSchema);
+    const query = this.buildDocumentQuery({ ordering: '-added', pageSize: limit });
+    const { data } = await this.request(`/api/documents/?${query}`, schema);
+    return data.results;
+  }
+
   async getDocument(id: number): Promise<PaperlessDocument> {
     const { data } = await this.request(`/api/documents/${id}/`, paperlessDocumentSchema);
     return data;

@@ -49,18 +49,19 @@ export const provider = sqliteTable('provider', {
   createdAt: timestamp('created_at'),
 });
 
-/** Editable prompt templates with version history. */
+/**
+ * User overrides for the built-in prompts. Only customised prompts get a row —
+ * the absence of a row means "use the code default", so "Reset to default" is a
+ * plain delete. One row per key (unique).
+ */
 export const promptTemplate = sqliteTable(
   'prompt_template',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    key: text('key').notNull(),
+    key: text('key').notNull().unique(),
     body: text('body').notNull(),
-    version: integer('version').notNull().default(1),
-    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
     updatedAt: timestamp('updated_at'),
   },
-  (t) => [index('prompt_template_key_idx').on(t.key)],
 );
 
 /** Single-row application settings (id = 1). */

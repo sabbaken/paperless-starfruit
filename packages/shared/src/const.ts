@@ -94,12 +94,13 @@ export const CLOUD_PROVIDER_KINDS: ProviderKind[] = [
   PROVIDER_KIND.MISTRAL,
 ];
 
-/** Prompt template keys, one per extracted field (+ ocr). */
+/**
+ * The two prompts the user can fully customise. There are exactly two LLM calls
+ * with editable text — the single metadata-extraction call and the vision-LLM OCR
+ * call — so there are two templates, each a whole prompt (not per-field snippets).
+ */
 export const PROMPT_KEY = {
-  TITLE: 'title',
-  TAGS: 'tags',
-  CORRESPONDENT: 'correspondent',
-  DATE: 'date',
+  EXTRACTION: 'extraction',
   OCR: 'ocr',
 } as const;
 export type PromptKey = (typeof PROMPT_KEY)[keyof typeof PROMPT_KEY];

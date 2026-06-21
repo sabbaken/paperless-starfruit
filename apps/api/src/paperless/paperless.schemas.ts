@@ -42,6 +42,8 @@ export const paperlessDocumentSchema = z.object({
   correspondent: z.number().int().nullable(),
   created: z.string(),
   added: z.string().optional(),
+  /** Original upload name, e.g. "scan_0001.pdf"; exposed to prompts as {{filename}}. */
+  original_file_name: z.string().nullable().optional(),
 });
 export type PaperlessDocument = z.infer<typeof paperlessDocumentSchema>;
 
