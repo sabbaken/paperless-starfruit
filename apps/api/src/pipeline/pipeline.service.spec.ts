@@ -22,7 +22,7 @@ const JOB: Job = { id: 1, documentId: 5 } as Job;
 const DEFAULT_SETTINGS: Settings = {
   pollIntervalSec: 60,
   autoApply: false,
-  createNewTags: true,
+  createNewTags: false,
   createNewCorrespondents: true,
   language: 'auto',
   ocrEnabled: false,

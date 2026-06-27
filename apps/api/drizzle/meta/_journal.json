@@ -50,6 +50,13 @@
       "when": 1782146309436,
       "tag": "0006_cheerful_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782147161609,
+      "tag": "0007_chief_toad",
+      "breakpoints": true
     }
   ]
 }

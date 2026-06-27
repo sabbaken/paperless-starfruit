@@ -71,7 +71,7 @@ export const settings = sqliteTable('settings', {
   autoApply: integer('auto_apply', { mode: 'boolean' }).notNull().default(false),
   createNewTags: integer('create_new_tags', { mode: 'boolean' })
     .notNull()
-    .default(true),
+    .default(false),
   createNewCorrespondents: integer('create_new_correspondents', { mode: 'boolean' })
     .notNull()
     .default(true),

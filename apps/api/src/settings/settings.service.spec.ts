@@ -9,7 +9,7 @@ describe('SettingsService', () => {
     expect(svc.get()).toEqual({
       pollIntervalSec: 60,
       autoApply: false,
-      createNewTags: true,
+      createNewTags: false,
       createNewCorrespondents: true,
       language: 'auto',
       ocrEnabled: false,
@@ -29,7 +29,9 @@ describe('SettingsService', () => {
     expect(updated.autoApply).toBe(true);
     expect(updated.llmProviderId).toBe(3);
     expect(updated.llmModel).toBe('claude-haiku-4-5');
-    expect(updated.createNewTags).toBe(true);
+    // createNewTags wasn't in the patch, so it keeps its column default (off)
+    expect(updated.createNewTags).toBe(false);
+    expect(updated.createNewCorrespondents).toBe(true);
     // re-read sees the same persisted state
     expect(svc.get().autoApply).toBe(true);
   });
