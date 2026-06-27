@@ -435,11 +435,28 @@ describe('PipelineService.process — OCR (M5)', () => {
     await expect(pipeline.process(JOB)).rejects.toThrow(/blank or unreadable/i);
   });
 
-  it('fails when OCR is enabled but no OCR model is selected', async () => {
-    const { pipeline } = makePipeline({
+  it('skips OCR (uses paperless text) when OCR is on but no OCR model is selected', async () => {
+    const { pipeline, ocr, client, llm } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'paperless tesseract text' },
       settings: { ocrEnabled: true, ocrProviderId: null, ocrModel: null },
     });
-    await expect(pipeline.process(JOB)).rejects.toThrow(/no OCR model/i);
+
+    const result = await pipeline.process(JOB);
+
+    // No model ⇒ don't fail; fall back to paperless's text and still extract.
+    expect(ocr.ocr).not.toHaveBeenCalled();
+    expect(client.downloadOriginal).not.toHaveBeenCalled();
+    expect(result.decision).toBe('review-queued');
+    const [args] = llm.generateStructured.mock.calls[0];
+    expect(args.prompt).toContain('paperless tesseract text');
+  });
+
+  it('defers with a model hint when OCR is on, no model, and no text yet', async () => {
+    const { pipeline } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: '   ' },
+      settings: { ocrEnabled: true, ocrProviderId: null, ocrModel: null },
+    });
+    await expect(pipeline.process(JOB)).rejects.toThrow(/select an OCR model/i);
   });
 
   it('reuses the OCR result across a retry, then re-OCRs after the job succeeds', async () => {

@@ -68,7 +68,7 @@ export const promptTemplate = sqliteTable(
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
   pollIntervalSec: integer('poll_interval_sec').notNull().default(60),
-  autoApply: integer('auto_apply', { mode: 'boolean' }).notNull().default(false),
+  autoApply: integer('auto_apply', { mode: 'boolean' }).notNull().default(true),
   createNewTags: integer('create_new_tags', { mode: 'boolean' })
     .notNull()
     .default(false),
@@ -76,13 +76,13 @@ export const settings = sqliteTable('settings', {
     .notNull()
     .default(true),
   /** Skip extraction (and OCR) for documents with more pages than this; null = no limit. */
-  extractMaxPages: integer('extract_max_pages'),
+  extractMaxPages: integer('extract_max_pages').default(100),
   language: text('language').notNull().default('auto'),
   ocrEnabled: integer('ocr_enabled', { mode: 'boolean' })
     .notNull()
-    .default(false),
+    .default(true),
   /** Skip OCR (reuse paperless's text) for documents with more pages than this; null = no limit. */
-  ocrMaxPages: integer('ocr_max_pages'),
+  ocrMaxPages: integer('ocr_max_pages').default(20),
   correspondentBlacklist: text('correspondent_blacklist', { mode: 'json' })
     .notNull()
     .$type<string[]>()

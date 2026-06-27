@@ -100,9 +100,18 @@ export class PipelineService {
       return { contentHash: contentHash(String(pageCount), 'skipped:oversized'), cost: null, decision: 'skipped' };
     }
 
-    // --- Step 3: OCR. Run it only when enabled AND within the OCR page limit;
-    // otherwise reuse paperless's existing Tesseract text (free). ---
-    const runOcr = settings.ocrEnabled && !overLimit(settings.ocrMaxPages);
+    // --- Step 3: OCR. Run it only when enabled, an OCR model is selected, AND the
+    // document is within the OCR page limit; otherwise reuse paperless's existing
+    // Tesseract text (free). ---
+    const ocrModelSelected = settings.ocrProviderId != null && !!settings.ocrModel;
+    if (settings.ocrEnabled && !ocrModelSelected) {
+      // Don't fail the job over a missing model — degrade to paperless's text and
+      // say so. The Processing UI also disables the OCR controls until a model is set.
+      this.logger.warn(
+        `job ${job.id} (doc ${job.documentId}): OCR is on but no OCR model is selected — using paperless's existing text. Pick an OCR model in Settings → Processing.`,
+      );
+    }
+    const runOcr = settings.ocrEnabled && ocrModelSelected && !overLimit(settings.ocrMaxPages);
     const existing = (doc.content ?? '').trim();
     let ocrProvider: ResolvedProvider | null = null;
     let ocrUsage: LlmUsage | undefined;
@@ -141,14 +150,14 @@ export class PipelineService {
       text = existing;
       if (!text) {
         // Not a failure — paperless likely hasn't OCR'd it yet. Defer so we don't
-        // burn every attempt back-to-back before the text exists (see worker). When
-        // OCR is on but page-gated off for this document, "enable OCR" would be
-        // misleading, so point at the OCR page limit instead.
-        throw new DeferJobError(
-          settings.ocrEnabled
-            ? 'Document has no text yet and is over the OCR page limit — raise the limit or wait for paperless to OCR it.'
-            : 'Document has no text yet — enable OCR or wait for paperless to OCR it.',
-        );
+        // burn every attempt back-to-back before the text exists (see worker). Point
+        // at whichever knob is actually blocking OCR so the message isn't misleading.
+        const fix = !settings.ocrEnabled
+          ? 'enable OCR'
+          : !ocrModelSelected
+            ? 'select an OCR model'
+            : 'raise the OCR page limit';
+        throw new DeferJobError(`Document has no text yet — ${fix} or wait for paperless to OCR it.`);
       }
     }
 
