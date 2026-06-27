@@ -134,6 +134,9 @@ function ModelsCard({
  */
 function PipelineForm({ initial }: { initial: Settings }) {
   const [form, setForm] = useState<Settings>(initial);
+  // Read live from the prop (not local form state) so picking an OCR model in the
+  // Models card above re-enables these controls immediately on the next refetch.
+  const ocrConfigured = initial.ocrProviderId != null && initial.ocrModel != null;
 
   const save = useUpdateSettings();
   const commit = (patch: SettingsUpdate) =>
@@ -161,10 +164,18 @@ function PipelineForm({ initial }: { initial: Settings }) {
       </CardHeader>
       <CardContent className="space-y-6">
         <Section title="OCR">
+          {!ocrConfigured && (
+            <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+              Pick an{" "}
+              <span className="font-medium text-foreground">OCR model</span> in
+              Models above to enable OCR. Until then paperless's own text is used.
+            </p>
+          )}
           <SwitchRow
             label="Run OCR before extraction"
             hint="Re-OCR each original with the OCR model. Off: reuse paperless's text (free)."
             checked={form.ocrEnabled}
+            disabled={!ocrConfigured}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, ocrEnabled: v }));
               commit({ ocrEnabled: v });
@@ -174,7 +185,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
             label="Skip OCR above"
             hint="Larger files reuse paperless's text instead of paying for OCR. Blank = no limit."
             value={form.ocrMaxPages}
-            disabled={!form.ocrEnabled}
+            disabled={!ocrConfigured || !form.ocrEnabled}
             onChange={(v) => {
               setForm((f) => ({ ...f, ocrMaxPages: v }));
               commitLimits();

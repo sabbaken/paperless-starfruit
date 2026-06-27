@@ -128,15 +128,15 @@ export type ConnectionTestResult = z.infer<typeof connectionTestResultSchema>;
 /** Single-row application settings. */
 export const settingsSchema = z.object({
   pollIntervalSec: z.number().int().min(15).default(60),
-  autoApply: z.boolean().default(false),
+  autoApply: z.boolean().default(true),
   createNewTags: z.boolean().default(false),
   createNewCorrespondents: z.boolean().default(true),
   /** Skip extraction (and OCR) for documents with more pages than this. `null` = no limit. */
-  extractMaxPages: z.number().int().positive().nullable().default(null),
+  extractMaxPages: z.number().int().positive().nullable().default(100),
   language: z.string().default('auto'),
-  ocrEnabled: z.boolean().default(false),
+  ocrEnabled: z.boolean().default(true),
   /** Skip OCR (reuse paperless's own text) for documents with more pages than this. `null` = no limit. */
-  ocrMaxPages: z.number().int().positive().nullable().default(null),
+  ocrMaxPages: z.number().int().positive().nullable().default(20),
   correspondentBlacklist: z.array(z.string()).default([]),
   /** The credential + model the extraction pipeline runs on; null until chosen. */
   llmProviderId: z.number().int().nullable().default(null),

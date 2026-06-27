@@ -8,13 +8,13 @@ describe('SettingsService', () => {
     const svc = new SettingsService(createTestDb());
     expect(svc.get()).toEqual({
       pollIntervalSec: 60,
-      autoApply: false,
+      autoApply: true,
       createNewTags: false,
       createNewCorrespondents: true,
-      extractMaxPages: null,
+      extractMaxPages: 100,
       language: 'auto',
-      ocrEnabled: false,
-      ocrMaxPages: null,
+      ocrEnabled: true,
+      ocrMaxPages: 20,
       correspondentBlacklist: [],
       llmProviderId: null,
       llmModel: null,
