@@ -163,7 +163,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
         <Section title="OCR">
           <SwitchRow
             label="Run OCR before extraction"
-            hint="Re-OCR each document's original with the selected OCR model and write the text back to paperless. When off, paperless's existing text is reused (free)."
+            hint="Re-OCR each original with the OCR model. Off: reuse paperless's text (free)."
             checked={form.ocrEnabled}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, ocrEnabled: v }));
@@ -172,7 +172,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
           />
           <MaxPagesField
             label="Skip OCR above"
-            hint="Documents with more pages than this reuse paperless's own text instead of paying for cloud OCR. Blank = no limit."
+            hint="Larger files reuse paperless's text instead of paying for OCR. Blank = no limit."
             value={form.ocrMaxPages}
             disabled={!form.ocrEnabled}
             onChange={(v) => {
@@ -185,7 +185,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
         <Section title="Extraction">
           <SwitchRow
             label="Create new tags"
-            hint="Let the AI create tags that don't exist yet. When off, only existing tags are applied and the model is told not to invent new ones."
+            hint="Let the AI create tags that don't exist yet."
             checked={form.createNewTags}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, createNewTags: v }));
@@ -194,7 +194,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
           />
           <SwitchRow
             label="Create new correspondents"
-            hint="Let the AI create correspondents that don't exist yet. When off, only existing correspondents are applied and the model is told not to invent new ones."
+            hint="Let the AI create correspondents that don't exist yet."
             checked={form.createNewCorrespondents}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, createNewCorrespondents: v }));
@@ -203,7 +203,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
           />
           <MaxPagesField
             label="Skip extraction above"
-            hint="Documents with more pages than this are left untouched — no OCR and no extraction — keeping whatever paperless already recognised. Blank = no limit."
+            hint="Larger files are skipped entirely — no OCR, no extraction. Blank = no limit."
             value={form.extractMaxPages}
             onChange={(v) => {
               setForm((f) => ({ ...f, extractMaxPages: v }));
@@ -215,7 +215,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
         <Section title="Apply">
           <SwitchRow
             label="Auto-apply suggestions"
-            hint="Write AI suggestions to paperless immediately. When off, each document waits for your approval in the Review queue."
+            hint="Apply to paperless immediately. Off: queue for review."
             checked={form.autoApply}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, autoApply: v }));
