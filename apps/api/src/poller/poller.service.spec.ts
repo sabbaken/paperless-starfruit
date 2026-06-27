@@ -22,7 +22,7 @@ function makePoller({
   const connection = { getClient: () => client } as unknown as ConnectionService;
   const settings = { get: () => ({ pollIntervalSec: 60 }) } as unknown as SettingsService;
   const taxonomy = {
-    resolveTriggerTags: vi.fn().mockResolvedValue({ reviewTagId: 100, autoTagId: 101 }),
+    resolveTriggerTag: vi.fn().mockResolvedValue(100),
   } as unknown as TaxonomyService;
   const review = { hasPending: vi.fn(hasPending) } as unknown as ReviewService;
   const enqueueMock = vi.fn(enqueue);
@@ -49,8 +49,8 @@ describe('PollerService.pollOnce', () => {
     const { poller, enqueueMock } = makePoller({ client });
     expect(await poller.pollOnce()).toBe(3);
     expect(enqueueMock).toHaveBeenCalledTimes(3);
-    // queried by both trigger tag ids
-    expect(client.listDocuments).toHaveBeenCalledWith({ tagIds: [100, 101], ordering: 'added' });
+    // queried by the single trigger tag id
+    expect(client.listDocuments).toHaveBeenCalledWith({ tagIds: [100], ordering: 'added' });
   });
 
   it('skips documents already awaiting review', async () => {

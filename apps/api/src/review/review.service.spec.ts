@@ -8,8 +8,7 @@ import type { TaxonomyService } from '../taxonomy/taxonomy.service';
 import type { AuditService } from '../audit/audit.service';
 import { ReviewService } from './review.service';
 
-const REVIEW_TAG = 100;
-const AUTO_TAG = 101;
+const TRIGGER_TAG = 100;
 
 const SUGGESTIONS: ReviewSuggestions = {
   title: 'ACME Invoice',
@@ -28,7 +27,7 @@ function makeReview(blacklist: string[] = []) {
     id: 5,
     title: 'scan_0001',
     content: 'document preview text',
-    tags: [9, REVIEW_TAG],
+    tags: [9, TRIGGER_TAG],
     correspondent: null,
     created: '2024-01-01T00:00:00Z',
   };
@@ -39,7 +38,7 @@ function makeReview(blacklist: string[] = []) {
   const connection = { getClient: () => client } as unknown as ConnectionService;
   const settings = { get: () => ({ correspondentBlacklist: blacklist }) } as unknown as SettingsService;
   const taxonomy = {
-    resolveTriggerTags: vi.fn().mockResolvedValue({ reviewTagId: REVIEW_TAG, autoTagId: AUTO_TAG }),
+    resolveTriggerTag: vi.fn().mockResolvedValue(TRIGGER_TAG),
     // Input-aware: map each requested name to a stable id.
     resolveTags: vi.fn((_client: unknown, names: string[]) =>
       Promise.resolve(

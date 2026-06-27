@@ -50,7 +50,7 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
           <CardTitle>Nothing to review</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          When a document tagged <code className="font-mono">ai-process</code> is processed, its
+          When a document tagged <code className="font-mono">psf-process</code> is processed, its
           AI suggestions land here for your approval.
         </CardContent>
       </Card>

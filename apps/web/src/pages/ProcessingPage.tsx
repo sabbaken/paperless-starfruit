@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, Loader2, ScanText } from "lucide-react";
 import type {
@@ -42,7 +42,8 @@ export function ProcessingPage() {
         providers={providers.data ?? []}
         onGoToProviders={() => navigate("/settings/api-keys")}
       />
-      <ProcessingForm initial={settings.data} />
+      <PipelineForm initial={settings.data} />
+      <GeneralForm initial={settings.data} />
     </div>
   );
 }
@@ -124,7 +125,110 @@ function ModelsCard({
   );
 }
 
-function ProcessingForm({ initial }: { initial: Settings }) {
+/**
+ * The processing pipeline: OCR → extraction → apply. Each stage has its own
+ * toggles, plus a per-file page limit so a 1000-page scan doesn't run up cloud
+ * OCR / LLM cost. The two stages gate independently — e.g. OCR up to 10 pages but
+ * still extract up to 50 — and a document over the extraction limit is skipped
+ * entirely, keeping whatever paperless already recognised.
+ */
+function PipelineForm({ initial }: { initial: Settings }) {
+  const [form, setForm] = useState<Settings>(initial);
+
+  const save = useUpdateSettings();
+  const commit = (patch: SettingsUpdate) =>
+    void toastSave(save.mutateAsync(patch));
+
+  // Toggles commit instantly; page-limit inputs commit a short pause after the
+  // last keystroke. A limit is sent only when blank (cleared) or a positive
+  // integer — partial/invalid entries are skipped until corrected.
+  const commitLimits = useDebouncedCallback(() => {
+    const patch: SettingsUpdate = {};
+    const ocr = sendableLimit(form.ocrMaxPages);
+    if (ocr !== undefined) patch.ocrMaxPages = ocr;
+    const extract = sendableLimit(form.extractMaxPages);
+    if (extract !== undefined) patch.extractMaxPages = extract;
+    if (Object.keys(patch).length > 0) commit(patch);
+  }, 600);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Pipeline</CardTitle>
+        <CardDescription>
+          How each document flows through OCR, extraction and apply.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Section title="OCR">
+          <SwitchRow
+            label="Run OCR before extraction"
+            hint="Re-OCR each document's original with the selected OCR model and write the text back to paperless. When off, paperless's existing text is reused (free)."
+            checked={form.ocrEnabled}
+            onCheckedChange={(v) => {
+              setForm((f) => ({ ...f, ocrEnabled: v }));
+              commit({ ocrEnabled: v });
+            }}
+          />
+          <MaxPagesField
+            label="Skip OCR above"
+            hint="Documents with more pages than this reuse paperless's own text instead of paying for cloud OCR. Blank = no limit."
+            value={form.ocrMaxPages}
+            disabled={!form.ocrEnabled}
+            onChange={(v) => {
+              setForm((f) => ({ ...f, ocrMaxPages: v }));
+              commitLimits();
+            }}
+          />
+        </Section>
+
+        <Section title="Extraction">
+          <SwitchRow
+            label="Create new tags"
+            hint="Let the AI create tags that don't exist yet. When off, only existing tags are applied and the model is told not to invent new ones."
+            checked={form.createNewTags}
+            onCheckedChange={(v) => {
+              setForm((f) => ({ ...f, createNewTags: v }));
+              commit({ createNewTags: v });
+            }}
+          />
+          <SwitchRow
+            label="Create new correspondents"
+            hint="Let the AI create correspondents that don't exist yet. When off, only existing correspondents are applied and the model is told not to invent new ones."
+            checked={form.createNewCorrespondents}
+            onCheckedChange={(v) => {
+              setForm((f) => ({ ...f, createNewCorrespondents: v }));
+              commit({ createNewCorrespondents: v });
+            }}
+          />
+          <MaxPagesField
+            label="Skip extraction above"
+            hint="Documents with more pages than this are left untouched — no OCR and no extraction — keeping whatever paperless already recognised. Blank = no limit."
+            value={form.extractMaxPages}
+            onChange={(v) => {
+              setForm((f) => ({ ...f, extractMaxPages: v }));
+              commitLimits();
+            }}
+          />
+        </Section>
+
+        <Section title="Apply">
+          <SwitchRow
+            label="Auto-apply suggestions"
+            hint="Write AI suggestions to paperless immediately. When off, each document waits for your approval in the Review queue."
+            checked={form.autoApply}
+            onCheckedChange={(v) => {
+              setForm((f) => ({ ...f, autoApply: v }));
+              commit({ autoApply: v });
+            }}
+          />
+        </Section>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GeneralForm({ initial }: { initial: Settings }) {
   const [form, setForm] = useState<Settings>(initial);
   const [blacklistText, setBlacklistText] = useState(
     initial.correspondentBlacklist.join("\n"),
@@ -134,8 +238,8 @@ function ProcessingForm({ initial }: { initial: Settings }) {
   const commit = (patch: SettingsUpdate) =>
     void toastSave(save.mutateAsync(patch));
 
-  // Toggles commit instantly; free-text fields commit a short pause after the last
-  // keystroke so we don't fire a request per character.
+  // Free-text fields commit a short pause after the last keystroke so we don't
+  // fire a request per character.
   const commitText = useDebouncedCallback(() => {
     const patch: SettingsUpdate = {
       language: form.language.trim() || "auto",
@@ -154,49 +258,12 @@ function ProcessingForm({ initial }: { initial: Settings }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Processing</CardTitle>
+        <CardTitle>General</CardTitle>
         <CardDescription>
-          How documents are picked up and enriched.
+          Polling, output language and correspondent exclusions.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        <SwitchRow
-          label="Run OCR before extraction"
-          hint="Re-OCR each document's original with the selected OCR model and write the text back to paperless. When off, paperless's existing text is reused (free)."
-          checked={form.ocrEnabled}
-          onCheckedChange={(v) => {
-            setForm((f) => ({ ...f, ocrEnabled: v }));
-            commit({ ocrEnabled: v });
-          }}
-        />
-        <SwitchRow
-          label="Auto-apply suggestions"
-          hint="Apply AI suggestions immediately instead of queueing them for review. Documents tagged ai-process-auto always auto-apply."
-          checked={form.autoApply}
-          onCheckedChange={(v) => {
-            setForm((f) => ({ ...f, autoApply: v }));
-            commit({ autoApply: v });
-          }}
-        />
-        <SwitchRow
-          label="Create new tags"
-          hint="Let the AI create tags that don't exist yet. When off, only existing tags are applied and the model is told not to invent new ones."
-          checked={form.createNewTags}
-          onCheckedChange={(v) => {
-            setForm((f) => ({ ...f, createNewTags: v }));
-            commit({ createNewTags: v });
-          }}
-        />
-        <SwitchRow
-          label="Create new correspondents"
-          hint="Let the AI create correspondents that don't exist yet. When off, only existing correspondents are applied and the model is told not to invent new ones."
-          checked={form.createNewCorrespondents}
-          onCheckedChange={(v) => {
-            setForm((f) => ({ ...f, createNewCorrespondents: v }));
-            commit({ createNewCorrespondents: v });
-          }}
-        />
-
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="pollInterval">Poll interval (seconds)</Label>
@@ -245,4 +312,65 @@ function ProcessingForm({ initial }: { initial: Settings }) {
       </CardContent>
     </Card>
   );
+}
+
+/** A titled group of rows inside a card. */
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+/** A page-limit field laid out like SwitchRow: label/hint left, number input right. */
+function MaxPagesField({
+  label,
+  hint,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: number | null;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="space-y-0.5">
+        <label htmlFor={id} className="text-sm font-medium">
+          {label}
+        </label>
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Input
+          id={id}
+          type="number"
+          min={1}
+          inputMode="numeric"
+          placeholder="No limit"
+          disabled={disabled}
+          value={value ?? ""}
+          onChange={(e) =>
+            onChange(e.target.value === "" ? null : Number(e.target.value))
+          }
+          className="w-28"
+        />
+        <span className="text-xs text-muted-foreground">pages</span>
+      </div>
+    </div>
+  );
+}
+
+/** A page limit is valid to persist when cleared (null) or a positive integer. */
+function sendableLimit(v: number | null): number | null | undefined {
+  if (v === null) return null;
+  return Number.isInteger(v) && v > 0 ? v : undefined;
 }

@@ -131,8 +131,12 @@ export const settingsSchema = z.object({
   autoApply: z.boolean().default(false),
   createNewTags: z.boolean().default(false),
   createNewCorrespondents: z.boolean().default(true),
+  /** Skip extraction (and OCR) for documents with more pages than this. `null` = no limit. */
+  extractMaxPages: z.number().int().positive().nullable().default(null),
   language: z.string().default('auto'),
   ocrEnabled: z.boolean().default(false),
+  /** Skip OCR (reuse paperless's own text) for documents with more pages than this. `null` = no limit. */
+  ocrMaxPages: z.number().int().positive().nullable().default(null),
   correspondentBlacklist: z.array(z.string()).default([]),
   /** The credential + model the extraction pipeline runs on; null until chosen. */
   llmProviderId: z.number().int().nullable().default(null),

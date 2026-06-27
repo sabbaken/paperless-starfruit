@@ -42,6 +42,8 @@ export const paperlessDocumentSchema = z.object({
   correspondent: z.number().int().nullable(),
   created: z.string(),
   added: z.string().optional(),
+  /** Page count paperless computed at consume time; null/absent when unknown (gates skip it). */
+  page_count: z.number().int().nullable().optional(),
   /** Original upload name, e.g. "scan_0001.pdf"; exposed to prompts as {{filename}}. */
   original_file_name: z.string().nullable().optional(),
 });

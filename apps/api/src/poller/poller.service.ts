@@ -13,9 +13,9 @@ import { QueueService } from '../queue/queue.service';
 const MIN_INTERVAL_SEC = 15;
 
 /**
- * Polls paperless-ngx for documents carrying a trigger tag (review or auto) and
- * enqueues fresh ones. Self-scheduling so it honours the configurable poll
- * interval without a fixed cron expression.
+ * Polls paperless-ngx for documents carrying the trigger tag and enqueues fresh
+ * ones. Self-scheduling so it honours the configurable poll interval without a
+ * fixed cron expression.
  */
 @Injectable()
 export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
@@ -51,9 +51,9 @@ export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
       return 0;
     }
 
-    const { reviewTagId, autoTagId } = await this.taxonomy.resolveTriggerTags(client);
+    const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
     const { results } = await client.listDocuments({
-      tagIds: [reviewTagId, autoTagId],
+      tagIds: [triggerTagId],
       ordering: 'added',
     });
 
