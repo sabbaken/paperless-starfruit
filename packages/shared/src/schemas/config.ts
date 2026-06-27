@@ -129,7 +129,7 @@ export type ConnectionTestResult = z.infer<typeof connectionTestResultSchema>;
 export const settingsSchema = z.object({
   pollIntervalSec: z.number().int().min(15).default(60),
   autoApply: z.boolean().default(false),
-  createNewTags: z.boolean().default(true),
+  createNewTags: z.boolean().default(false),
   createNewCorrespondents: z.boolean().default(true),
   language: z.string().default('auto'),
   ocrEnabled: z.boolean().default(false),
