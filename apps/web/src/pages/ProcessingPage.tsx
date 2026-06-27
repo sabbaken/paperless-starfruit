@@ -179,12 +179,21 @@ function ProcessingForm({ initial }: { initial: Settings }) {
           }}
         />
         <SwitchRow
-          label="Create new tags & correspondents"
-          hint="Let the AI create tags/correspondents that don't exist yet. When off, only existing ones are applied."
+          label="Create new tags"
+          hint="Let the AI create tags that don't exist yet. When off, only existing tags are applied and the model is told not to invent new ones."
           checked={form.createNewTags}
           onCheckedChange={(v) => {
             setForm((f) => ({ ...f, createNewTags: v }));
             commit({ createNewTags: v });
+          }}
+        />
+        <SwitchRow
+          label="Create new correspondents"
+          hint="Let the AI create correspondents that don't exist yet. When off, only existing correspondents are applied and the model is told not to invent new ones."
+          checked={form.createNewCorrespondents}
+          onCheckedChange={(v) => {
+            setForm((f) => ({ ...f, createNewCorrespondents: v }));
+            commit({ createNewCorrespondents: v });
           }}
         />
 

@@ -10,6 +10,7 @@ describe('SettingsService', () => {
       pollIntervalSec: 60,
       autoApply: false,
       createNewTags: true,
+      createNewCorrespondents: true,
       language: 'auto',
       ocrEnabled: false,
       correspondentBlacklist: [],

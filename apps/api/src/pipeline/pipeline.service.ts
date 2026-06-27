@@ -158,6 +158,11 @@ export class PipelineService {
         language: settings.language,
         allTags: snap.tags.filter((t) => !isTrigger(t.id)).map((t) => t.name),
         allCorrespondents: snap.correspondents.map((c) => c.name),
+        // The prompt reflects the user's intent (the raw setting), not the
+        // auto-gated `create` below — so in review mode the model still proposes
+        // new tags/correspondents the human can approve.
+        allowNewTags: settings.createNewTags,
+        allowNewCorrespondents: settings.createNewCorrespondents,
         currentTitle: doc.title,
         currentTags: doc.tags
           .filter((id) => !isTrigger(id))
@@ -184,14 +189,18 @@ export class PipelineService {
 
     // Explicit auto tag wins; otherwise the global auto-apply setting decides.
     const isAuto = doc.tags.includes(autoTagId) || settings.autoApply;
-    // Only create new tags/correspondents without a human gate (auto mode).
-    const create = isAuto && settings.createNewTags;
+    // Only create new entities without a human gate (auto mode), and only the
+    // kinds the user opted into — tags and correspondents are gated separately.
+    const createTags = isAuto && settings.createNewTags;
+    const createCorrespondents = isAuto && settings.createNewCorrespondents;
 
-    const resolvedTags = await this.taxonomy.resolveTags(client, extraction.tags, { create });
+    const resolvedTags = await this.taxonomy.resolveTags(client, extraction.tags, {
+      create: createTags,
+    });
     const resolvedCorrespondent = await this.taxonomy.resolveCorrespondent(
       client,
       extraction.correspondent,
-      { create, blacklist: settings.correspondentBlacklist },
+      { create: createCorrespondents, blacklist: settings.correspondentBlacklist },
     );
 
     const auditBase = {
