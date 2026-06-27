@@ -41,6 +41,8 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
     { name: 'language', label: 'Language', description: 'The configured output language, or “auto”.' },
     { name: 'all_tags', label: 'Existing tags', description: 'Every tag already in paperless — encourages reuse over invention.' },
     { name: 'all_correspondents', label: 'Existing correspondents', description: 'Every correspondent already in paperless.' },
+    { name: 'tag_policy', label: 'Tag policy', description: 'A sentence stating whether the model may introduce new tags (reflects the “Create new tags” setting).' },
+    { name: 'correspondent_policy', label: 'Correspondent policy', description: 'A sentence stating whether the model may introduce a new correspondent (reflects the “Create new correspondents” setting).' },
     { name: 'title', label: 'Current title', description: 'The document’s current title in paperless.' },
     { name: 'tags', label: 'Current tags', description: 'The document’s current tag names.' },
     { name: 'correspondent', label: 'Current correspondent', description: 'The document’s current correspondent, if any.' },
@@ -62,8 +64,8 @@ export const DEFAULT_PROMPTS: Record<PromptKey, string> = {
   [PROMPT_KEY.EXTRACTION]: `You extract structured metadata from a single archived document for a paperless-ngx system.
 Return concise, human-meaningful values:
 - title: a short descriptive title — no file extensions, no reference numbers as the whole title.
-- tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits; only invent a tag when none apply.
-- correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches.
+- tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits. {{tag_policy}}
+- correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches. {{correspondent_policy}}
 - date: the document's own date (when it was issued or written) as YYYY-MM-DD, or null if not evident. Never use today's date as a fallback.
 
 Write all output in {{language}} (use the document's own language when this is "auto").

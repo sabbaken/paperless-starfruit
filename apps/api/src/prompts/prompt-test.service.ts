@@ -75,6 +75,8 @@ export class PromptTestService {
         language: settings.language,
         allTags: snap.tags.filter((t) => !triggerIds.has(t.id)).map((t) => t.name),
         allCorrespondents: snap.correspondents.map((c) => c.name),
+        allowNewTags: settings.createNewTags,
+        allowNewCorrespondents: settings.createNewCorrespondents,
         currentTitle: doc.title,
         currentTags: doc.tags
           .filter((id) => !triggerIds.has(id))

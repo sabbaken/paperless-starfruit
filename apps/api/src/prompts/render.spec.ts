@@ -18,6 +18,8 @@ describe('extractionVars', () => {
     language: 'auto',
     allTags: ['Invoice', 'Tax'],
     allCorrespondents: ['ACME'],
+    allowNewTags: true,
+    allowNewCorrespondents: true,
     currentTitle: 'scan_0001',
     currentTags: [],
     currentCorrespondent: null,
@@ -32,6 +34,16 @@ describe('extractionVars', () => {
     expect(v.correspondent).toBe('(none)');
     expect(v.filename).toBe('(none)');
     expect(v.title).toBe('scan_0001');
+  });
+
+  it('expands the create-new toggles into directive sentences, independently', () => {
+    const allowed = extractionVars({ ...base, allowNewTags: true, allowNewCorrespondents: false });
+    expect(allowed.tag_policy).toContain('may introduce a new tag');
+    expect(allowed.correspondent_policy).toContain('Do not invent a new correspondent');
+
+    const flipped = extractionVars({ ...base, allowNewTags: false, allowNewCorrespondents: true });
+    expect(flipped.tag_policy).toContain('Do not invent new tags');
+    expect(flipped.correspondent_policy).toContain('may introduce a new correspondent');
   });
 
   it('truncates very long content', () => {

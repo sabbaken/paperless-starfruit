@@ -72,6 +72,9 @@ export const settings = sqliteTable('settings', {
   createNewTags: integer('create_new_tags', { mode: 'boolean' })
     .notNull()
     .default(true),
+  createNewCorrespondents: integer('create_new_correspondents', { mode: 'boolean' })
+    .notNull()
+    .default(true),
   language: text('language').notNull().default('auto'),
   ocrEnabled: integer('ocr_enabled', { mode: 'boolean' })
     .notNull()

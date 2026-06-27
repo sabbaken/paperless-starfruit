@@ -20,6 +20,9 @@ export interface ExtractionVarInput {
   /** Existing taxonomy, to steer reuse over invention. */
   allTags: string[];
   allCorrespondents: string[];
+  /** Whether the model may introduce new tags / correspondents (drives `{{tag_policy}}` / `{{correspondent_policy}}`). */
+  allowNewTags: boolean;
+  allowNewCorrespondents: boolean;
   /** The document's current metadata in paperless. */
   currentTitle: string;
   currentTags: string[];
@@ -28,12 +31,24 @@ export interface ExtractionVarInput {
   filename: string | null;
 }
 
+/** Directive sentences the create-new toggles expand to inside the extraction prompt. */
+const TAG_POLICY = {
+  on: 'If none fits, you may introduce a new tag.',
+  off: 'Do not invent new tags — if none fits, use no tag rather than creating one.',
+};
+const CORRESPONDENT_POLICY = {
+  on: 'If none matches, you may introduce a new correspondent.',
+  off: 'Do not invent a new correspondent — if none matches, return null.',
+};
+
 export function extractionVars(i: ExtractionVarInput): Record<string, string> {
   return {
     content: truncateContent(i.content),
     language: i.language,
     all_tags: list(i.allTags),
     all_correspondents: list(i.allCorrespondents),
+    tag_policy: i.allowNewTags ? TAG_POLICY.on : TAG_POLICY.off,
+    correspondent_policy: i.allowNewCorrespondents ? CORRESPONDENT_POLICY.on : CORRESPONDENT_POLICY.off,
     title: i.currentTitle,
     tags: list(i.currentTags),
     correspondent: orNone(i.currentCorrespondent),

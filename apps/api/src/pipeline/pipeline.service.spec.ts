@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: Settings = {
   pollIntervalSec: 60,
   autoApply: false,
   createNewTags: true,
+  createNewCorrespondents: true,
   language: 'auto',
   ocrEnabled: false,
   correspondentBlacklist: [],
@@ -140,7 +141,7 @@ function makePipeline(o: Overrides = {}) {
     audit,
     prompts,
   );
-  return { pipeline, client, llm, ocr, review, audit, prompts };
+  return { pipeline, client, llm, ocr, review, audit, prompts, taxonomy };
 }
 
 /** Settings that turn OCR on, pointing it at a (mocked) credential + model. */
@@ -169,6 +170,58 @@ describe('PipelineService.process', () => {
     });
     expect(review.create).not.toHaveBeenCalled();
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'auto-applied' }));
+  });
+
+  it('gates tag and correspondent creation independently in auto mode', async () => {
+    const { pipeline, taxonomy } = makePipeline({
+      doc: { tags: [9, AUTO_TAG] },
+      settings: { createNewTags: true, createNewCorrespondents: false },
+    });
+
+    await pipeline.process(JOB);
+
+    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(expect.anything(), ['invoice'], {
+      create: true,
+    });
+    expect(vi.mocked(taxonomy.resolveCorrespondent)).toHaveBeenCalledWith(
+      expect.anything(),
+      'ACME',
+      expect.objectContaining({ create: false }),
+    );
+  });
+
+  it('never creates new entities in review mode, regardless of the settings', async () => {
+    const { pipeline, taxonomy } = makePipeline({
+      doc: { tags: [REVIEW_TAG] },
+      settings: { createNewTags: true, createNewCorrespondents: true },
+    });
+
+    await pipeline.process(JOB);
+
+    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(expect.anything(), ['invoice'], {
+      create: false,
+    });
+    expect(vi.mocked(taxonomy.resolveCorrespondent)).toHaveBeenCalledWith(
+      expect.anything(),
+      'ACME',
+      expect.objectContaining({ create: false }),
+    );
+  });
+
+  it('reflects the create-new settings in the rendered extraction prompt vars', async () => {
+    const { pipeline, prompts } = makePipeline({
+      doc: { tags: [REVIEW_TAG] },
+      settings: { createNewTags: true, createNewCorrespondents: false },
+    });
+
+    await pipeline.process(JOB);
+
+    const extractionCall = vi
+      .mocked(prompts.render)
+      .mock.calls.find(([key]) => key === 'extraction');
+    const vars = extractionCall?.[1] as Record<string, string>;
+    expect(vars.tag_policy).toContain('may introduce a new tag');
+    expect(vars.correspondent_policy).toContain('Do not invent a new correspondent');
   });
 
   it('queues a review item (no PATCH) when only the review tag is present', async () => {

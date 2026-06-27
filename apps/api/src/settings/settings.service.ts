@@ -69,6 +69,7 @@ function toSettings(row: SettingsRow): Settings {
     pollIntervalSec: row.pollIntervalSec,
     autoApply: row.autoApply,
     createNewTags: row.createNewTags,
+    createNewCorrespondents: row.createNewCorrespondents,
     language: row.language,
     ocrEnabled: row.ocrEnabled,
     correspondentBlacklist: row.correspondentBlacklist,
