@@ -57,6 +57,13 @@
       "when": 1782147161609,
       "tag": "0007_chief_toad",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782154934977,
+      "tag": "0008_hard_ezekiel",
+      "breakpoints": true
     }
   ]
 }

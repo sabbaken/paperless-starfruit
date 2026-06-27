@@ -93,16 +93,16 @@ describe('PaperlessClient', () => {
   });
 
   it('creates a tag with a JSON body', async () => {
-    fetchMock.mockResolvedValue(json({ id: 7, name: 'ai-process' }, { status: 201 }));
+    fetchMock.mockResolvedValue(json({ id: 7, name: 'psf-process' }, { status: 201 }));
 
-    const tag = await client().createTag('ai-process');
-    expect(tag).toEqual({ id: 7, name: 'ai-process' });
+    const tag = await client().createTag('psf-process');
+    expect(tag).toEqual({ id: 7, name: 'psf-process' });
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('http://pl.local/api/tags/');
     expect(init.method).toBe('POST');
     expect(init.headers['Content-Type']).toBe('application/json');
-    expect(JSON.parse(init.body as string)).toEqual({ name: 'ai-process' });
+    expect(JSON.parse(init.body as string)).toEqual({ name: 'psf-process' });
   });
 
   it('re-anchors paginated "next" links to the configured base URL', async () => {

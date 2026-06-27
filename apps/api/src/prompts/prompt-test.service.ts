@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
-  DEFAULT_TRIGGER_TAGS,
+  DEFAULT_TRIGGER_TAG,
   EXTRACTION_SCHEMA_DESCRIPTION,
   EXTRACTION_SCHEMA_NAME,
   PROMPT_KEY,
@@ -64,7 +64,7 @@ export class PromptTestService {
     const provider = this.resolveProvider(settings.llmProviderId, settings.llmModel, 'LLM');
 
     const snap = await this.taxonomy.getSnapshot(client);
-    const triggerNames = new Set<string>([DEFAULT_TRIGGER_TAGS.review, DEFAULT_TRIGGER_TAGS.auto]);
+    const triggerNames = new Set<string>([DEFAULT_TRIGGER_TAG]);
     const triggerIds = new Set(snap.tags.filter((t) => triggerNames.has(t.name)).map((t) => t.id));
     const tagName = (id: number) => snap.tags.find((t) => t.id === id)?.name;
 

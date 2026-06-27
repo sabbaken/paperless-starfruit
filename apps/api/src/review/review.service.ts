@@ -32,7 +32,7 @@ const MAX_PREVIEW_CHARS = 8_000;
  * The human-review queue: creation (M3), and listing + approve/edit/reject
  * (M4). Approving resolves the user-confirmed names to ids (creating any that
  * are missing), merges them with the document's existing tags and writes the
- * change back to paperless, dropping the trigger tags in the same PATCH.
+ * change back to paperless, dropping the trigger tag in the same PATCH.
  */
 @Injectable()
 export class ReviewService {
@@ -113,8 +113,8 @@ export class ReviewService {
     this.assertPending(row);
     const client = this.requireClient();
     const doc = await client.getDocument(row.documentId);
-    const { reviewTagId, autoTagId } = await this.taxonomy.resolveTriggerTags(client);
-    const tags = doc.tags.filter((t) => t !== reviewTagId && t !== autoTagId);
+    const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
+    const tags = doc.tags.filter((t) => t !== triggerTagId);
     if (tags.length !== doc.tags.length) await client.patchDocument(doc.id, { tags });
     this.markStatus(id, REVIEW_STATUS.REJECTED);
     this.audit.record({ jobId: row.jobId, documentId: row.documentId, decision: 'rejected' });
@@ -145,7 +145,7 @@ export class ReviewService {
     payload: ReviewApprove,
   ): Promise<void> {
     const doc = await client.getDocument(row.documentId);
-    const { reviewTagId, autoTagId } = await this.taxonomy.resolveTriggerTags(client);
+    const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
     const blacklist = this.settings.get().correspondentBlacklist;
 
     // The user explicitly confirmed these, so create-if-missing regardless of
@@ -161,7 +161,7 @@ export class ReviewService {
     const addIds = resolvedTags.map((t) => t.id).filter((x): x is number => x != null);
     const patch = {
       title: payload.title,
-      tags: mergeTagIds(doc.tags, addIds, [reviewTagId, autoTagId]),
+      tags: mergeTagIds(doc.tags, addIds, [triggerTagId]),
       ...(correspondent?.id != null ? { correspondent: correspondent.id } : {}),
       // Date-only — a UTC-midnight datetime shifts a day on UTC-behind servers.
       ...(payload.date ? { created: payload.date } : {}),

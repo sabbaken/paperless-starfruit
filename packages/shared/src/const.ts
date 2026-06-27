@@ -10,11 +10,12 @@ export type JobStatus = (typeof JOB_STATUS)[keyof typeof JOB_STATUS];
 /** Statuses that count as "in flight" for the one-active-job-per-document guard. */
 export const ACTIVE_JOB_STATUSES: JobStatus[] = [JOB_STATUS.QUEUED, JOB_STATUS.RUNNING];
 
-/** Default paperless-ngx trigger tags. `auto` applies instantly; `review` queues for approval. */
-export const DEFAULT_TRIGGER_TAGS = {
-  review: 'ai-process',
-  auto: 'ai-process-auto',
-} as const;
+/**
+ * The single paperless-ngx tag that marks a document for AI processing. Whether a
+ * processed document is auto-applied or queued for human review is decided by the
+ * `autoApply` setting, not by the tag.
+ */
+export const DEFAULT_TRIGGER_TAG = 'psf-process';
 
 /** Review-item lifecycle. `pending` waits on the user; the rest are terminal. */
 export const REVIEW_STATUS = {

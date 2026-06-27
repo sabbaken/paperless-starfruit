@@ -45,7 +45,7 @@ export function DashboardPage() {
         <CardContent>
           {recentJobs.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No jobs yet. Tag a document in paperless with <code className="font-mono">ai-process</code> to get started.
+              No jobs yet. Tag a document in paperless with <code className="font-mono">psf-process</code> to get started.
             </p>
           ) : (
             <ul className="divide-y">

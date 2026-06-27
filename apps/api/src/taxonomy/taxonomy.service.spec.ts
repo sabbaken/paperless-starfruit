@@ -77,16 +77,21 @@ describe('TaxonomyService', () => {
     expect(out).toEqual({ id: 4, name: 'ACME', isNew: false });
   });
 
-  it('resolves and caches the trigger tag ids, creating any that are missing', async () => {
-    const client = fakeClient([{ id: 50, name: 'ai-process' }]);
-    const first = await svc.resolveTriggerTags(client);
-    expect(first.reviewTagId).toBe(50);
-    expect(first.autoTagId).not.toBeNull();
-    expect(client.createTag).toHaveBeenCalledWith('ai-process-auto');
-
-    client.createTag.mockClear();
-    const second = await svc.resolveTriggerTags(client);
-    expect(second).toEqual(first);
+  it('resolves and caches the trigger tag id, reusing an existing tag', async () => {
+    const client = fakeClient([{ id: 50, name: 'psf-process' }]);
+    const first = await svc.resolveTriggerTag(client);
+    expect(first).toBe(50);
     expect(client.createTag).not.toHaveBeenCalled();
+
+    const second = await svc.resolveTriggerTag(client);
+    expect(second).toBe(50);
+    expect(client.createTag).not.toHaveBeenCalled();
+  });
+
+  it('creates the trigger tag when it is missing', async () => {
+    const client = fakeClient([]);
+    const id = await svc.resolveTriggerTag(client);
+    expect(client.createTag).toHaveBeenCalledWith('psf-process');
+    expect(id).not.toBeNull();
   });
 });

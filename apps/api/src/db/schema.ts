@@ -75,10 +75,14 @@ export const settings = sqliteTable('settings', {
   createNewCorrespondents: integer('create_new_correspondents', { mode: 'boolean' })
     .notNull()
     .default(true),
+  /** Skip extraction (and OCR) for documents with more pages than this; null = no limit. */
+  extractMaxPages: integer('extract_max_pages'),
   language: text('language').notNull().default('auto'),
   ocrEnabled: integer('ocr_enabled', { mode: 'boolean' })
     .notNull()
     .default(false),
+  /** Skip OCR (reuse paperless's text) for documents with more pages than this; null = no limit. */
+  ocrMaxPages: integer('ocr_max_pages'),
   correspondentBlacklist: text('correspondent_blacklist', { mode: 'json' })
     .notNull()
     .$type<string[]>()

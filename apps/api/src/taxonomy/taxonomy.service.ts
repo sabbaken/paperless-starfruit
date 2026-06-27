@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DEFAULT_TRIGGER_TAGS, type ResolvedTag } from '@paperless-starfruit/shared';
+import { DEFAULT_TRIGGER_TAG, type ResolvedTag } from '@paperless-starfruit/shared';
 import type { PaperlessClient } from '../paperless/paperless.client';
 import type { PaperlessCorrespondent, PaperlessTag } from '../paperless/paperless.schemas';
 
@@ -7,11 +7,6 @@ interface Snapshot {
   fetchedAt: number;
   tags: PaperlessTag[];
   correspondents: PaperlessCorrespondent[];
-}
-
-export interface TriggerTags {
-  reviewTagId: number;
-  autoTagId: number;
 }
 
 const SNAPSHOT_TTL_MS = 60_000;
@@ -27,7 +22,7 @@ const norm = (s: string) => s.trim().toLowerCase();
 @Injectable()
 export class TaxonomyService {
   private snapshot: Snapshot | null = null;
-  private triggerTags: TriggerTags | null = null;
+  private triggerTagId: number | null = null;
 
   async getSnapshot(
     client: PaperlessClient,
@@ -44,13 +39,11 @@ export class TaxonomyService {
     return this.snapshot;
   }
 
-  /** Resolve (creating if missing) the review + auto trigger tag ids. Cached for the process. */
-  async resolveTriggerTags(client: PaperlessClient): Promise<TriggerTags> {
-    if (this.triggerTags) return this.triggerTags;
-    const reviewTagId = await this.ensureTag(client, DEFAULT_TRIGGER_TAGS.review);
-    const autoTagId = await this.ensureTag(client, DEFAULT_TRIGGER_TAGS.auto);
-    this.triggerTags = { reviewTagId, autoTagId };
-    return this.triggerTags;
+  /** Resolve (creating if missing) the trigger tag id. Cached for the process. */
+  async resolveTriggerTag(client: PaperlessClient): Promise<number> {
+    if (this.triggerTagId != null) return this.triggerTagId;
+    this.triggerTagId = await this.ensureTag(client, DEFAULT_TRIGGER_TAG);
+    return this.triggerTagId;
   }
 
   /**
@@ -123,7 +116,7 @@ export class TaxonomyService {
   /** Drop caches (e.g. after the paperless connection changes). */
   invalidate(): void {
     this.snapshot = null;
-    this.triggerTags = null;
+    this.triggerTagId = null;
   }
 
   private async ensureTag(client: PaperlessClient, name: string): Promise<number> {

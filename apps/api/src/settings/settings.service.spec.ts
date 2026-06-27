@@ -11,8 +11,10 @@ describe('SettingsService', () => {
       autoApply: false,
       createNewTags: false,
       createNewCorrespondents: true,
+      extractMaxPages: null,
       language: 'auto',
       ocrEnabled: false,
+      ocrMaxPages: null,
       correspondentBlacklist: [],
       llmProviderId: null,
       llmModel: null,
@@ -41,6 +43,18 @@ describe('SettingsService', () => {
     const updated = svc.update({ llmProviderId: 99, llmModel: 'claude-haiku-4-5' });
     expect(updated.llmProviderId).toBeNull();
     expect(updated.llmModel).toBeNull();
+  });
+
+  it('round-trips the page limits and clears them with null', () => {
+    const svc = new SettingsService(createTestDb());
+    expect(svc.update({ ocrMaxPages: 10, extractMaxPages: 50 })).toMatchObject({
+      ocrMaxPages: 10,
+      extractMaxPages: 50,
+    });
+    expect(svc.get().ocrMaxPages).toBe(10);
+    // null clears a previously-set limit
+    expect(svc.update({ ocrMaxPages: null }).ocrMaxPages).toBeNull();
+    expect(svc.get().extractMaxPages).toBe(50);
   });
 
   it('treats an empty patch as a no-op', () => {

@@ -75,15 +75,40 @@ export class PipelineService {
     const provider = this.resolveProvider(settings.llmProviderId, settings.llmModel, 'LLM');
 
     const doc = await client.getDocument(job.documentId);
+    const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
 
-    // --- Step 2: OCR (single on/off toggle). When on, OCR the original and use
-    // that text; when off, reuse paperless's existing Tesseract text (free). ---
+    // --- Step 2: page-based cost gates. `page_count` comes straight from paperless;
+    // when it's unknown (null) no gate applies — we can't prove the file is oversized. ---
+    const pageCount = doc.page_count ?? null;
+    const overLimit = (limit: number | null) =>
+      limit != null && pageCount != null && pageCount > limit;
+
+    // The extraction limit is the OUTER gate: a document too large to extract gets
+    // neither OCR nor extraction. We leave whatever paperless already recognised,
+    // drop the trigger tag so it isn't re-polled, and record the skip. Re-tagging it
+    // (or raising the limit) is the explicit "process me anyway" signal.
+    if (overLimit(settings.extractMaxPages)) {
+      await this.dropTriggerTags(client, doc, triggerTagId);
+      this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
+      this.logger.log(
+        `job ${job.id} (doc ${job.documentId}) skipped: ${pageCount} pages over the extraction limit (${settings.extractMaxPages})`,
+      );
+      // A sentinel hash that can never equal a real completion's hash (those are
+      // `<version>|llm:…|ocr:…`). Raising the limit and re-tagging must reprocess —
+      // it must not look "already done". The page gate itself suppresses redundant
+      // reruns while the document is still oversized.
+      return { contentHash: contentHash(String(pageCount), 'skipped:oversized'), cost: null, decision: 'skipped' };
+    }
+
+    // --- Step 3: OCR. Run it only when enabled AND within the OCR page limit;
+    // otherwise reuse paperless's existing Tesseract text (free). ---
+    const runOcr = settings.ocrEnabled && !overLimit(settings.ocrMaxPages);
     const existing = (doc.content ?? '').trim();
     let ocrProvider: ResolvedProvider | null = null;
     let ocrUsage: LlmUsage | undefined;
     let text: string;
 
-    if (settings.ocrEnabled) {
+    if (runOcr) {
       ocrProvider = this.resolveProvider(settings.ocrProviderId, settings.ocrModel, 'OCR');
       const ocrKey = `${ocrProvider.kind}/${ocrProvider.model}`;
       const cached = this.ocrCache.get(job.documentId);
@@ -116,20 +141,23 @@ export class PipelineService {
       text = existing;
       if (!text) {
         // Not a failure — paperless likely hasn't OCR'd it yet. Defer so we don't
-        // burn every attempt back-to-back before the text exists (see worker).
+        // burn every attempt back-to-back before the text exists (see worker). When
+        // OCR is on but page-gated off for this document, "enable OCR" would be
+        // misleading, so point at the OCR page limit instead.
         throw new DeferJobError(
-          'Document has no text yet — enable OCR or wait for paperless to OCR it.',
+          settings.ocrEnabled
+            ? 'Document has no text yet and is over the OCR page limit — raise the limit or wait for paperless to OCR it.'
+            : 'Document has no text yet — enable OCR or wait for paperless to OCR it.',
         );
       }
     }
 
-    // --- Step 3: fingerprint (post-OCR text + full config) + skip check. ---
+    // --- Step 4: fingerprint (post-OCR text + full config) + skip check. ---
     const fingerprint = configFingerprint({
       llm: { kind: provider.kind, model: provider.model },
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
     });
     const hash = contentHash(text, fingerprint);
-    const { reviewTagId, autoTagId } = await this.taxonomy.resolveTriggerTags(client);
 
     // Skip a byte-for-byte-identical rerun (same text + same config fingerprint).
     // An identical result was already produced — and that run already wrote this
@@ -138,7 +166,7 @@ export class PipelineService {
     // poller's pending-check guards against re-enqueuing one). We still report any
     // OCR tokens we just spent computing the hash.
     if (this.queue.hasCompletedWithHash(job.documentId, hash)) {
-      await this.dropTriggerTags(client, doc, reviewTagId, autoTagId);
+      await this.dropTriggerTags(client, doc, triggerTagId);
       this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
       this.ocrCache.delete(job.documentId);
       return { contentHash: hash, cost: ocrUsage?.totalTokens ?? null, decision: 'skipped' };
@@ -146,10 +174,10 @@ export class PipelineService {
 
     // OCR text replaces the document's `content`; it is not a reviewable suggestion.
     // Write it back only when it actually changed, to avoid a needless re-index PATCH.
-    const ocrChanged = settings.ocrEnabled && text !== existing;
+    const ocrChanged = runOcr && text !== existing;
 
     const snap = await this.taxonomy.getSnapshot(client);
-    const isTrigger = (id: number) => id === reviewTagId || id === autoTagId;
+    const isTrigger = (id: number) => id === triggerTagId;
     const tagName = (id: number) => snap.tags.find((t) => t.id === id)?.name;
     const prompt = this.prompts.render(
       PROMPT_KEY.EXTRACTION,
@@ -187,8 +215,9 @@ export class PipelineService {
     // Page-billed OCR (Mistral) carries no token usage, so it adds nothing here.
     const cost = usage.totalTokens + (ocrUsage?.totalTokens ?? 0);
 
-    // Explicit auto tag wins; otherwise the global auto-apply setting decides.
-    const isAuto = doc.tags.includes(autoTagId) || settings.autoApply;
+    // A single trigger tag drives the pipeline; the auto-apply setting alone
+    // decides whether to write immediately or queue the suggestion for review.
+    const isAuto = settings.autoApply;
     // Only create new entities without a human gate (auto mode), and only the
     // kinds the user opted into — tags and correspondents are gated separately.
     const createTags = isAuto && settings.createNewTags;
@@ -218,8 +247,7 @@ export class PipelineService {
         client,
         doc,
         { extraction, resolvedTags, resolvedCorrespondent },
-        reviewTagId,
-        autoTagId,
+        triggerTagId,
         ocrChanged ? text : undefined,
       );
       this.audit.record({ ...auditBase, decision: 'auto-applied' });
@@ -272,17 +300,16 @@ export class PipelineService {
     client: PaperlessClient,
     doc: PaperlessDocument,
     s: { extraction: Extraction; resolvedTags: ResolvedTag[]; resolvedCorrespondent: ResolvedTag | null },
-    reviewTagId: number,
-    autoTagId: number,
+    triggerTagId: number,
     /** New OCR text to write back in the same PATCH, when it changed. */
     content?: string,
   ): Promise<void> {
     const addIds = s.resolvedTags.map((t) => t.id).filter((id): id is number => id != null);
     const patch: DocumentPatch = {
       title: s.extraction.title,
-      // Merge suggested tags with the current ones and drop the trigger tags in
+      // Merge suggested tags with the current ones and drop the trigger tag in
       // the same PATCH — tag-replace semantics, never a blind overwrite.
-      tags: mergeTagIds(doc.tags, addIds, [reviewTagId, autoTagId]),
+      tags: mergeTagIds(doc.tags, addIds, [triggerTagId]),
     };
     if (s.resolvedCorrespondent?.id != null) patch.correspondent = s.resolvedCorrespondent.id;
     // Send a date-only value: a UTC-midnight datetime would render a day early
@@ -295,10 +322,9 @@ export class PipelineService {
   private async dropTriggerTags(
     client: PaperlessClient,
     doc: PaperlessDocument,
-    reviewTagId: number,
-    autoTagId: number,
+    triggerTagId: number,
   ): Promise<void> {
-    const tags = doc.tags.filter((id) => id !== reviewTagId && id !== autoTagId);
+    const tags = doc.tags.filter((id) => id !== triggerTagId);
     if (tags.length !== doc.tags.length) await client.patchDocument(doc.id, { tags });
   }
 }
