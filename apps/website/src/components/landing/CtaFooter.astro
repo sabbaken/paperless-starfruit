@@ -1,0 +1,131 @@
+---
+// Closing call-to-action + site footer.
+const year = 2026;
+---
+
+<section class="cta">
+  <div class="container cta__inner">
+    <img class="cta__logo" src="/paperless-starfruit.png" width="72" height="72" alt="" />
+    <h2 class="cta__title">Give your scans the metadata they deserve.</h2>
+    <p class="cta__lead">
+      Free, open source, and self-hosted. Bring the keys you already have and deploy in minutes.
+    </p>
+    <div class="cta__btns">
+      <a class="btn btn--gold" href="/docs/installation/">Deploy with Docker</a>
+      <a class="btn btn--ghost" href="/docs/">Read the docs</a>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="container foot__inner">
+    <div class="foot__brand">
+      <img src="/paperless-starfruit.png" width="26" height="26" alt="" />
+      <span>Paperless Starfruit</span>
+    </div>
+
+    <nav class="foot__links" aria-label="Footer">
+      <a href="/docs/">Documentation</a>
+      <a href="/docs/installation/">Install</a>
+      <a href="https://github.com/your-org/paperless-starfruit">GitHub</a>
+      <a href="https://docs.paperless-ngx.com/">paperless-ngx</a>
+    </nav>
+
+    <p class="foot__note">
+      An independent companion for paperless-ngx — not affiliated with the paperless-ngx
+      project. © {year}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .cta {
+    padding-block: clamp(72px, 11vw, 132px);
+    background:
+      radial-gradient(70% 130% at 50% 0%, rgba(235, 199, 36, 0.22), transparent 62%),
+      var(--paper);
+    border-top: 1px solid var(--line-soft);
+    text-align: center;
+  }
+  .cta__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .cta__logo {
+    border-radius: 16px;
+    margin-bottom: 22px;
+    filter: drop-shadow(0 14px 28px rgba(235, 199, 36, 0.4));
+  }
+  .cta__title {
+    font-size: clamp(2rem, 4.4vw, 3.2rem);
+    max-width: 18ch;
+  }
+  .cta__lead {
+    margin-top: 18px;
+    color: var(--ink-soft);
+    font-size: 1.1rem;
+    max-width: 48ch;
+  }
+  .cta__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 32px;
+  }
+
+  .foot {
+    border-top: 1px solid var(--line);
+    background: var(--ink);
+    color: var(--paper);
+    padding-block: 40px;
+  }
+  .foot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px 32px;
+  }
+  .foot__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .foot__brand img {
+    border-radius: 6px;
+  }
+  .foot__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    font-size: 0.92rem;
+  }
+  .foot__links a {
+    color: color-mix(in srgb, var(--paper) 78%, transparent);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .foot__links a:hover {
+    color: var(--gold);
+  }
+  .foot__note {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: color-mix(in srgb, var(--paper) 50%, transparent);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 18px;
+  }
+
+  @media (min-width: 720px) {
+    .foot__note {
+      margin-left: auto;
+      width: auto;
+      border-top: 0;
+      padding-top: 0;
+    }
+  }
+</style>

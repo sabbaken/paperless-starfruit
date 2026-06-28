@@ -1,0 +1,98 @@
+---
+// "What it is" — sets the side-car mental model before the detailed pipeline.
+---
+
+<section class="sidecar section" id="sidecar">
+  <div class="container">
+    <p class="eyebrow">How it fits</p>
+    <h2 class="section-title sidecar__title">
+      It doesn&rsquo;t replace paperless-ngx.<br />It works for it.
+    </h2>
+    <p class="lead">
+      Run it as a second container beside your stack. It talks to paperless over the same
+      REST API you already use — reading the documents you tag, writing back metadata, and
+      removing the tag when it&rsquo;s done. Nothing else in your archive changes.
+    </p>
+
+    <ul class="principles">
+      <li class="principles__item">
+        <span class="principles__k">beside, not instead</span>
+        <p>
+          A separate container that speaks paperless&rsquo;s API. Your library, tags and
+          workflow stay exactly as they are.
+        </p>
+      </li>
+      <li class="principles__item">
+        <span class="principles__k">one tag, in your hands</span>
+        <p>
+          Tag a document <code>psf-process</code> and it gets picked up. Re-tag to reprocess.
+          Leave it untagged and it&rsquo;s never touched.
+        </p>
+      </li>
+      <li class="principles__item">
+        <span class="principles__k">your call to apply</span>
+        <p>
+          Write changes straight back, or hold every suggestion in a review queue until you
+          approve it — a single setting.
+        </p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  .sidecar {
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--paper-2);
+  }
+
+  .sidecar__title {
+    max-width: 22ch;
+  }
+
+  .principles {
+    list-style: none;
+    margin: clamp(40px, 6vw, 64px) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 28px;
+  }
+
+  .principles__item {
+    padding-top: 18px;
+    border-top: 2px solid var(--ink);
+  }
+
+  .principles__k {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--rind-deep);
+  }
+
+  .principles__item p {
+    margin-top: 12px;
+    color: var(--ink-soft);
+    font-size: 1rem;
+  }
+
+  .principles code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--gold-tint);
+    border: 1px solid var(--gold-soft);
+    color: var(--gold-deep);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+
+  @media (min-width: 760px) {
+    .principles {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+  }
+</style>

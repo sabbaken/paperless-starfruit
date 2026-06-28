@@ -1,0 +1,140 @@
+---
+// The processing pipeline — a genuine ordered sequence, hence the numbering.
+const steps = [
+  {
+    t: 'You tag it',
+    d: 'Add the <code>psf-process</code> tag to any document in paperless-ngx. That single tag is the only trigger.',
+    note: 'manual or a paperless rule',
+  },
+  {
+    t: 'The poller picks it up',
+    d: 'A lightweight loop checks paperless on an interval you set and queues one job per document — never a pile-up.',
+    note: 'every 60s · floored at 15s',
+  },
+  {
+    t: 'OCR, if you want it',
+    d: 'Re-read the original with your OCR model and write the text back to paperless. Skip it and the existing Tesseract text is reused — free.',
+    note: 'optional · page-capped',
+  },
+  {
+    t: 'Extract the metadata',
+    d: 'One language-model call returns a title, tags, correspondent and date, validated against a strict schema before anything is trusted.',
+    note: 'title · tags · correspondent · date',
+  },
+  {
+    t: 'Reconcile with your library',
+    d: 'Suggested tags and correspondents are matched to what already exists. New ones are created only when you allow it.',
+    note: 'respects your blacklist',
+  },
+  {
+    t: 'Apply — or hand it to you',
+    d: 'Auto-apply writes the changes and removes the trigger tag. Otherwise it waits in the review queue for your approval.',
+    note: 'auto-apply or review',
+  },
+];
+---
+
+<section class="pipe section" id="pipeline">
+  <div class="container">
+    <p class="eyebrow">The pipeline</p>
+    <h2 class="section-title">From a tag to a tidy document, in six steps.</h2>
+    <p class="lead">
+      Every document follows the same path. Re-tag any time to run it again; identical
+      content with the same models is skipped, so a re-run costs nothing.
+    </p>
+
+    <ol class="steps">
+      {
+        steps.map((s, i) => (
+          <li class="step">
+            <span class="step__n">{String(i + 1).padStart(2, '0')}</span>
+            <div class="step__body">
+              <h3 class="step__t">{s.t}</h3>
+              <p class="step__d" set:html={s.d} />
+              <span class="step__note">{s.note}</span>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .steps {
+    list-style: none;
+    margin: clamp(44px, 6vw, 68px) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    counter-reset: step;
+    position: relative;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 22px;
+    padding: 26px 0;
+    border-top: 1px solid var(--line);
+    position: relative;
+  }
+  .step:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .step__n {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--gold-deep);
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    background: var(--gold-tint);
+    align-self: start;
+  }
+
+  .step__t {
+    font-size: 1.22rem;
+    letter-spacing: -0.015em;
+  }
+  .step__d {
+    margin-top: 8px;
+    color: var(--ink-soft);
+    font-size: 1rem;
+    max-width: 60ch;
+  }
+  .step__d :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--gold-tint);
+    border: 1px solid var(--gold-soft);
+    color: var(--gold-deep);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+  .step__note {
+    display: inline-block;
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--rind);
+  }
+  .step__note::before {
+    content: '↳ ';
+    opacity: 0.6;
+  }
+
+  @media (min-width: 820px) {
+    .step {
+      grid-template-columns: 96px 1fr;
+      gap: 32px;
+      padding: 30px 0;
+    }
+  }
+</style>
