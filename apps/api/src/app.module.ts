@@ -1,6 +1,8 @@
+import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { DbModule } from './db/db.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { AuthModule } from './auth/auth.module';
@@ -23,6 +25,15 @@ import { HealthController } from './health.controller';
     // .env (where .env.example lives) to avoid a confusing missing-key error.
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', '../../.env'] }),
     ScheduleModule.forRoot(),
+    // Serve the built React SPA from the same single process (no nginx). In the
+    // container apps/web/dist sits beside apps/api/dist, so this path resolves
+    // from the compiled app.module.js both there and in the dev build output.
+    // `/api/*` is excluded so unknown API paths still 404 as JSON, while every
+    // other path falls back to index.html for client-side routing.
+    ServeStaticModule.forRoot({
+      rootPath: resolve(__dirname, '../../web/dist'),
+      exclude: ['/api/{*path}'],
+    }),
     DbModule,
     CryptoModule,
     AuthModule,

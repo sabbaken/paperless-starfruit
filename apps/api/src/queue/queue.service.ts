@@ -117,6 +117,22 @@ export class QueueService {
     return recovered.length;
   }
 
+  /**
+   * Manually un-stick a terminally-failed document (the dashboard "Retry"
+   * action). Deletes the document's `failed` rows — the rows `hasTerminalFailure`
+   * keys on, so the poller stops skipping it — then enqueues a fresh job. It is
+   * per-DOCUMENT, not per-row: leaving any failed row for the doc would keep the
+   * block in place. The trigger tag is still on the doc in paperless, so the
+   * fresh job reprocesses it. Returns true if a new job was enqueued.
+   */
+  retryDocument(documentId: number): boolean {
+    this.db
+      .delete(job)
+      .where(and(eq(job.documentId, documentId), eq(job.status, JOB_STATUS.FAILED)))
+      .run();
+    return this.enqueue(documentId);
+  }
+
   /** Has this document already failed terminally (attempts exhausted)? */
   hasTerminalFailure(documentId: number): boolean {
     const rows = this.db

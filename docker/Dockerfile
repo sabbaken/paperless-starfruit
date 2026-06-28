@@ -24,5 +24,10 @@ ENV DATABASE_PATH=/data/app.db
 COPY --from=build /app /app
 EXPOSE 3000
 VOLUME ["/data"]
-# Run migrations, then start the single API+poller+worker process.
-CMD ["sh", "-c", "node apps/api/node_modules/.bin/tsx apps/api/src/db/migrate.ts && node apps/api/dist/main.js"]
+# Liveness probe. The app runs under the global 'api' prefix, so health is at
+# /api/health; node:22 ships a global fetch, so no curl/wget needed.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+# Start the single API + poller + worker process. Migrations are applied on boot
+# by DbModule (idempotent, path-correct), so there's no separate migrate step.
+CMD ["node", "apps/api/dist/main.js"]

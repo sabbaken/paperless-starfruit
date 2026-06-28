@@ -100,12 +100,10 @@ export class ReviewService {
     const client = this.requireClient();
     await this.applyApproval(client, row, payload);
     this.markStatus(id, REVIEW_STATUS.APPROVED);
-    this.audit.record({
-      jobId: row.jobId,
-      documentId: row.documentId,
-      decision: 'approved',
-      result: payload,
-    });
+    // No prompt/output here: the LLM run was already audited as 'review-queued'
+    // for this doc. Recording the approval payload too would be unreachable in the
+    // history UI (hasDetail keys on prompt/output) and inconsistent with bulkApprove.
+    this.audit.record({ jobId: row.jobId, documentId: row.documentId, decision: 'approved' });
   }
 
   async reject(id: number): Promise<void> {

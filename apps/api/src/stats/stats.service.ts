@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { desc, eq } from 'drizzle-orm';
-import { REVIEW_STATUS, type JobSummary, type Stats } from '@paperless-starfruit/shared';
+import { JOB_STATUS, REVIEW_STATUS, type JobSummary, type Stats } from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { job, reviewItem, type Job } from '../db/schema';
@@ -16,10 +16,20 @@ export class StatsService {
     const jobs = this.db.select().from(job).all();
     const queue = { queued: 0, running: 0, done: 0, failed: 0 };
     let tokenSpend = 0;
+    // Throughput = jobs completed in the last 24h, an at-a-glance "is it working?"
+    // gauge that doesn't grow unbounded the way the lifetime `done` count does.
+    const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    let throughput = 0;
     for (const j of jobs) {
       if (j.status in queue) queue[j.status as keyof typeof queue] += 1;
       tokenSpend += j.cost ?? 0;
+      if (j.status === JOB_STATUS.DONE && j.updatedAt.getTime() >= dayAgo) throughput += 1;
     }
+
+    // Error rate over *finished* jobs only (done + failed); queued/running aren't
+    // outcomes yet. 0 when nothing has finished, so the card never shows NaN.
+    const finished = queue.done + queue.failed;
+    const errorRate = finished > 0 ? queue.failed / finished : 0;
 
     const pendingReview = this.db
       .select({ id: reviewItem.id })
@@ -35,7 +45,7 @@ export class StatsService {
       .all()
       .map(toSummary);
 
-    return { queue, pendingReview, tokenSpend, recentJobs };
+    return { queue, pendingReview, tokenSpend, throughput, errorRate, recentJobs };
   }
 }
 

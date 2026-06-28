@@ -1,0 +1,27 @@
+# The build stage runs `pnpm install` from the lockfile and `pnpm run build`,
+# so host artifacts must not bleed into the image: node_modules would clobber
+# the freshly-installed (store-linked) tree, and a host dist/.db/.env could ship
+# stale code or secrets. Keep the build context to source + manifests only.
+**/node_modules
+**/dist
+**/.turbo
+.turbo
+.git
+.github
+.idea
+.vscode
+
+# Local data and secrets — never bake these into the image.
+**/*.db
+**/*.db-shm
+**/*.db-wal
+data
+**/data
+.env
+.env.*
+!.env.example
+
+# Dev-only paperless ingest folder + scratch.
+docker/paperless-consume
+tmp
+*.log
