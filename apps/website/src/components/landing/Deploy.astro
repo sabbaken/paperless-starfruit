@@ -155,4 +155,13 @@ const points = [
       gap: 22px;
     }
   }
+
+  /* shrink the terminal type on small screens so more of each command fits */
+  @media (max-width: 480px) {
+    .term__body {
+      font-size: 11px;
+      line-height: 1.7;
+      padding: 14px 14px 16px;
+    }
+  }
 </style>
