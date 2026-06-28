@@ -1,0 +1,100 @@
+---
+// Features — a plain enumeration of what the product does.
+const features = [
+  {
+    t: 'Better OCR',
+    d: 'Re-read scans with a vision model when paperless’s own text falls short.',
+    icon: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8M7 12h6M7 16h4"/>',
+  },
+  {
+    t: 'Automatic metadata',
+    d: 'A clean title, tags, correspondent and date for every document.',
+    icon: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.2"/>',
+  },
+  {
+    t: 'Review or auto-apply',
+    d: 'Approve, edit or reject each suggestion — or write it straight back.',
+    icon: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  },
+  {
+    t: 'Prompts you control',
+    d: 'Edit what each model is asked, and test it on a real document first.',
+    icon: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+  },
+  {
+    t: 'Any provider',
+    d: 'Anthropic, OpenAI, Google, Mistral, or any local OpenAI-compatible model.',
+    icon: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+  },
+  {
+    t: 'Full history',
+    d: 'See the exact prompt sent and the model’s reply behind every run.',
+    icon: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  },
+];
+---
+
+<section class="features section" id="features">
+  <div class="container">
+    <p class="eyebrow">Features</p>
+    <h2 class="section-title">Everything it does.</h2>
+
+    <ul class="grid">
+      {
+        features.map((f) => (
+          <li class="feat">
+            <span class="feat__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={f.icon} />
+            </span>
+            <h3 class="feat__t">{f.t}</h3>
+            <p class="feat__d">{f.d}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .grid {
+    list-style: none;
+    margin: clamp(40px, 6vw, 60px) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 28px 32px;
+  }
+
+  .feat__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: var(--gold-tint);
+    border: 1px solid var(--gold-soft);
+    color: var(--gold-deep);
+  }
+
+  .feat__t {
+    font-size: 1.12rem;
+    margin-top: 16px;
+    letter-spacing: -0.015em;
+  }
+  .feat__d {
+    margin-top: 7px;
+    color: var(--ink-soft);
+    font-size: 0.97rem;
+    max-width: 36ch;
+  }
+
+  @media (min-width: 560px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (min-width: 920px) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
