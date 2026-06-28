@@ -31,6 +31,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
+import { UpdateNotice } from '@/components/update-notice';
 import type { NavItem } from '@/types/nav';
 
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
@@ -142,6 +143,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <span className="truncate group-data-[collapsible=icon]:hidden">{baseUrl}</span>
             </div>
           )}
+          <UpdateNotice />
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Support on Ko-fi">

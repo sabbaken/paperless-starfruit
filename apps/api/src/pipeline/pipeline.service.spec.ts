@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS: Settings = {
   llmModel: 'claude-haiku-4-5',
   ocrProviderId: null,
   ocrModel: null,
+  checkForUpdates: true,
 };
 
 const DEFAULT_DOC: PaperlessDocument = {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Loader2, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, SearchX } from 'lucide-react';
 import {
   AUDIT_DECISIONS,
   type AuditEntryDetail,
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 
 const PAGE_SIZE = 25;
@@ -98,13 +99,19 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
       {log.isLoading ? (
         <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
       ) : items.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No matching runs. Each time a document tagged{' '}
-            <code className="font-mono">psf-process</code> is processed, the prompt sent to the
-            model and its full response are recorded here for debugging.
-          </CardContent>
-        </Card>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <SearchX />
+            </EmptyMedia>
+            <EmptyTitle>No matching runs</EmptyTitle>
+            <EmptyDescription>
+              Each time a document tagged <code className="font-mono">psf-process</code> is
+              processed, the prompt sent to the model and its full response are recorded here for
+              debugging.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <>
           <ul className="divide-y rounded-lg border bg-card">

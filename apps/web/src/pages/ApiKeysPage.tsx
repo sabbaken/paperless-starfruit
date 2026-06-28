@@ -13,7 +13,7 @@ import {useCreateProvider, useDeleteProvider, useProviders, useTestProvider, use
 import {cn} from '@/lib/utils';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {PageSection} from '@/components/ui/page-section';
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from '@/components/ui/dialog';
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from '@/components/ui/empty';
 import {Input} from '@/components/ui/input';
@@ -41,102 +41,98 @@ export function ApiKeysPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Cloud providers</CardTitle>
-          <CardDescription>
-            Keys are encrypted at rest and never returned to the browser.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="divide-y">
-            {CLOUD_PROVIDER_KINDS.map((kind) => {
-              const cred = cloudByKind.get(kind);
-              const meta = PROVIDER_KIND_META[kind];
-              return (
-                <li key={kind} className="flex items-center gap-3 py-3">
-                  <KeyRound className="size-4 shrink-0 text-muted-foreground"/>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{meta.label}</span>
-                      {cred && (
-                        <Badge variant="secondary" className="gap-1">
-                          <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-500"/>
-                          Connected
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+      <PageSection
+        title="Cloud providers"
+        description="Keys are encrypted at rest and never returned to the browser."
+      >
+        <ul className="divide-y">
+          {CLOUD_PROVIDER_KINDS.map((kind) => {
+            const cred = cloudByKind.get(kind);
+            const meta = PROVIDER_KIND_META[kind];
+            return (
+              <li key={kind} className="flex items-center gap-3 py-3">
+                <KeyRound className="size-4 shrink-0 text-muted-foreground"/>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{meta.label}</span>
+                    {cred && (
+                      <Badge variant="secondary" className="gap-1">
+                        <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-500"/>
+                        Connected
+                      </Badge>
+                    )}
                   </div>
-                  {cred ? (
-                    <RowActions
-                      onEdit={() => setForm({mode: 'edit', cred})}
-                      providerId={cred.id}
-                    />
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => setForm({mode: 'create', kind})}>
-                      <Plus className="size-4"/>
-                      Add key
-                    </Button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </CardContent>
-      </Card>
+                  <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+                </div>
+                {cred ? (
+                  <RowActions
+                    onEdit={() => setForm({mode: 'edit', cred})}
+                    providerId={cred.id}
+                  />
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => setForm({mode: 'create', kind})}>
+                    <Plus className="size-4"/>
+                    Add key
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </PageSection>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Local &amp; OpenAI-compatible</CardTitle>
-          {localCreds.length !== 0 && <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setForm({mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE})}
-          >
-            <Plus className="size-4"/>
-            Add endpoint
-          </Button>}
-        </CardHeader>
-        <CardContent>
-          {localCreds.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <Server />
-                </EmptyMedia>
-                <EmptyTitle>No local endpoints</EmptyTitle>
-                <EmptyDescription>
-                  Add Ollama, LM Studio, vLLM or any OpenAI-compatible server.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setForm({mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE})}
-                >
-                  <Plus className="size-4" />
-                  Add endpoint
-                </Button>
-              </EmptyContent>
-            </Empty>
-          ) : (
-            <ul className="divide-y">
-              {localCreds.map((cred) => (
-                <li key={cred.id} className="flex items-center gap-3 py-3">
-                  <Server className="size-4 shrink-0 text-muted-foreground"/>
-                  <div className="min-w-0 flex-1">
-                    <span className="font-medium">{cred.name}</span>
-                    <p className="truncate font-mono text-xs text-muted-foreground">{cred.baseUrl}</p>
-                  </div>
-                  <RowActions onEdit={() => setForm({mode: 'edit', cred})} providerId={cred.id}/>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <PageSection
+        title="Local & OpenAI-compatible"
+        action={
+          localCreds.length !== 0 ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setForm({mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE})}
+            >
+              <Plus className="size-4"/>
+              Add endpoint
+            </Button>
+          ) : undefined
+        }
+      >
+        {localCreds.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Server />
+              </EmptyMedia>
+              <EmptyTitle>No local endpoints</EmptyTitle>
+              <EmptyDescription>
+                Add Ollama, LM Studio, vLLM or any OpenAI-compatible server.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setForm({mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE})}
+              >
+                <Plus className="size-4" />
+                Add endpoint
+              </Button>
+            </EmptyContent>
+          </Empty>
+        ) : (
+          <ul className="divide-y">
+            {localCreds.map((cred) => (
+              <li key={cred.id} className="flex items-center gap-3 py-3">
+                <Server className="size-4 shrink-0 text-muted-foreground"/>
+                <div className="min-w-0 flex-1">
+                  <span className="font-medium">{cred.name}</span>
+                  <p className="truncate font-mono text-xs text-muted-foreground">{cred.baseUrl}</p>
+                </div>
+                <RowActions onEdit={() => setForm({mode: 'edit', cred})} providerId={cred.id}/>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PageSection>
 
       <Dialog open={!!form} onOpenChange={(open) => !open && setForm(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

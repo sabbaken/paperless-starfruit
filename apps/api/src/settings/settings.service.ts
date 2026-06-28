@@ -79,5 +79,6 @@ function toSettings(row: SettingsRow): Settings {
     llmModel: row.llmModel ?? null,
     ocrProviderId: row.ocrProviderId ?? null,
     ocrModel: row.ocrModel ?? null,
+    checkForUpdates: row.checkForUpdates,
   };
 }
