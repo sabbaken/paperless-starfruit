@@ -1,22 +1,47 @@
 ---
-// Marketing landing page. Full content lands in the next stage; this is the
-// scaffold that proves the custom-root + Starlight-under-/docs routing works.
-const title = 'Paperless Starfruit';
+import Landing from '../layouts/Landing.astro';
+import Nav from '../components/landing/Nav.astro';
+import Hero from '../components/landing/Hero.astro';
+import SideCar from '../components/landing/SideCar.astro';
+import Byok from '../components/landing/Byok.astro';
+import Pipeline from '../components/landing/Pipeline.astro';
+import Showcase from '../components/landing/Showcase.astro';
+import Deploy from '../components/landing/Deploy.astro';
+import CtaFooter from '../components/landing/CtaFooter.astro';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <title>{title} — AI metadata & OCR for paperless-ngx</title>
-  </head>
-  <body>
-    <main style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 4rem auto; padding: 0 1rem;">
-      <h1>{title}</h1>
-      <p>A self-hosted, bring-your-own-keys AI companion for paperless-ngx.</p>
-      <p><a href="/docs/">Read the docs →</a></p>
-    </main>
-  </body>
-</html>
+<Landing>
+  <Nav />
+  <main>
+    <Hero />
+    <SideCar />
+    <Byok />
+    <Pipeline />
+    <Showcase />
+    <Deploy />
+    <CtaFooter />
+  </main>
+</Landing>
+
+<script>
+  // Progressive scroll-reveal: content is fully visible without JS; this only
+  // adds the entrance transition for `.reveal` elements when they scroll in.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const els = document.querySelectorAll<HTMLElement>('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach((el) => el.classList.add('is-in'));
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-in');
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+    );
+    els.forEach((el) => io.observe(el));
+  }
+</script>

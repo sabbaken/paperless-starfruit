@@ -1,0 +1,120 @@
+---
+// Sticky top navigation for the landing page.
+---
+
+<header class="nav">
+  <div class="container nav__inner">
+    <a class="nav__brand" href="/" aria-label="Paperless Starfruit — home">
+      <img src="/paperless-starfruit.png" width="32" height="32" alt="" />
+      <span>Paperless Starfruit</span>
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <a href="#pipeline">How it works</a>
+      <a href="#keys">Your keys</a>
+      <a href="#app">The app</a>
+      <a href="/docs/">Docs</a>
+    </nav>
+
+    <div class="nav__actions">
+      <a
+        class="nav__github"
+        href="https://github.com/your-org/paperless-starfruit"
+        aria-label="View source on GitHub"
+      >
+        <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" fill="currentColor">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+          ></path>
+        </svg>
+      </a>
+      <a class="btn btn--gold nav__cta" href="/docs/installation/">Deploy</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--paper) 82%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 64px;
+  }
+
+  .nav__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    font-size: 1.02rem;
+    margin-right: auto;
+  }
+
+  .nav__brand img {
+    border-radius: 7px;
+  }
+
+  .nav__links {
+    display: none;
+    gap: 28px;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+
+  .nav__links a {
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .nav__links a:hover {
+    color: var(--ink);
+  }
+
+  .nav__actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .nav__github {
+    color: var(--ink-soft);
+    display: inline-flex;
+    transition: color 0.15s ease;
+  }
+
+  .nav__github:hover {
+    color: var(--ink);
+  }
+
+  .nav__cta {
+    padding: 9px 18px;
+    font-size: 0.92rem;
+  }
+
+  @media (min-width: 880px) {
+    .nav__links {
+      display: flex;
+      margin-right: 8px;
+    }
+  }
+
+  @media (max-width: 540px) {
+    .nav__brand span {
+      display: none;
+    }
+    .nav__brand {
+      margin-right: auto;
+    }
+  }
+</style>

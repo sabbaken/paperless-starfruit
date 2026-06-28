@@ -1,0 +1,158 @@
+---
+// Deploy — the real one-container Docker Compose flow + the self-hosting points.
+const points = [
+  { k: 'one container', t: 'A single Node process and a mounted volume. No Postgres, no Redis, no message broker to babysit.' },
+  { k: 'your data stays put', t: 'Config, prompts, queue and history live in one SQLite file at /data/app.db. Back it up and you have everything.' },
+  { k: 'behind your proxy', t: 'Auth is a bearer token, not a cookie. Put Caddy, Traefik or nginx in front of port 3000 and you are set.' },
+  { k: 'first run', t: 'Open the UI, create the single admin account, and registration closes itself. No default password ever ships.' },
+];
+---
+
+<section class="deploy section" id="deploy">
+  <div class="container">
+    <p class="eyebrow">Self-hosting</p>
+    <h2 class="section-title">Up and running in two commands.</h2>
+
+    <div class="deploy__grid">
+      <div class="term card" role="img" aria-label="Terminal: generate ENCRYPTION_KEY, then docker compose up">
+        <div class="term__bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="term__title">bash</span>
+        </div>
+        <pre class="term__body"><code><span class="c"># the one required secret — keep it stable</span>
+<span class="p">$</span> export ENCRYPTION_KEY=<span class="s">"$(node -e \
+    "console.log(require('crypto')\
+    .randomBytes(32).toString('base64'))")"</span>
+
+<span class="c"># build &amp; start — one container</span>
+<span class="p">$</span> docker compose -f docker/docker-compose.yml \
+    up -d --build
+
+<span class="c"># → http://localhost:3000  (API + web UI, one port)</span></code></pre>
+      </div>
+
+      <ul class="dpoints">
+        {
+          points.map((p) => (
+            <li class="dpoint">
+              <span class="dpoint__k">{p.k}</span>
+              <p>{p.t}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <p class="deploy__more">
+      Full walkthrough — volumes, joining your paperless network, environment variables —
+      in the <a href="/docs/installation/">installation guide</a>.
+    </p>
+  </div>
+</section>
+
+<style>
+  .deploy {
+    border-top: 1px solid var(--line-soft);
+    background: var(--paper-2);
+  }
+
+  .deploy__grid {
+    margin-top: clamp(36px, 5vw, 56px);
+    display: grid;
+    gap: clamp(26px, 4vw, 44px);
+    align-items: start;
+  }
+
+  .term {
+    overflow: hidden;
+    background: #1b1c14;
+    border-color: #2c2d22;
+  }
+  .term__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 15px;
+    background: #24251b;
+    border-bottom: 1px solid #2c2d22;
+  }
+  .term__bar .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #3a3b2e;
+  }
+  .term__title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #7c7d6a;
+    margin-left: 10px;
+  }
+  .term__body {
+    margin: 0;
+    padding: 18px 18px 20px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.85;
+    color: #e7e6d6;
+  }
+  .term__body code {
+    font-family: inherit;
+  }
+  .term__body .c {
+    color: #7f8a55;
+  }
+  .term__body .p {
+    color: var(--gold);
+    user-select: none;
+  }
+  .term__body .s {
+    color: #d6c98f;
+  }
+
+  .dpoints {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 20px;
+  }
+  .dpoint {
+    padding-left: 18px;
+    border-left: 2px solid var(--rind);
+  }
+  .dpoint__k {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .dpoint p {
+    margin-top: 6px;
+    color: var(--ink-soft);
+    font-size: 0.96rem;
+  }
+
+  .deploy__more {
+    margin-top: clamp(28px, 4vw, 40px);
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+  }
+  .deploy__more a {
+    color: var(--gold-deep);
+    font-weight: 600;
+    text-underline-offset: 3px;
+  }
+
+  @media (min-width: 880px) {
+    .deploy__grid {
+      grid-template-columns: 1.25fr 1fr;
+    }
+    .dpoints {
+      gap: 22px;
+    }
+  }
+</style>
