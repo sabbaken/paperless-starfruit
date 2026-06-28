@@ -1,17 +1,10 @@
 ---
-// Bring your own keys — the privacy/control pitch + the supported providers.
+// Bring your own keys — the supported providers, kept brief.
 const cloud = [
   { name: 'Anthropic', icon: '/icons/providers/anthropic.png', models: 'Claude Opus 4.5 · Sonnet 4.6 · Haiku 4.5' },
   { name: 'OpenAI', icon: '/icons/providers/openai.png', models: 'GPT-4.1 · GPT-4o · o4-mini' },
   { name: 'Google', icon: '/icons/providers/google.png', models: 'Gemini 2.5 Pro · 2.5 Flash' },
   { name: 'Mistral', icon: '/icons/providers/mistral.png', models: 'Mistral Large · Pixtral · Mistral OCR' },
-];
-
-const control = [
-  { k: 'encrypted at rest', t: 'Keys are sealed with AES-GCM under a secret only your server holds.' },
-  { k: 'there is no us', t: 'Requests go straight from your container to the provider you chose. Nothing routes through a vendor.' },
-  { k: 'masked in the ui', t: 'A saved key is never returned to the browser again — not even to you.' },
-  { k: 'right model per job', t: 'A cheap model for OCR, a sharp one for extraction — or the same for both. Your choice.' },
 ];
 ---
 
@@ -19,59 +12,37 @@ const control = [
   <div class="container">
     <p class="eyebrow">Bring your own keys</p>
     <h2 class="section-title">Your providers. Your bill. Your data.</h2>
-    <p class="lead">
-      Paperless Starfruit ships with no AI built in and no account to create. You connect
-      the providers you already trust — or a model running on your own hardware — and the
-      keys never leave your server.
-    </p>
 
-    <div class="keys__grid">
-      <div class="providers">
-        {
-          cloud.map((p) => (
-            <div class="provider">
-              <img src={p.icon} width="28" height="28" alt={`${p.name} logo`} loading="lazy" />
-              <div class="provider__text">
-                <span class="provider__name">{p.name}</span>
-                <span class="provider__models">{p.models}</span>
-              </div>
+    <div class="providers">
+      {
+        cloud.map((p) => (
+          <div class="provider">
+            <img src={p.icon} width="28" height="28" alt={`${p.name} logo`} loading="lazy" />
+            <div class="provider__text">
+              <span class="provider__name">{p.name}</span>
+              <span class="provider__models">{p.models}</span>
             </div>
-          ))
-        }
-        <div class="provider provider--local">
-          <span class="provider__glyph" aria-hidden="true">&gt;_</span>
-          <div class="provider__text">
-            <span class="provider__name">Anything OpenAI-compatible</span>
-            <span class="provider__models">Ollama · LM Studio · vLLM · OpenRouter — local or remote</span>
           </div>
+        ))
+      }
+      <div class="provider provider--local">
+        <span class="provider__glyph" aria-hidden="true">&gt;_</span>
+        <div class="provider__text">
+          <span class="provider__name">Anything OpenAI-compatible</span>
+          <span class="provider__models">Ollama · LM Studio · vLLM · OpenRouter — local or remote</span>
         </div>
       </div>
-
-      <ul class="control">
-        {
-          control.map((c) => (
-            <li class="control__item">
-              <span class="control__k">{c.k}</span>
-              <p>{c.t}</p>
-            </li>
-          ))
-        }
-      </ul>
     </div>
+
+    <p class="keys__note">Encrypted at rest, and sent straight to the provider — never through us.</p>
   </div>
 </section>
 
 <style>
-  .keys__grid {
-    margin-top: clamp(40px, 6vw, 60px);
-    display: grid;
-    gap: clamp(28px, 4vw, 48px);
-  }
-
   .providers {
+    margin-top: clamp(36px, 5vw, 52px);
     display: grid;
     gap: 12px;
-    align-content: start;
   }
 
   .provider {
@@ -88,7 +59,7 @@ const control = [
       border-color 0.18s ease;
   }
   .provider:hover {
-    transform: translateX(4px);
+    transform: translateY(-3px);
     border-color: var(--gold-soft);
   }
 
@@ -132,40 +103,21 @@ const control = [
     background: var(--paper-2);
   }
 
-  .control {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 22px;
-    align-content: start;
-  }
-  .control__item {
-    padding-left: 18px;
-    border-left: 2px solid var(--gold);
-  }
-  .control__k {
+  .keys__note {
+    margin-top: 22px;
     font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-  .control__item p {
-    margin-top: 7px;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
     color: var(--ink-soft);
-    font-size: 0.97rem;
   }
 
-  @media (min-width: 860px) {
-    .keys__grid {
+  @media (min-width: 720px) {
+    .providers {
       grid-template-columns: 1fr 1fr;
-      align-items: start;
+      gap: 14px;
     }
-    .control {
-      grid-template-columns: 1fr 1fr;
-      gap: 28px 32px;
+    .provider--local {
+      grid-column: 1 / -1;
     }
   }
 </style>

@@ -3,32 +3,32 @@
 const steps = [
   {
     t: 'You tag it',
-    d: 'Add the <code>psf-process</code> tag to any document in paperless-ngx. That single tag is the only trigger.',
+    d: 'Add <code>psf-process</code> to any document. That one tag is the only trigger.',
     note: 'manual or a paperless rule',
   },
   {
     t: 'The poller picks it up',
-    d: 'A lightweight loop checks paperless on an interval you set and queues one job per document — never a pile-up.',
+    d: 'A loop checks paperless on your interval and queues one job per document.',
     note: 'every 60s · floored at 15s',
   },
   {
     t: 'OCR, if you want it',
-    d: 'Re-read the original with your OCR model and write the text back to paperless. Skip it and the existing Tesseract text is reused — free.',
+    d: 'Re-read the original with your OCR model — or reuse paperless&rsquo;s text, free.',
     note: 'optional · page-capped',
   },
   {
     t: 'Extract the metadata',
-    d: 'One language-model call returns a title, tags, correspondent and date, validated against a strict schema before anything is trusted.',
+    d: 'One model call returns a title, tags, correspondent and date, checked against a schema.',
     note: 'title · tags · correspondent · date',
   },
   {
     t: 'Reconcile with your library',
-    d: 'Suggested tags and correspondents are matched to what already exists. New ones are created only when you allow it.',
+    d: 'Matched to your existing tags and correspondents; new ones only if you allow it.',
     note: 'respects your blacklist',
   },
   {
     t: 'Apply — or hand it to you',
-    d: 'Auto-apply writes the changes and removes the trigger tag. Otherwise it waits in the review queue for your approval.',
+    d: 'Auto-apply writes it back and drops the tag. Otherwise it waits in the review queue.',
     note: 'auto-apply or review',
   },
 ];
@@ -39,8 +39,8 @@ const steps = [
     <p class="eyebrow">The pipeline</p>
     <h2 class="section-title">From a tag to a tidy document, in six steps.</h2>
     <p class="lead">
-      Every document follows the same path. Re-tag any time to run it again; identical
-      content with the same models is skipped, so a re-run costs nothing.
+      Every document takes the same path. Re-tag to run it again — unchanged content is
+      skipped, so a re-run is free.
     </p>
 
     <ol class="steps">
