@@ -78,6 +78,13 @@
       "when": 1782232085892,
       "tag": "0010_flimsy_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1782756146801,
+      "tag": "0011_square_killer_shrike",
+      "breakpoints": true
     }
   ]
 }

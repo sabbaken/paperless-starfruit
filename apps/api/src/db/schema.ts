@@ -93,6 +93,10 @@ export const settings = sqliteTable('settings', {
   /** The credential + model used for OCR (consumed in M5); null until chosen. */
   ocrProviderId: integer('ocr_provider_id'),
   ocrModel: text('ocr_model'),
+  /** Opt-in (default on) check for a newer release; gates the sidebar update notice. */
+  checkForUpdates: integer('check_for_updates', { mode: 'boolean' })
+    .notNull()
+    .default(true),
 });
 
 /**

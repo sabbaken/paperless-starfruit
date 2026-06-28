@@ -26,13 +26,7 @@ import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { toastSave } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { PageSection } from '@/components/ui/page-section';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -154,13 +148,9 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{prompt.label}</CardTitle>
-          <CardDescription>{prompt.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="space-y-8">
+      <PageSection title={prompt.label} description={prompt.description}>
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label>Variables</Label>
             <p className="text-xs text-muted-foreground">
@@ -217,8 +207,8 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </PageSection>
 
       <TestPanel promptKey={prompt.key} body={body} />
     </div>
@@ -241,15 +231,11 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Test on a document</CardTitle>
-        <CardDescription>
-          Runs the current prompt (including unsaved edits) against a real document using your
-          selected model.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <PageSection
+      title="Test on a document"
+      description="Runs the current prompt (including unsaved edits) against a real document using your selected model."
+    >
+      <div className="space-y-4">
         {docs.isError ? (
           <p className="text-sm text-muted-foreground">
             Connect your paperless instance and select a model in Settings → Processing to test
@@ -288,8 +274,8 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
         )}
 
         {test.data && <TestResult result={test.data} promptKey={promptKey} />}
-      </CardContent>
-    </Card>
+      </div>
+    </PageSection>
   );
 }
 

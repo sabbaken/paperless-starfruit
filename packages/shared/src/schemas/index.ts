@@ -7,3 +7,4 @@ export * from './models';
 export * from './prompts';
 export * from './review';
 export * from './stats';
+export * from './version';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Check, Loader2, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Check, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import type { ReviewDetail, ReviewItemView } from '@paperless-starfruit/shared';
 import {
   useApproveReview,
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -45,15 +46,18 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
 
   if (items.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Nothing to review</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          When a document tagged <code className="font-mono">psf-process</code> is processed, its
-          AI suggestions land here for your approval.
-        </CardContent>
-      </Card>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Inbox />
+          </EmptyMedia>
+          <EmptyTitle>Nothing to review</EmptyTitle>
+          <EmptyDescription>
+            When a document tagged <code className="font-mono">psf-process</code> is processed, its
+            AI suggestions land here for your approval.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 

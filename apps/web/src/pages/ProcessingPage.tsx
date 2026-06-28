@@ -9,13 +9,7 @@ import type {
 import { useProviders } from "@/api/providers";
 import { useSettings, useUpdateSettings } from "@/api/settings";
 import { ModelPicker } from "@/components/model-picker";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageSection } from "@/components/ui/page-section";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectRow } from "@/components/ui/select-row";
@@ -36,7 +30,7 @@ export function ProcessingPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <ModelsCard
         settings={settings.data}
         providers={providers.data ?? []}
@@ -80,14 +74,8 @@ function ModelsCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Models</CardTitle>
-        <CardDescription>
-          Choose which model handles extraction and OCR.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="divide-y">
+    <PageSection title="Models" description="Choose which model handles extraction and OCR.">
+      <div className="divide-y">
         <SelectRow
           icon={<ScanText className="size-4" />}
           label="OCR model"
@@ -102,7 +90,7 @@ function ModelsCard({
           value={describe(settings.llmProviderId, settings.llmModel)}
           onClick={() => setPicker("llm")}
         />
-      </CardContent>
+      </div>
 
       {picker && (
         <ModelPicker
@@ -121,7 +109,7 @@ function ModelsCard({
           }}
         />
       )}
-    </Card>
+    </PageSection>
   );
 }
 
@@ -155,14 +143,11 @@ function PipelineForm({ initial }: { initial: Settings }) {
   }, 600);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pipeline</CardTitle>
-        <CardDescription>
-          How each document flows through OCR, extraction and apply.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <PageSection
+      title="Pipeline"
+      description="How each document flows through OCR, extraction and apply."
+    >
+      <div className="space-y-6">
         <Section title="OCR">
           {!ocrConfigured && (
             <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -234,8 +219,8 @@ function PipelineForm({ initial }: { initial: Settings }) {
             }}
           />
         </Section>
-      </CardContent>
-    </Card>
+      </div>
+    </PageSection>
   );
 }
 
@@ -267,14 +252,11 @@ function GeneralForm({ initial }: { initial: Settings }) {
   }, 600);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>General</CardTitle>
-        <CardDescription>
-          Polling, output language and correspondent exclusions.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
+    <PageSection
+      title="General"
+      description="Polling, output language and correspondent exclusions."
+    >
+      <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="pollInterval">Poll interval (seconds)</Label>
@@ -320,12 +302,12 @@ function GeneralForm({ initial }: { initial: Settings }) {
             }}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </PageSection>
   );
 }
 
-/** A titled group of rows inside a card. */
+/** A titled group of rows within a settings section. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="space-y-4">

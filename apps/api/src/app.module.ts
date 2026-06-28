@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConnectionModule } from './connection/connection.module';
 import { ProvidersModule } from './providers/providers.module';
 import { SettingsModule } from './settings/settings.module';
+import { VersionModule } from './version/version.module';
 import { PromptsModule } from './prompts/prompts.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { AuditModule } from './audit/audit.module';
@@ -40,6 +41,7 @@ import { HealthController } from './health.controller';
     ConnectionModule,
     ProvidersModule,
     SettingsModule,
+    VersionModule,
     PromptsModule,
     TaxonomyModule,
     AuditModule,
