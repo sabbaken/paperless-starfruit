@@ -1,0 +1,60 @@
+---
+title: AI providers & keys
+description: Connect Anthropic, OpenAI, Google, Mistral or any OpenAI-compatible endpoint. Keys are encrypted at rest and never returned to the browser.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Paperless Starfruit bundles no AI of its own. On the **API Keys** screen you connect the
+providers you want to use, and the keys never leave your server.
+
+## Cloud providers
+
+Each cloud provider takes a single API key. Models come from a curated catalog.
+
+| Provider  | Kind        | Example models |
+|-----------|-------------|----------------|
+| Anthropic | `anthropic` | Claude Opus 4.5, Sonnet 4.6, Haiku 4.5 |
+| OpenAI    | `openai`    | GPT-4.1, GPT-4.1 mini, GPT-4o, GPT-4o mini, o4-mini |
+| Google    | `google`    | Gemini 2.5 Pro, 2.5 Flash, 2.0 Flash |
+| Mistral   | `mistral`   | Mistral Large, Mistral Small, Pixtral Large, Mistral OCR |
+
+To add one: pick the provider, paste its key, and hit **Test** — a probe call reports
+whether the provider is reachable and how long it took. A connected provider shows a green
+*Connected* badge; you can edit or remove it later.
+
+## Local & OpenAI-compatible
+
+For self-hosted or third-party gateways — **Ollama, LM Studio, vLLM, OpenRouter** — choose
+**OpenAI-compatible**. Here you:
+
+- give the endpoint a **name** (e.g. `Ollama (laptop)`),
+- set a **base URL** (e.g. `http://localhost:11434/v1`),
+- optionally add an **API key** (many local endpoints don't need one).
+
+Models for these endpoints are **discovered live** from the server rather than a fixed
+catalog. You can add as many local endpoints as you like.
+
+<Aside type="note" title="Vision support varies">
+OCR needs a vision-capable model. PDFs are sent as a file to providers that accept them
+(Anthropic, OpenAI, Google); generic OpenAI-compatible and Mistral endpoints take images.
+The model picker flags which catalog models are vision-capable.
+</Aside>
+
+## How keys are protected
+
+- **Encrypted at rest** with AES-GCM, using a key derived from `ENCRYPTION_KEY` that only
+  your server holds.
+- **Never returned to the browser.** Once saved, a key is masked — editing shows a
+  *“leave blank to keep current key”* placeholder rather than the value.
+- **No vendor in the middle.** Requests go straight from your container to the provider you
+  chose.
+
+## Picking models
+
+Which model handles each task is set on the **Processing** screen, not here:
+
+- a **language model** for extracting title/tags/correspondent/date, and
+- an optional **OCR model** for re-reading scans.
+
+They can be the same model or different ones. See [Processing & models →](/docs/processing/).

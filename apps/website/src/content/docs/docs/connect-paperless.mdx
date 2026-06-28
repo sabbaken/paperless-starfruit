@@ -1,0 +1,65 @@
+---
+title: Connect paperless
+description: Point Paperless Starfruit at your paperless-ngx instance with a least-privilege token, and learn how the trigger tag works.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Open the **Connection** screen (Settings → Connection) and link your paperless-ngx instance.
+
+<Steps>
+
+1. **Enter the base URL** of your paperless instance, e.g. `https://paperless.home.lan`.
+   If you run both in the same Docker network, use the service name instead of `localhost`
+   (see [Installation](/docs/installation/#running-alongside-paperless-ngx)).
+
+2. **Paste an API token.** In paperless, mint one under **Settings → My Profile →
+   API Auth Token**.
+
+3. **Test connection.** A read-only check confirms the URL and token, and reports the
+   server's API version and document count. Leave **API version** blank — it is
+   auto-detected.
+
+4. **Save.** The token is stored encrypted at rest and is never returned to the browser
+   again.
+
+</Steps>
+
+## Use a least-privilege user
+
+Prefer a **dedicated paperless user** over the superuser. Create a paperless account that
+can:
+
+- view and change documents, and
+- view and add tags and correspondents,
+
+then mint *that* user's token. Paperless Starfruit only ever reads documents you tag and
+writes back metadata — it needs nothing more.
+
+<Aside type="note" title="Why URLs aren't SSRF-restricted">
+This app must reach self-hosted and LAN addresses — paperless on a private IP, a local
+Ollama, and so on — so admin-entered URLs are intentionally not blocked from reaching
+internal hosts. The security model is *one trusted admin*: only the single admin you create
+can set these URLs.
+</Aside>
+
+## The trigger tag
+
+Processing is driven by a single tag: **`psf-process`**.
+
+- **Tag a document** `psf-process` (by hand, or with a paperless rule) and the poller picks
+  it up on its next cycle.
+- **Re-tag** a document to run it again — this is the explicit “process me” signal.
+- **Untagged** documents are never read or modified.
+
+When a document is processed and applied, the trigger tag is removed in the same update that
+writes the metadata, so it won't be picked up again unless you re-tag it.
+
+<Aside type="tip">
+Whether a processed document is written back automatically or held for your review is decided
+by the **Auto-apply** setting, not by the tag. See [Processing](/docs/processing/).
+</Aside>
+
+## Next
+
+[Add your AI providers and keys →](/docs/providers/)

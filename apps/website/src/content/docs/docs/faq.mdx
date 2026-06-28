@@ -1,0 +1,81 @@
+---
+title: FAQ & troubleshooting
+description: Common questions about costs, reprocessing, OCR, the encryption key, and resetting a lost admin password.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## I tagged a document but nothing happened
+
+Work through these:
+
+- Is the tag exactly **`psf-process`**? It's case-sensitive.
+- Is the [paperless connection](/docs/connect-paperless/) saved and testing green?
+- Have you selected a **language model** on the [Processing](/docs/processing/) screen?
+- Wait one poll interval (60s by default). Then check the **dashboard** — the job should
+  appear as queued, running, done or failed.
+- If it shows **failed**, open the error on the dashboard; use **Retry** after fixing the
+  cause.
+- If the document is large, it may have hit a [page cap](/docs/processing/#the-pipeline)
+  and been skipped on purpose.
+
+## How much will it cost?
+
+You pay your providers directly for the tokens (or pages, for Mistral OCR) each run uses.
+At a typical ~50 documents/week this is small, but you control it:
+
+- Leave **OCR off** to reuse paperless's free text and only pay for extraction.
+- Use a cheaper model for OCR than for extraction.
+- Set **page caps** so big files don't run expensive OCR — or aren't processed at all.
+
+The dashboard shows total tokens used, and every run's cost is in the
+**History** log.
+
+## Re-running a document costs nothing — why?
+
+If you re-tag a document and nothing relevant changed (same recognised text, same models),
+the [skip-if-identical guard](/docs/pipeline/#reprocessing) recognises the result would be
+identical and skips the extraction call. Change a model or re-OCR with a different provider
+to force a real re-run.
+
+## Should I turn OCR on?
+
+Only if paperless's built-in Tesseract OCR isn't good enough for your documents. Vision-model
+OCR can be markedly better on messy scans, but it's billed per token (or per page for Mistral
+OCR), whereas reusing paperless's text is free. Many people leave OCR off and only enable it
+for tricky documents.
+
+## Where is my data?
+
+Everything — config, prompts, the job queue, review items and audit history — is in a single
+SQLite file at `/data/app.db` on the `paperless_starfruit_data` volume. Back that volume up
+and you have a complete snapshot.
+
+## I lost the admin password
+
+There's no password reset in the UI. Because the instance is claimed by the **first admin**,
+an operator with server access can re-open first-run setup by removing the admin record from
+the database, then creating a new admin in the UI.
+
+<Aside type="danger" title="Back up first">
+This edits the database directly. Stop the container and copy `/data/app.db` before you
+touch it. Removing all rows from the `user` table re-opens the *“create admin”* card on next
+start; your paperless connection, keys, prompts and history are untouched.
+</Aside>
+
+## Can I rotate the encryption key?
+
+Avoid it. `ENCRYPTION_KEY` both encrypts stored credentials and signs admin sessions, so
+rotating it logs the admin out **and** makes every stored paperless/provider credential
+undecryptable — you'd have to re-enter them all. Treat it as a stable production secret.
+
+## Is it affiliated with paperless-ngx?
+
+No. Paperless Starfruit is an independent companion that talks to paperless-ngx over its
+public REST API. It is not part of, or endorsed by, the paperless-ngx project.
+
+## How do I debug a bad result?
+
+Open the **History** screen. Every run records the **fully-rendered prompt** that was sent
+and the **raw model response**, searchable — so you can see exactly why a title or tag came
+out the way it did, and adjust your [prompt](/docs/prompts/) accordingly.

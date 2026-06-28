@@ -1,0 +1,115 @@
+---
+title: Installation
+description: Deploy Paperless Starfruit as a single container with Docker Compose, set the one required secret, and create your admin account.
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Paperless Starfruit ships as **one container** — a Node process plus a mounted volume for
+its SQLite database. There is no Postgres, no Redis and no message broker.
+
+## Requirements
+
+- Docker with Compose v2 (`docker compose`).
+- A running [paperless-ngx](https://docs.paperless-ngx.com/) instance it can reach.
+- At least one AI provider key, or a local OpenAI-compatible model (you can add this later
+  from the UI).
+
+## Deploy
+
+<Steps>
+
+1. **Generate the one required secret.** `ENCRYPTION_KEY` encrypts your stored credentials
+   **and** signs admin sessions, so it must be set and kept stable.
+
+   ```bash
+   export ENCRYPTION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
+   ```
+
+2. **Build and start the container.**
+
+   ```bash
+   docker compose -f docker/docker-compose.yml up -d --build
+   ```
+
+3. **Open the UI** at `http://localhost:3000`. The container serves both the API and the
+   web UI on the same port.
+
+4. **Create your admin.** On first run the UI shows a *“create admin”* card. Set a username
+   and password — registration then closes itself, and only login works from then on. There
+   is no default password.
+
+</Steps>
+
+<Aside type="caution" title="Keep ENCRYPTION_KEY stable">
+Rotating `ENCRYPTION_KEY` logs the admin out **and** makes every stored paperless/provider
+credential undecryptable — you would have to re-enter them all. Store it like any other
+production secret.
+</Aside>
+
+## Environment variables
+
+These are the *only* runtime variables. Everything else lives in the UI.
+
+| Variable         | Required | Default        | Purpose |
+|------------------|----------|----------------|---------|
+| `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials and signs admin sessions. |
+| `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path. Its directory is created if missing. |
+| `PORT`           | no       | `3000`         | HTTP port for the API + web UI. |
+| `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down. |
+
+## Persistence
+
+The SQLite database holds **everything**: your config, prompts, the job queue, review items
+and audit history. It lives at `/data/app.db` on the named volume `paperless_starfruit_data`.
+
+```yaml
+volumes:
+  - paperless_starfruit_data:/data
+```
+
+Back that volume up and you have a complete snapshot of your setup.
+
+## Running alongside paperless-ngx
+
+Your container needs to reach paperless over the network. There are two common setups:
+
+<Tabs>
+  <TabItem label="Separate stacks">
+    If paperless is reachable on your LAN or a published port, just enter that URL in the
+    UI's Connection screen — for example `http://192.168.1.10:8000` or
+    `https://paperless.home.lan`.
+  </TabItem>
+  <TabItem label="Same Docker network">
+    To talk to paperless by its service name, attach this container to that stack's network.
+    Find it with `docker network ls` (usually `<paperless-project>_default`), then:
+
+    ```yaml
+    services:
+      paperless-starfruit:
+        networks: [default, paperless]
+    networks:
+      paperless:
+        external: true
+        name: paperless_default   # your paperless stack's network
+    ```
+
+    Then set the paperless URL to the in-network service name, e.g. `http://webserver:8000`
+    — **not** `http://localhost:8000` (localhost is this container).
+  </TabItem>
+</Tabs>
+
+## Behind a reverse proxy
+
+Auth is a **bearer token, not a cookie**, so no extra CORS or cookie configuration is needed.
+Put your TLS terminator (Caddy, Traefik, nginx) in front of port 3000. Set `CORS_ORIGIN`
+only if you want to restrict which origins may call the API.
+
+## Health
+
+The container exposes `GET /api/health` (used by the Docker `HEALTHCHECK`). Database
+migrations apply automatically on boot, so there is no separate migrate step for a normal run.
+
+## Next
+
+With the container up, [connect your paperless instance →](/docs/connect-paperless/)

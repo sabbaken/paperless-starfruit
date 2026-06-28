@@ -1,0 +1,72 @@
+---
+title: Processing & models
+description: Choose the OCR and language models, set the page caps that control cost, and decide whether results auto-apply or wait for review.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The **Processing** screen is where you pick the models and tune how documents are enriched.
+
+## Models
+
+Two model slots, each chosen from your [connected providers](/docs/providers/):
+
+- **OCR model** — reads scanned documents. Used only when OCR is enabled. Must be
+  vision-capable.
+- **Language model** — extracts the title, tags, correspondent and date.
+
+If you haven't connected a provider yet, the picker links you to the API Keys screen.
+
+## The pipeline
+
+A single card groups the OCR → extraction → apply workflow.
+
+### OCR
+
+- **Run OCR before extraction** — when on, each original is re-read with your OCR model and
+  the result is written back to paperless's `content`. When off, paperless's own (free)
+  Tesseract text is reused. *Disabled until you pick an OCR model.*
+- **Skip OCR above … pages** — larger files reuse paperless's text instead of paying for
+  OCR. Blank means no limit.
+
+### Extraction
+
+- **Create new tags** — let the AI create tags that don't exist yet.
+- **Create new correspondents** — let the AI create correspondents that don't exist yet.
+- **Skip extraction above … pages** — larger files are skipped *entirely* — no OCR, no
+  extraction. Blank means no limit.
+
+<Aside type="tip" title="Two caps, two jobs">
+The **extraction** cap is the outer gate (over it → skip everything) and the **OCR** cap is
+the inner gate (over it → reuse paperless text, but still extract). So with OCR ≤ 20pp and
+extraction ≤ 100pp, a 50-page file extracts on paperless's text, and a 1000-page book is
+skipped. See [How processing works](/docs/pipeline/).
+</Aside>
+
+### Apply
+
+- **Auto-apply suggestions** — when on, changes are written to paperless immediately and the
+  trigger tag is dropped. When off, every result is queued for [review](/docs/review/).
+
+## General
+
+- **Poll interval (seconds)** — how often the poller checks paperless. Floored at **15s**
+  (PATCH/upload are CPU-heavy on paperless).
+- **Output language** — the language the model writes metadata in. `auto` uses the
+  document's own language.
+- **Correspondent blacklist** — one name per line; these are never assigned or created as a
+  correspondent.
+
+## Defaults
+
+| Setting | Default |
+|---------|---------|
+| Poll interval | `60s` (minimum `15s`) |
+| Auto-apply | **on** |
+| Create new tags | off |
+| Create new correspondents | on |
+| Skip extraction above | `100` pages |
+| Run OCR | on (once a model is picked) |
+| Skip OCR above | `20` pages |
+| Output language | `auto` |
+| Max attempts per job | `3` |
