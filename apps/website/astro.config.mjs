@@ -27,7 +27,7 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/your-org/paperless-starfruit',
+          href: 'https://github.com/sabbaken/paperless-starfruit',
         },
       ],
       customCss: ['./src/styles/theme.css'],
