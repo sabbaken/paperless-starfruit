@@ -54,7 +54,7 @@ export default defineConfig({
           label: 'Configuration',
           items: [
             { label: 'AI providers', link: '/docs/providers/' },
-            { label: 'Processing & models', link: '/docs/processing/' },
+            { label: 'Processing', link: '/docs/processing/' },
             { label: 'Prompts', link: '/docs/prompts/' },
           ],
         },
