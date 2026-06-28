@@ -13,10 +13,86 @@ better OCR and automatic metadata (title, tags, correspondent, date), all config
 ## Layout
 
 ```
-apps/api      NestJS — API + poller + worker, one process
+apps/api      NestJS — API + poller + worker, one process (also serves the built SPA)
 apps/web      React + Vite admin SPA
 packages/shared   Zod schemas, types, constants (FE/BE contract)
 ```
+
+## How it works
+
+1. You tag a document in paperless-ngx with **`psf-process`**.
+2. The poller picks it up, OCRs it (optional) and asks an LLM for a title, tags, correspondent and date.
+3. Depending on the **Auto-apply** setting, the result is either written straight back to paperless (and the trigger tag removed), or queued in the **Review** screen for you to approve/edit/reject.
+
+Everything — the paperless connection, provider keys, models, prompts, page limits, polling
+interval — is configured in the web UI. The only thing set outside the UI is a handful of
+environment variables for the process itself (below).
+
+## Deploy (self-hosting)
+
+A single container, no Postgres/Redis. SQLite lives on a mounted volume.
+
+```bash
+# Generate the one required secret (keep it stable — see below):
+export ENCRYPTION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
+
+docker compose -f docker/docker-compose.yml up -d --build
+```
+
+Then open **http://localhost:3000** — the container serves both the API and the web UI on
+the same port. On first run, the UI shows a **"create admin"** card; once you set the admin
+username/password, registration closes and only login works (there is no default password).
+
+- **Persistence:** the SQLite database is at `/data/app.db` on the `paperless_starfruit_data`
+  volume. Back that up to keep your config, prompts, queue and audit history.
+- **Behind a reverse proxy:** put your TLS terminator (Caddy/Traefik/nginx) in front of port
+  3000. Auth is a bearer token, not a cookie, so no extra CORS/cookie config is needed; set
+  `CORS_ORIGIN` only if you want to restrict it.
+- **Alongside an existing paperless-ngx stack:** attach the container to that stack's Docker
+  network (see the commented example in `docker/docker-compose.yml`) and point the paperless
+  URL in the UI at the in-network service name (e.g. `http://webserver:8000`), not `localhost`.
+
+### Configuration (environment variables)
+
+These four are the *only* runtime env vars. Everything else is configured in the UI.
+
+| Variable         | Required | Default          | Purpose |
+|------------------|----------|------------------|---------|
+| `ENCRYPTION_KEY` | **yes**  | —                | 32-byte key (base64 or hex). Encrypts stored credentials **and** signs admin sessions. |
+| `DATABASE_PATH`  | no       | `/data/app.db`   | SQLite file path (its directory is created if missing). |
+| `PORT`           | no       | `3000`           | HTTP port for the API + SPA. |
+| `CORS_ORIGIN`    | no       | reflect origin   | Comma-separated allowed origins. Leave unset unless you want to lock it down. |
+
+> **Keep `ENCRYPTION_KEY` stable.** Rotating it logs the admin out *and* makes every stored
+> paperless/provider credential undecryptable — you'd have to re-enter them. Store it like any
+> other production secret.
+
+Configured in the UI (not env): the paperless URL + token, AI provider keys, model choices,
+prompts, page limits, the polling interval, auto-apply, and the correspondent blacklist. Worker
+concurrency is fixed at 1 by design (single-user scale — simplicity over throughput).
+
+### Connect paperless (least-privilege)
+
+In the UI's Connection screen, enter your paperless base URL and an API token, and hit
+**Test connection**. Leave **API version** blank — it's auto-detected.
+
+Prefer a **dedicated paperless user** over the superuser: create a paperless account that can
+*view and change documents* and *view and add tags and correspondents*, then mint that user's
+token (paperless: **Settings → My Profile → API Auth Token**). The token is stored encrypted at
+rest. Because this app must reach self-hosted/LAN URLs (paperless on a private IP, a local
+Ollama, etc.), the admin-entered URLs are intentionally **not** SSRF-restricted — the security
+model is "one trusted admin".
+
+### Configure AI providers
+
+Add provider credentials in the **API Keys** screen. Supported kinds:
+
+- **Anthropic, OpenAI, Google, Mistral** — one API key each; models come from a curated catalog.
+- **OpenAI-compatible** — for local/self-hosted endpoints (Ollama, LM Studio, vLLM, OpenRouter);
+  set a base URL, the API key is optional, and models are discovered live.
+
+Keys are encrypted at rest (AES-GCM) and never returned to the browser unmasked. Pick the default
+LLM and OCR models in the **Processing** screen.
 
 ## Development
 
@@ -27,9 +103,12 @@ pnpm dev               # run api (:3000) + web (:5173) together
 ```
 
 Open **http://localhost:5173** — the web dev server proxies `/api` to the API on port 3000.
+(In production the API serves the built SPA itself on port 3000.)
 
-- **Migrations apply automatically on API boot**, so there's no separate migrate step for a normal run. `pnpm db:generate` (regenerate a migration after a schema change) and `pnpm db:migrate` (apply migrations standalone, e.g. in CI) remain available.
-- `ENCRYPTION_KEY` is required to save credentials (it encrypts the paperless token at rest). The API reads `.env` from `apps/api/` or the repo root.
+- **Migrations apply automatically on API boot**, so there's no separate migrate step for a normal
+  run. `pnpm db:generate` (regenerate a migration after a schema change) and `pnpm db:migrate`
+  (apply migrations standalone, e.g. in CI) remain available.
+- `ENCRYPTION_KEY` is required to save credentials. The API reads `.env` from `apps/api/` or the repo root.
 
 ## Local paperless-ngx for testing
 
@@ -43,18 +122,11 @@ pnpm paperless:logs     # tail paperless logs
 pnpm paperless:down     # stop it
 ```
 
-Then in the Paperless Starfruit onboarding screen use `http://localhost:8000` and the
-token. Leave **API version** blank — it's auto-detected from the server. Drop
-PDFs/images into `docker/paperless-consume/` to have paperless ingest them.
+Then in the onboarding screen use `http://localhost:8000` and the token. Drop PDFs/images into
+`docker/paperless-consume/` to have paperless ingest them, and tag one `psf-process` to test.
 
 ## Build
 
 ```bash
 pnpm build
-```
-
-## Docker
-
-```bash
-docker compose -f docker/docker-compose.yml up --build
 ```

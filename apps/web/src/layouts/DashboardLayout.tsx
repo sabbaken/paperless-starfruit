@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Coffee, Inbox, LayoutDashboard, LogOut, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, Coffee, History, Inbox, LayoutDashboard, LogOut, SlidersHorizontal } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useLogout } from '@/api/auth';
 import { useStats } from '@/api/stats';
@@ -36,6 +36,7 @@ import type { NavItem } from '@/types/nav';
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
   '/dashboard': { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
   '/review': { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
+  '/history': { title: 'History', description: 'Inspect the prompts and model responses behind each run', width: 'wide' },
   '/settings/general': { title: 'General', description: 'Theme and app preferences' },
   '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
   '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
@@ -63,6 +64,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const nav: NavItem[] = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
+    { to: '/history', label: 'History', icon: History },
     {
       to: '/settings',
       label: 'Settings',

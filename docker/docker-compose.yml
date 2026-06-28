@@ -1,18 +1,44 @@
-# Standalone compose for Paperless Starfruit. To run it alongside an existing
-# paperless-ngx stack, attach this service to that stack's network instead.
+# Standalone compose for Paperless Starfruit — a single container, no external
+# services. The SQLite DB lives on the named volume; the paperless connection
+# and provider keys are configured from the web UI (not here).
+#
+# ENCRYPTION_KEY is the ONE required secret: it encrypts stored credentials and
+# signs admin sessions, so it must be set and kept stable (rotating it logs the
+# admin out and makes saved credentials undecryptable). Provide it via the shell
+# or a `.env` file next to this compose file. Generate one with:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 services:
   paperless-starfruit:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    image: paperless-starfruit
     ports:
       - "3000:3000"
     volumes:
       - paperless_starfruit_data:/data
     environment:
       DATABASE_PATH: /data/app.db
-      # paperless connection + provider keys are configured from the web UI.
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set — see the comment above}
+      # Optional: lock CORS to specific origins (comma-separated). Unset reflects
+      # the request origin, which is fine since auth is a bearer token, not a cookie.
+      # CORS_ORIGIN: https://paperless-ai.home.lan
     restart: unless-stopped
+
+# To run alongside an existing paperless-ngx stack, attach this service to that
+# stack's Docker network so it can reach paperless by its service name. Find the
+# network with `docker network ls` (usually "<paperless-project>_default"), then:
+#
+#   services:
+#     paperless-starfruit:
+#       networks: [default, paperless]
+#   networks:
+#     paperless:
+#       external: true
+#       name: paperless_default          # <- your paperless stack's network
+#
+# Then in the web UI set the paperless URL to the in-network service name, e.g.
+# http://webserver:8000 — NOT http://localhost:8000 (localhost is this container).
 
 volumes:
   paperless_starfruit_data:

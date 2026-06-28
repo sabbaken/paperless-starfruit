@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RotateCw } from 'lucide-react';
 import type { JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
+import { useRetryJob } from '@/api/jobs';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,17 +18,19 @@ const STATUS_TONE: Record<JobSummary['status'], string> = {
 export function DashboardPage() {
   const navigate = useNavigate();
   const stats = useStats({ refetchInterval: 5000 });
+  const retry = useRetryJob();
 
   if (stats.isLoading || !stats.data) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
   }
 
-  const { queue, pendingReview, tokenSpend, recentJobs } = stats.data;
+  const { queue, pendingReview, tokenSpend, throughput, errorRate, recentJobs } = stats.data;
   const active = queue.queued + queue.running;
+  const finished = queue.done + queue.failed;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Stat label="In queue" value={active} hint={`${queue.running} running`} />
         <Stat
           label="Awaiting review"
@@ -35,6 +38,12 @@ export function DashboardPage() {
           action={pendingReview > 0 ? <Button size="sm" variant="outline" onClick={() => navigate('/review')}>Review</Button> : undefined}
         />
         <Stat label="Processed" value={queue.done} hint={queue.failed ? `${queue.failed} failed` : undefined} hintTone={queue.failed ? 'fault' : undefined} />
+        <Stat label="Processed (24h)" value={throughput} hint="completed today" />
+        <Stat
+          label="Error rate"
+          value={`${Math.round(errorRate * 100)}%`}
+          hint={finished > 0 ? `${queue.failed} of ${finished} finished` : 'no jobs finished yet'}
+        />
         <Stat label="Tokens used" value={tokenSpend.toLocaleString()} />
       </div>
 
@@ -43,6 +52,11 @@ export function DashboardPage() {
           <CardTitle>Recent activity</CardTitle>
         </CardHeader>
         <CardContent>
+          {retry.error && (
+            <p className="mb-2 text-sm text-destructive">
+              {retry.error instanceof Error ? retry.error.message : 'Retry failed'}
+            </p>
+          )}
           {recentJobs.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               No jobs yet. Tag a document in paperless with <code className="font-mono">psf-process</code> to get started.
@@ -60,6 +74,22 @@ export function DashboardPage() {
                     <Badge variant="outline" className="shrink-0 font-mono">
                       {job.cost.toLocaleString()} tok
                     </Badge>
+                  )}
+                  {job.status === 'failed' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 shrink-0 px-2"
+                      disabled={retry.isPending}
+                      onClick={() => retry.mutate(job.documentId)}
+                    >
+                      {retry.isPending && retry.variables === job.documentId ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <RotateCw className="size-3.5" />
+                      )}
+                      Retry
+                    </Button>
                   )}
                 </li>
               ))}

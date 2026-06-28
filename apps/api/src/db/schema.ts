@@ -136,17 +136,27 @@ export const reviewItem = sqliteTable('review_item', {
 });
 
 /** Append-only audit trail of every processing run. */
-export const auditLog = sqliteTable('audit_log', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  jobId: integer('job_id'),
-  documentId: integer('document_id').notNull(),
-  prompt: text('prompt'),
-  rawOutput: text('raw_output'),
-  result: text('result', { mode: 'json' }),
-  tokensCost: integer('tokens_cost'),
-  decision: text('decision'),
-  createdAt: timestamp('created_at'),
-});
+export const auditLog = sqliteTable(
+  'audit_log',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    jobId: integer('job_id'),
+    documentId: integer('document_id').notNull(),
+    prompt: text('prompt'),
+    rawOutput: text('raw_output'),
+    result: text('result', { mode: 'json' }),
+    tokensCost: integer('tokens_cost'),
+    decision: text('decision'),
+    createdAt: timestamp('created_at'),
+  },
+  // The history UI orders by recency and filters by document / decision; index
+  // those so the log stays cheap to page through as runs accumulate.
+  (t) => [
+    index('audit_created_idx').on(t.createdAt),
+    index('audit_document_idx').on(t.documentId),
+    index('audit_decision_idx').on(t.decision),
+  ],
+);
 
 export type User = typeof user.$inferSelect;
 export type Job = typeof job.$inferSelect;

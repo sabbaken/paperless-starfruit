@@ -24,6 +24,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^5.0.1",
+    "@nestjs/serve-static": "^5.0.5",
     "@paperless-starfruit/shared": "workspace:*",
     "ai": "^6.0.208",
     "better-sqlite3": "^11.7.0",
