@@ -1,0 +1,67 @@
+---
+title: Prompts
+description: Edit the two prompts the models receive — extraction and OCR — insert document variables, test against a real document, and reset to the built-in default.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+There are exactly two LLM calls with editable text, so the **Prompts** screen has two
+whole prompts you control completely:
+
+- **Extraction** — the single call that returns the title, tags, correspondent and date.
+- **OCR** — the vision-LLM prompt used when OCR runs. (The dedicated Mistral OCR endpoint
+  ignores it.)
+
+Each is shown as a complete prompt, so what you edit is exactly what the model receives. The
+output *shape* stays enforced by a strict schema regardless of the prompt text — you control
+the instructions, not the structure.
+
+## Insertable variables
+
+Click a variable to drop it at your cursor. At run time each is replaced with the document's
+own values.
+
+**Extraction prompt**
+
+| Variable | Replaced with |
+|----------|---------------|
+| `{{content}}` | the recognized text (OCR output, or paperless's text) |
+| `{{language}}` | your configured output language, or `auto` |
+| `{{all_tags}}` | every existing tag, comma-separated |
+| `{{all_correspondents}}` | every existing correspondent, comma-separated |
+| `{{tag_policy}}` | a sentence reflecting your *create new tags* setting |
+| `{{correspondent_policy}}` | a sentence reflecting your *create new correspondents* setting |
+| `{{title}}` | the document's current title |
+| `{{tags}}` | the document's current tags |
+| `{{correspondent}}` | the document's current correspondent, or `(none)` |
+| `{{created}}` | the document's current date, or `(none)` |
+| `{{filename}}` | the original filename, or `(none)` |
+
+**OCR prompt**
+
+| Variable | Replaced with |
+|----------|---------------|
+| `{{language}}` | your configured output language, or `auto` |
+| `{{filename}}` | the original filename, or `(none)` |
+
+<Aside type="note">
+Unknown placeholders are left untouched, so a typo like `{{contnt}}` stays visible in the
+rendered prompt instead of silently disappearing.
+</Aside>
+
+## Test on a real document
+
+Pick a document from your paperless instance and hit **Run test**. It runs your *current*
+(even unsaved) prompt against that document and shows:
+
+- the structured result — title, tags, correspondent, date (or the transcribed text, for OCR),
+- the token usage, and
+- the exact rendered prompt that was sent.
+
+Testing **never writes anything back** to paperless.
+
+## Reset to default
+
+Defaults live in code; the database stores only your override (one row per prompt). **Reset
+to default** is a plain delete that drops your override — and because defaults can keep
+evolving, you pick up improvements when you reset. There is no version history to manage.
