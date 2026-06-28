@@ -74,7 +74,7 @@ function ModelsCard({
   };
 
   return (
-    <PageSection title="Models" description="Choose which model handles extraction and OCR.">
+    <PageSection title="Models">
       <div className="divide-y">
         <SelectRow
           icon={<ScanText className="size-4" />}
@@ -145,7 +145,6 @@ function PipelineForm({ initial }: { initial: Settings }) {
   return (
     <PageSection
       title="Pipeline"
-      description="How each document flows through OCR, extraction and apply."
     >
       <div className="space-y-6">
         <Section title="OCR">
@@ -158,7 +157,7 @@ function PipelineForm({ initial }: { initial: Settings }) {
           )}
           <SwitchRow
             label="Run OCR before extraction"
-            hint="Re-OCR each original with the OCR model. Off: reuse paperless's text (free)."
+            hint="If off reuse paperless's offline ocr"
             checked={form.ocrEnabled}
             disabled={!ocrConfigured}
             onCheckedChange={(v) => {
@@ -181,7 +180,6 @@ function PipelineForm({ initial }: { initial: Settings }) {
         <Section title="Extraction">
           <SwitchRow
             label="Create new tags"
-            hint="Let the AI create tags that don't exist yet."
             checked={form.createNewTags}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, createNewTags: v }));
@@ -190,7 +188,6 @@ function PipelineForm({ initial }: { initial: Settings }) {
           />
           <SwitchRow
             label="Create new correspondents"
-            hint="Let the AI create correspondents that don't exist yet."
             checked={form.createNewCorrespondents}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, createNewCorrespondents: v }));

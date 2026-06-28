@@ -30,7 +30,9 @@ export default defineConfig({
           href: 'https://github.com/sabbaken/paperless-starfruit',
         },
       ],
-      customCss: ['./src/styles/theme.css'],
+      // Space Grotesk first so the header wordmark can match the landing nav
+      // (Nav.astro) exactly; theme.css then applies the brand overrides.
+      customCss: ['@fontsource-variable/space-grotesk', './src/styles/theme.css'],
       // Default social-card image for docs pages (the landing sets its own).
       head: [
         { tag: 'meta', attrs: { property: 'og:image', content: `${site}/og.png` } },
