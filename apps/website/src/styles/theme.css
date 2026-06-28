@@ -1,0 +1,42 @@
+/* Starlight theme overrides — Carambola-yellow brand (#EBC724).
+ * Pure brand yellow is too light to carry text, so the docs chrome uses a
+ * readable gold/amber for accents and reserves the bright yellow for highlights
+ * (active state tints, the landing-page CTA). */
+
+:root {
+  /* Brand source token, mirrored from apps/web (oklch 0.836 0.164 95deg). */
+  --psf-brand: #ebc724;
+  --psf-brand-ink: #2b2300;
+
+  /* Light theme accent ramp — dark gold for text, pale gold for tints. */
+  --sl-color-accent-low: #f6ecc1;
+  --sl-color-accent: #9a7400;
+  --sl-color-accent-high: #4d3a00;
+
+  /* Slightly warm the neutral grays so the docs feel of-a-piece with the app. */
+  --sl-color-text-accent: var(--sl-color-accent);
+}
+
+:root[data-theme='dark'] {
+  /* Dark theme accent ramp — bright gold for text, deep gold for tints. */
+  --sl-color-accent-low: #3d2f00;
+  --sl-color-accent: #d8a800;
+  --sl-color-accent-high: #f6e6a8;
+}
+
+/* Brand the hero CTA buttons Starlight renders on splash pages. */
+.sl-link-button.primary {
+  background: var(--psf-brand);
+  border-color: var(--psf-brand);
+  color: var(--psf-brand-ink);
+}
+.sl-link-button.primary:hover {
+  background: #f3d24a;
+  border-color: #f3d24a;
+}
+
+/* Inline code + the site title sit a touch tighter than the default. */
+.site-title {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
