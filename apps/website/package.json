@@ -10,7 +10,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "typecheck": "astro check",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.0",
@@ -25,6 +26,7 @@
     "@eslint/js": "^9.17.0",
     "eslint": "^9.17.0",
     "eslint-plugin-astro": "^1.7.0",
+    "playwright": "^1.61.1",
     "typescript": "^5.6.3"
   }
 }
