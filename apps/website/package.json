@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
+    "dev": "astro dev --force",
+    "start": "astro dev --force",
     "build": "node scripts/write-version.mjs && astro build",
     "preview": "astro preview",
     "astro": "astro",
