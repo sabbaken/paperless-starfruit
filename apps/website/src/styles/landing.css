@@ -7,7 +7,7 @@
 
 :root {
   /* Carambola gold (the brand, mirrored from apps/web) + readable variants */
-  --gold: #ebc724;
+  --gold: #ebc625;
   --gold-deep: #846400;
   --gold-soft: #f7e9a4;
   --gold-tint: #fbf3cf;
@@ -185,7 +185,7 @@ img {
 .btn--gold {
   --btn-bg: var(--gold);
   --btn-fg: #2a2300;
-  box-shadow: 0 8px 24px -10px rgba(235, 199, 36, 0.9);
+  box-shadow: 0 8px 24px -10px rgba(235, 198, 37, 0.9);
 }
 
 .btn--gold:hover {

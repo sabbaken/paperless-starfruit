@@ -1,27 +1,45 @@
-/* Starlight theme overrides — Carambola-yellow brand (#EBC724).
- * Pure brand yellow is too light to carry text, so the docs chrome uses a
- * readable gold/amber for accents and reserves the bright yellow for highlights
- * (active state tints, the landing-page CTA). */
+/* Starlight theme overrides — Carambola-yellow brand (#EBC625).
+ * The docs chrome is branded with the carambola yellow itself: interactive
+ * accents (social icons, active TOC entry, in-content links, focus rings) all
+ * resolve to `--psf-brand`, mirroring apps/web where the same yellow is the
+ * accent/ring color. The header wordmark instead matches the landing nav (see
+ * `.site-title` below), and the active sidebar item gets a per-theme chip. */
 
 :root {
-  /* Brand source token, mirrored from apps/web (oklch 0.836 0.164 95deg). */
-  --psf-brand: #ebc724;
+  /* Brand source token — carambola yellow (apps/web uses the oklch equivalent,
+   * oklch(0.836 0.164 95deg)). */
+  --psf-brand: #ebc625;
   --psf-brand-ink: #2b2300;
 
-  /* Light theme accent ramp — dark gold for text, pale gold for tints. */
-  --sl-color-accent-low: #f6ecc1;
-  --sl-color-accent: #9a7400;
-  --sl-color-accent-high: #4d3a00;
+  /* Active docs sidebar item — pale-gold chip with dark ink on light. */
+  --psf-sidebar-active: #f7f0d4;
+  --psf-sidebar-active-ink: var(--psf-brand-ink);
+}
 
-  /* Slightly warm the neutral grays so the docs feel of-a-piece with the app. */
-  --sl-color-text-accent: var(--sl-color-accent);
+/* Brand-yellow accent ramp. Driving `--sl-color-text-accent` off the brand
+ * makes every accent (title, GitHub icon, TOC current item, links) render in
+ * the carambola yellow rather than Starlight's blue or a muted gold. Both the
+ * bare `:root` (OS light/dark, when Starlight sets no `data-theme`) and the
+ * explicit `[data-theme='light']` toggle are covered so Starlight's own
+ * higher-specificity light rule can never win. */
+:root,
+:root[data-theme='light'] {
+  --sl-color-accent-low: #f6ecc1; /* pale tint — subtle brand-wash backgrounds */
+  --sl-color-accent: var(--psf-brand);
+  --sl-color-accent-high: #a37c00; /* darker brand — stronger-contrast accents */
+  --sl-color-text-accent: var(--psf-brand);
 }
 
 :root[data-theme='dark'] {
-  /* Dark theme accent ramp — bright gold for text, deep gold for tints. */
-  --sl-color-accent-low: #3d2f00;
-  --sl-color-accent: #d8a800;
-  --sl-color-accent-high: #f6e6a8;
+  --sl-color-accent-low: #3d2f00; /* deep gold tint */
+  --sl-color-accent: var(--psf-brand);
+  --sl-color-accent-high: #f6e6a8; /* pale gold */
+  --sl-color-text-accent: var(--psf-brand);
+
+  /* In dark mode the pale chip becomes a deep carambola-brown pill with
+   * brand-yellow text, so the active item sits naturally on the dark sidebar. */
+  --psf-sidebar-active: #413a1e;
+  --psf-sidebar-active-ink: var(--psf-brand);
 }
 
 /* Brand the hero CTA buttons Starlight renders on splash pages. */
@@ -35,8 +53,35 @@
   border-color: #f3d24a;
 }
 
-/* Inline code + the site title sit a touch tighter than the default. */
+/* Docs sidebar: the active page pill. Starlight paints it with a solid accent
+ * background + inverted (near-white) text; instead the fill/ink come from the
+ * per-theme `--psf-sidebar-active*` tokens — a pale-gold chip with dark ink on
+ * light, a deep carambola-brown pill with brand-yellow text on dark. The
+ * selector is intentionally more specific than Starlight's scoped
+ * `[aria-current='page']` rule so it wins regardless of stylesheet order. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  background-color: var(--psf-sidebar-active);
+  color: var(--psf-sidebar-active-ink);
+}
+
+/* Docs header logo: match the landing nav wordmark exactly (Nav.astro
+ * `.nav__brand`) — a 32px rounded mark next to "Paperless Starfruit" set in
+ * Space Grotesk at 1.02rem/600 with tight tracking. The text uses the primary
+ * foreground (dark on light, light on dark) rather than the accent, so the
+ * header reads identically on the landing and in the docs. */
 .site-title {
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  gap: 10px;
+  font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--sl-color-white);
+}
+.site-title img {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
 }
