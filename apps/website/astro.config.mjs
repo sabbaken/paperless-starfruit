@@ -31,6 +31,12 @@ export default defineConfig({
         },
       ],
       customCss: ['./src/styles/theme.css'],
+      // Default social-card image for docs pages (the landing sets its own).
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: `${site}/og.png` } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: `${site}/og.png` } },
+        { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
+      ],
       // The custom landing owns `/`, so Starlight has no content at the site
       // root — disable its built-in 404 (a branded `src/pages/404.astro` covers it).
       disable404Route: true,

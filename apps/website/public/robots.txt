@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://paperless-starfruit.vercel.app/sitemap-index.xml
