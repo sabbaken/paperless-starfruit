@@ -11,7 +11,10 @@ const cloud = [
 <section class="keys section" id="keys">
   <div class="container">
     <p class="eyebrow">Bring your own keys</p>
-    <h2 class="section-title">Your providers. Your bill. Your data.</h2>
+    <h2 class="section-title">Use your own API keys.</h2>
+    <p class="lead">
+      Connect the providers you already pay for — or a model running on your own hardware.
+    </p>
 
     <div class="providers">
       {
@@ -39,6 +42,12 @@ const cloud = [
 </section>
 
 <style>
+  .keys {
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--paper-2);
+  }
+
   .providers {
     margin-top: clamp(36px, 5vw, 52px);
     display: grid;
@@ -54,13 +63,6 @@ const cloud = [
     border-radius: var(--radius);
     padding: 16px 18px;
     box-shadow: var(--shadow-sm);
-    transition:
-      transform 0.18s ease,
-      border-color 0.18s ease;
-  }
-  .provider:hover {
-    transform: translateY(-3px);
-    border-color: var(--gold-soft);
   }
 
   .provider img {
@@ -100,7 +102,7 @@ const cloud = [
   }
   .provider--local {
     border-style: dashed;
-    background: var(--paper-2);
+    background: var(--paper);
   }
 
   .keys__note {
