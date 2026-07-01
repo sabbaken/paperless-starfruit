@@ -16,7 +16,17 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm run build
+# Only build what ships in this image: the API and the web UI it serves
+# statically (shared is pulled in via turbo's `^build`). apps/website is the
+# Astro landing/docs site, deployed separately to Vercel — its package.json
+# isn't copied above, so astro was never installed and building it here fails.
+RUN pnpm exec turbo run build \
+  --filter=@paperless-starfruit/api \
+  --filter=@paperless-starfruit/web
+# apps/website is the Astro landing/docs site (deployed separately to Vercel):
+# never built or served here. Drop its sources so the runtime `COPY /app` below
+# doesn't carry them into the image.
+RUN rm -rf apps/website
 
 FROM base AS runtime
 ENV NODE_ENV=production
