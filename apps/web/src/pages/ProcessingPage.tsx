@@ -1,6 +1,14 @@
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Brain, Loader2, ScanText } from "lucide-react";
+import {
+  Brain,
+  CheckCircle2,
+  Inbox,
+  Loader2,
+  type LucideIcon,
+  ScanText,
+  Zap,
+} from "lucide-react";
 import type {
   ProviderConfig,
   Settings,
@@ -13,10 +21,12 @@ import { PageSection } from "@/components/ui/page-section";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectRow } from "@/components/ui/select-row";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { toastSave } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 
 export function ProcessingPage() {
   const navigate = useNavigate();
@@ -31,12 +41,11 @@ export function ProcessingPage() {
 
   return (
     <div className="space-y-8">
-      <ModelsCard
+      <PipelineStepper
         settings={settings.data}
         providers={providers.data ?? []}
         onGoToProviders={() => navigate("/settings/api-keys")}
       />
-      <PipelineForm initial={settings.data} />
       <GeneralForm initial={settings.data} />
     </div>
   );
@@ -44,7 +53,14 @@ export function ProcessingPage() {
 
 type PickerTarget = "llm" | "ocr";
 
-function ModelsCard({
+/**
+ * The pipeline as a vertical stepper — one card per stage (OCR → extraction →
+ * apply), each carrying its own model and knobs, top to bottom the document's
+ * journey. Each stage has a per-file page limit so a 1000-page scan doesn't
+ * run up cloud OCR / LLM cost; the stages gate independently, and a document
+ * over the extraction limit is skipped entirely.
+ */
+function PipelineStepper({
   settings,
   providers,
   onGoToProviders,
@@ -53,78 +69,11 @@ function ModelsCard({
   providers: ProviderConfig[];
   onGoToProviders: () => void;
 }) {
+  const [form, setForm] = useState<Settings>(settings);
   const [picker, setPicker] = useState<PickerTarget | null>(null);
-
-  const update = useUpdateSettings();
-
-  const providerName = (id: number | null) =>
-    providers.find((p) => p.id === id)?.name ?? null;
-  const describe = (id: number | null, model: string | null) =>
-    model ? `${providerName(id) ?? "Unknown"} · ${model}` : null;
-
-  const onSelect = (providerId: number, model: string) => {
-    void toastSave(
-      update.mutateAsync(
-        picker === "ocr"
-          ? { ocrProviderId: providerId, ocrModel: model }
-          : { llmProviderId: providerId, llmModel: model },
-      ),
-    );
-    setPicker(null);
-  };
-
-  return (
-    <PageSection title="Models">
-      <div className="divide-y">
-        <SelectRow
-          icon={<ScanText className="size-4" />}
-          label="OCR model"
-          hint="Reads scanned documents (used when OCR is enabled)."
-          value={describe(settings.ocrProviderId, settings.ocrModel)}
-          onClick={() => setPicker("ocr")}
-        />
-        <SelectRow
-          icon={<Brain className="size-4" />}
-          label="Language model"
-          hint="Extracts title, tags, correspondent and date."
-          value={describe(settings.llmProviderId, settings.llmModel)}
-          onClick={() => setPicker("llm")}
-        />
-      </div>
-
-      {picker && (
-        <ModelPicker
-          title={picker === "ocr" ? "OCR model" : "Language model"}
-          visionOnly={picker === "ocr"}
-          selected={
-            picker === "ocr"
-              ? { providerId: settings.ocrProviderId, model: settings.ocrModel }
-              : { providerId: settings.llmProviderId, model: settings.llmModel }
-          }
-          onSelect={onSelect}
-          onClose={() => setPicker(null)}
-          onAddKey={() => {
-            setPicker(null);
-            onGoToProviders();
-          }}
-        />
-      )}
-    </PageSection>
-  );
-}
-
-/**
- * The processing pipeline: OCR → extraction → apply. Each stage has its own
- * toggles, plus a per-file page limit so a 1000-page scan doesn't run up cloud
- * OCR / LLM cost. The two stages gate independently — e.g. OCR up to 10 pages but
- * still extract up to 50 — and a document over the extraction limit is skipped
- * entirely, keeping whatever paperless already recognised.
- */
-function PipelineForm({ initial }: { initial: Settings }) {
-  const [form, setForm] = useState<Settings>(initial);
-  // Read live from the prop (not local form state) so picking an OCR model in the
-  // Models card above re-enables these controls immediately on the next refetch.
-  const ocrConfigured = initial.ocrProviderId != null && initial.ocrModel != null;
+  // Read live from the prop (not local form state) so picking an OCR model
+  // re-enables the OCR controls immediately on the next refetch.
+  const ocrConfigured = settings.ocrProviderId != null && settings.ocrModel != null;
 
   const save = useUpdateSettings();
   const commit = (patch: SettingsUpdate) =>
@@ -142,22 +91,36 @@ function PipelineForm({ initial }: { initial: Settings }) {
     if (Object.keys(patch).length > 0) commit(patch);
   }, 600);
 
+  const providerName = (id: number | null) =>
+    providers.find((p) => p.id === id)?.name ?? null;
+  const describe = (id: number | null, model: string | null) =>
+    model ? `${providerName(id) ?? "Unknown"} · ${model}` : null;
+
+  const onSelectModel = (providerId: number, model: string) => {
+    void toastSave(
+      save.mutateAsync(
+        picker === "ocr"
+          ? { ocrProviderId: providerId, ocrModel: model }
+          : { llmProviderId: providerId, llmModel: model },
+      ),
+    );
+    setPicker(null);
+  };
+
   return (
-    <PageSection
-      title="Pipeline"
-    >
-      <div className="space-y-6">
-        <Section title="OCR">
-          {!ocrConfigured && (
-            <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-              Pick an{" "}
-              <span className="font-medium text-foreground">OCR model</span> in
-              Models above to enable OCR. Until then paperless's own text is used.
+    <div className="grid grid-cols-[36px_1fr] gap-x-3.5">
+      {/* --- Stage 1: OCR ----------------------------------------------- */}
+      <StageRail icon={ScanText} />
+      <div className="mb-4 rounded-xl border bg-card px-5 py-2">
+        <div className="flex items-center justify-between gap-3 py-3">
+          <div>
+            <p className="text-sm font-medium">1. OCR</p>
+            <p className="text-xs text-muted-foreground">
+              Re-read scanned pages with a vision model
             </p>
-          )}
-          <SwitchRow
-            label="Run OCR before extraction"
-            hint="If off reuse paperless's offline ocr"
+          </div>
+          <Switch
+            aria-label="Run OCR"
             checked={form.ocrEnabled}
             disabled={!ocrConfigured}
             onCheckedChange={(v) => {
@@ -165,59 +128,212 @@ function PipelineForm({ initial }: { initial: Settings }) {
               commit({ ocrEnabled: v });
             }}
           />
-          <MaxPagesField
-            label="Skip OCR above"
-            hint="Larger files reuse paperless's text instead of paying for OCR. Blank = no limit."
-            value={form.ocrMaxPages}
-            disabled={!ocrConfigured || !form.ocrEnabled}
-            onChange={(v) => {
-              setForm((f) => ({ ...f, ocrMaxPages: v }));
-              commitLimits();
-            }}
-          />
-        </Section>
+        </div>
 
-        <Section title="Extraction">
-          <SwitchRow
-            label="Create new tags"
-            checked={form.createNewTags}
-            onCheckedChange={(v) => {
-              setForm((f) => ({ ...f, createNewTags: v }));
-              commit({ createNewTags: v });
-            }}
-          />
-          <SwitchRow
-            label="Create new correspondents"
-            checked={form.createNewCorrespondents}
-            onCheckedChange={(v) => {
-              setForm((f) => ({ ...f, createNewCorrespondents: v }));
-              commit({ createNewCorrespondents: v });
-            }}
-          />
-          <MaxPagesField
-            label="Skip extraction above"
-            hint="Larger files are skipped entirely — no OCR, no extraction. Blank = no limit."
-            value={form.extractMaxPages}
-            onChange={(v) => {
-              setForm((f) => ({ ...f, extractMaxPages: v }));
-              commitLimits();
-            }}
-          />
-        </Section>
-
-        <Section title="Apply">
-          <SwitchRow
-            label="Auto-apply suggestions"
-            hint="Apply to paperless immediately. Off: queue for review."
-            checked={form.autoApply}
-            onCheckedChange={(v) => {
-              setForm((f) => ({ ...f, autoApply: v }));
-              commit({ autoApply: v });
-            }}
-          />
-        </Section>
+        {ocrConfigured && form.ocrEnabled ? (
+          <div className="divide-y border-t">
+            <SelectRow
+              icon={<ScanText className="size-4" />}
+              label="Model"
+              value={describe(settings.ocrProviderId, settings.ocrModel)}
+              onClick={() => setPicker("ocr")}
+            />
+            <div className="py-3">
+              <MaxPagesField
+                label="Skip OCR above"
+                hint="Larger files reuse paperless's own text"
+                value={form.ocrMaxPages}
+                onChange={(v) => {
+                  setForm((f) => ({ ...f, ocrMaxPages: v }));
+                  commitLimits();
+                }}
+              />
+            </div>
+          </div>
+        ) : !ocrConfigured ? (
+          // Keep the model row reachable — it's the only way to configure OCR.
+          <div className="border-t">
+            <SelectRow
+              icon={<ScanText className="size-4" />}
+              label="Model"
+              value={null}
+              onClick={() => setPicker("ocr")}
+            />
+            <p className="pb-3 text-xs text-muted-foreground">
+              Pick an OCR model to enable OCR — until then paperless's own text
+              is used.
+            </p>
+          </div>
+        ) : (
+          <p className="border-t py-3 text-xs text-muted-foreground">
+            Using paperless's built-in text
+          </p>
+        )}
       </div>
-    </PageSection>
+
+      {/* --- Stage 2: Extraction ----------------------------------------- */}
+      <StageRail icon={Brain} />
+      <div className="mb-4 rounded-xl border bg-card px-5 py-2">
+        <div className="flex items-center justify-between gap-3 py-3">
+          <div>
+            <p className="text-sm font-medium">2. Extraction</p>
+            <p className="text-xs text-muted-foreground">
+              Title, tags, correspondent and date
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">always on</span>
+        </div>
+
+        <div className="divide-y border-t">
+          <SelectRow
+            icon={<Brain className="size-4" />}
+            label="Model"
+            value={describe(settings.llmProviderId, settings.llmModel)}
+            onClick={() => setPicker("llm")}
+          />
+          <div className="py-3">
+            <SwitchRow
+              label="Create new tags"
+              checked={form.createNewTags}
+              onCheckedChange={(v) => {
+                setForm((f) => ({ ...f, createNewTags: v }));
+                commit({ createNewTags: v });
+              }}
+            />
+          </div>
+          <div className="py-3">
+            <SwitchRow
+              label="Create new correspondents"
+              checked={form.createNewCorrespondents}
+              onCheckedChange={(v) => {
+                setForm((f) => ({ ...f, createNewCorrespondents: v }));
+                commit({ createNewCorrespondents: v });
+              }}
+            />
+          </div>
+          <div className="py-3">
+            <MaxPagesField
+              label="Skip extraction above"
+              hint="Larger files are skipped entirely"
+              value={form.extractMaxPages}
+              onChange={(v) => {
+                setForm((f) => ({ ...f, extractMaxPages: v }));
+                commitLimits();
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* --- Stage 3: Apply ----------------------------------------------- */}
+      <StageRail icon={CheckCircle2} last />
+      <div className="rounded-xl border bg-card px-5 py-2">
+        <div className="flex items-center justify-between gap-3 py-3">
+          <div>
+            <p className="text-sm font-medium">3. Apply</p>
+            <p className="text-xs text-muted-foreground">
+              What happens with the suggestions
+            </p>
+          </div>
+        </div>
+
+        <div
+          role="radiogroup"
+          aria-label="Apply mode"
+          className="grid grid-cols-2 gap-2 border-t py-3"
+        >
+          <ApplyOption
+            icon={Inbox}
+            title="Queue for review"
+            description="You approve each document before paperless is touched"
+            selected={!form.autoApply}
+            onSelect={() => {
+              setForm((f) => ({ ...f, autoApply: false }));
+              commit({ autoApply: false });
+            }}
+          />
+          <ApplyOption
+            icon={Zap}
+            title="Apply automatically"
+            description="Suggestions land in paperless immediately"
+            selected={form.autoApply}
+            onSelect={() => {
+              setForm((f) => ({ ...f, autoApply: true }));
+              commit({ autoApply: true });
+            }}
+          />
+        </div>
+      </div>
+
+      {picker && (
+        <ModelPicker
+          title={picker === "ocr" ? "OCR model" : "Language model"}
+          visionOnly={picker === "ocr"}
+          selected={
+            picker === "ocr"
+              ? { providerId: settings.ocrProviderId, model: settings.ocrModel }
+              : { providerId: settings.llmProviderId, model: settings.llmModel }
+          }
+          onSelect={onSelectModel}
+          onClose={() => setPicker(null)}
+          onAddKey={() => {
+            setPicker(null);
+            onGoToProviders();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** The stepper rail cell: stage icon in a circle, hairline down to the next stage. */
+function StageRail({ icon: Icon, last }: { icon: LucideIcon; last?: boolean }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <Icon className="size-4" />
+      </div>
+      {!last && <div className="my-1.5 w-px flex-1 bg-border" aria-hidden />}
+    </div>
+  );
+}
+
+/** One of the two apply-mode choices — a selectable card with radio semantics. */
+function ApplyOption({
+  icon: Icon,
+  title,
+  description,
+  selected,
+  onSelect,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={cn(
+        "cursor-pointer rounded-lg border p-3 text-left transition-colors",
+        selected ? "border-primary ring-1 ring-primary" : "hover:bg-muted/50",
+      )}
+    >
+      <p
+        className={cn(
+          "flex items-center gap-1.5 text-sm font-medium",
+          !selected && "text-muted-foreground",
+        )}
+      >
+        <Icon className="size-4" />
+        {title}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+    </button>
   );
 }
 
@@ -301,18 +417,6 @@ function GeneralForm({ initial }: { initial: Settings }) {
         </div>
       </div>
     </PageSection>
-  );
-}
-
-/** A titled group of rows within a settings section. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </p>
-      {children}
-    </div>
   );
 }
 
