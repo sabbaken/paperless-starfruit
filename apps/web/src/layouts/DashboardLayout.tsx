@@ -273,7 +273,10 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
           </Link>
         </SidebarMenuButton>
         <CollapsibleTrigger asChild>
-          <SidebarMenuAction aria-label={`Toggle ${item.label}`} className="data-[state=open]:rotate-90">
+          <SidebarMenuAction
+            aria-label={`Toggle ${item.label}`}
+            className="cursor-pointer data-[state=open]:rotate-90"
+          >
             <ChevronRight />
           </SidebarMenuAction>
         </CollapsibleTrigger>
