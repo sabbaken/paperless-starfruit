@@ -82,19 +82,12 @@ function PromptList({
             // icon inherits the text colour (black when active), never brand.
             data-active={isActive}
             className={cn(
-              'flex flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground lg:flex-none',
+              'flex flex-1 cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground lg:flex-none',
               ACTIVE_NAV_ITEM,
             )}
           >
             <Icon className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">{p.label}</span>
-            {p.customized && (
-              <span
-                title="Customised"
-                aria-label="customised"
-                className="size-1.5 shrink-0 rounded-full bg-brand"
-              />
-            )}
           </button>
         );
       })}
