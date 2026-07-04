@@ -38,17 +38,16 @@ clone or build:
 ghcr.io/sabbaken/paperless-starfruit/api:latest    # or sha-<commit> to pin an exact build
 ```
 
-Pick the compose file that matches your setup:
+Two compose files, depending on where you start (full walkthrough in the
+[installation docs](https://paperless-starfruit.vercel.app/docs/installation/)):
 
 ### Already running paperless-ngx
 
-Use the standalone compose — one service, attached to your existing stack:
+Use [`docker/docker-compose.yml`](docker/docker-compose.yml) — just the Starfruit container.
+Put the one required secret in a `.env` next to it and start:
 
 ```bash
-mkdir paperless-starfruit && cd paperless-starfruit
-curl -fsSLO https://raw.githubusercontent.com/sabbaken/paperless-starfruit/master/docker/docker-compose.yml
-
-# Generate the one required secret (keep it stable — see below):
+# Keep ENCRYPTION_KEY stable — see below.
 echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 
 docker compose up -d
@@ -60,12 +59,10 @@ name (e.g. `http://webserver:8000`) as the paperless URL in the UI — not `loca
 
 ### Starting from scratch (paperless-ngx included)
 
-`docker-compose.full.yml` brings up Redis + paperless-ngx + Paperless Starfruit together:
+Use [`docker/docker-compose.full.yml`](docker/docker-compose.full.yml) — Redis +
+paperless-ngx + Paperless Starfruit together. This one needs two secrets:
 
 ```bash
-mkdir paperless && cd paperless
-curl -fsSLO https://raw.githubusercontent.com/sabbaken/paperless-starfruit/master/docker/docker-compose.full.yml
-
 cat > .env <<EOF
 ENCRYPTION_KEY=$(openssl rand -base64 32)
 PAPERLESS_SECRET_KEY=$(openssl rand -base64 32)
@@ -81,15 +78,17 @@ in-network service name, not `localhost`.
 
 ### First run
 
-Open **http://localhost:3000** — the container serves both the API and the web UI on
-the same port. On first run, the UI shows a **"create admin"** card; once you set the admin
+Open **http://localhost:7827** — the container serves both the API and the web UI on
+the same port. (The compose files publish the app on host port **7827** — deliberately
+uncommon so they work as-is; change the left side of the `ports:` mapping to move it.)
+On first run, the UI shows a **"create admin"** card; once you set the admin
 username/password, registration closes and only login works (there is no default password).
 
 - **Persistence:** the SQLite database is at `/data/app.db` on a named volume. Back that up
   to keep your config, prompts, queue and audit history.
-- **Behind a reverse proxy:** put your TLS terminator (Caddy/Traefik/nginx) in front of port
-  3000. Auth is a bearer token, not a cookie, so no extra CORS/cookie config is needed; set
-  `CORS_ORIGIN` only if you want to restrict it.
+- **Behind a reverse proxy:** put your TLS terminator (Caddy/Traefik/nginx) in front of the
+  published port (`7827` by default). Auth is a bearer token, not a cookie, so no extra
+  CORS/cookie config is needed; set `CORS_ORIGIN` only if you want to restrict it.
 - **Building from source** (optional): clone the repo, swap `image:` for the commented
   `build:` block in `docker/docker-compose.yml`, then
   `docker compose -f docker/docker-compose.yml up -d --build`.
@@ -102,7 +101,7 @@ These four are the *only* runtime env vars. Everything else is configured in the
 |------------------|----------|------------------|---------|
 | `ENCRYPTION_KEY` | **yes**  | —                | 32-byte key (base64 or hex). Encrypts stored credentials **and** signs admin sessions. |
 | `DATABASE_PATH`  | no       | `/data/app.db`   | SQLite file path (its directory is created if missing). |
-| `PORT`           | no       | `3000`           | HTTP port for the API + SPA. |
+| `PORT`           | no       | `3000`           | Port the app listens on *inside* the container (the compose files publish it as `7827`). |
 | `CORS_ORIGIN`    | no       | reflect origin   | Comma-separated allowed origins. Leave unset unless you want to lock it down. |
 
 > **Keep `ENCRYPTION_KEY` stable.** Rotating it logs the admin out *and* makes every stored
@@ -145,7 +144,7 @@ pnpm dev               # run api (:3000) + web (:5173) together
 ```
 
 Open **http://localhost:5173** — the web dev server proxies `/api` to the API on port 3000.
-(In production the API serves the built SPA itself on port 3000.)
+(In production the API serves the built SPA itself on the same port.)
 
 - **Migrations apply automatically on API boot**, so there's no separate migrate step for a normal
   run. `pnpm db:generate` (regenerate a migration after a schema change) and `pnpm db:migrate`

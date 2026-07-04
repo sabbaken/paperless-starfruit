@@ -1,50 +1,159 @@
 ---
 title: Installation
-description: Deploy Paperless Starfruit as a single container with Docker Compose, set the one required secret, and create your admin account.
+description: Pull the official image and deploy with Docker Compose — next to an existing paperless-ngx, or as a full stack that includes one.
 ---
 
-import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
-Paperless Starfruit ships as **one container** — a Node process plus a mounted volume for
-its SQLite database. There is no Postgres, no Redis and no message broker.
+Paperless Starfruit ships as **one container** — a Node process plus a volume for its SQLite
+database. No Postgres, no Redis. Pre-built images are published to GitHub Container Registry,
+so there is nothing to clone or build:
 
-## Requirements
+```
+ghcr.io/sabbaken/paperless-starfruit/api:latest    # or sha-<commit> to pin an exact build
+```
 
-- Docker with Compose v2 (`docker compose`).
-- A running [paperless-ngx](https://docs.paperless-ngx.com/) instance it can reach.
-- At least one AI provider key, or a local OpenAI-compatible model (you can add this later
-  from the UI).
+All you need is Docker with Compose v2. Provider keys can be added later from the UI.
 
 ## Deploy
 
-<Steps>
+Two compose files, depending on where you start:
 
-1. **Generate the one required secret.** `ENCRYPTION_KEY` encrypts your stored credentials
-   **and** signs admin sessions, so it must be set and kept stable.
+<Tabs>
+  <TabItem label="Next to an existing paperless-ngx">
+    Save as `docker-compose.yml`:
 
-   ```bash
-   export ENCRYPTION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
-   ```
+    ```yaml
+    services:
+      paperless-starfruit:
+        image: ghcr.io/sabbaken/paperless-starfruit/api:latest
+        restart: unless-stopped
+        ports:
+          - '7827:3000'
+        volumes:
+          - paperless_starfruit_data:/data
+        environment:
+          DATABASE_PATH: /data/app.db
+          ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
 
-2. **Build and start the container.**
+    volumes:
+      paperless_starfruit_data:
+    ```
 
-   ```bash
-   docker compose -f docker/docker-compose.yml up -d --build
-   ```
+    Put the one required secret in a `.env` next to it and start:
 
-3. **Open the UI** at `http://localhost:3000`. The container serves both the API and the
-   web UI on the same port.
+    ```bash
+    echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+    docker compose up -d
+    ```
 
-4. **Create your admin.** On first run the UI shows a *“create admin”* card. Set a username
-   and password — registration then closes itself, and only login works from then on. There
-   is no default password.
+    The container has to reach paperless over the network:
 
-</Steps>
+    - If paperless has a LAN address or published port, just enter that URL in the UI later —
+      e.g. `http://192.168.1.10:8000` or `https://paperless.home.lan`.
+    - To use the Docker service name instead, attach the container to your paperless stack's
+      network — find it with `docker network ls` (usually `<project>_default`), then:
+
+      ```yaml
+      services:
+        paperless-starfruit:
+          networks: [default, paperless]
+      networks:
+        paperless:
+          external: true
+          name: paperless_default   # your paperless stack's network
+      ```
+
+      and use `http://webserver:8000` as the paperless URL — **not** `localhost`, which is
+      this container.
+  </TabItem>
+  <TabItem label="From scratch (paperless-ngx included)">
+    A full stack — Redis + paperless-ngx + Paperless Starfruit. Save as `docker-compose.yml`:
+
+    ```yaml
+    services:
+      broker:
+        image: docker.io/library/redis:8
+        restart: unless-stopped
+        volumes:
+          - redisdata:/data
+
+      paperless:
+        image: ghcr.io/paperless-ngx/paperless-ngx:latest
+        restart: unless-stopped
+        depends_on:
+          - broker
+        ports:
+          - '8000:8000'
+        environment:
+          PAPERLESS_REDIS: redis://broker:6379
+          PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?set PAPERLESS_SECRET_KEY in .env}
+          # The URL paperless is reached at in the browser (needed for CSRF).
+          PAPERLESS_URL: ${PAPERLESS_URL:-http://localhost:8000}
+          PAPERLESS_TIME_ZONE: ${TZ:-UTC}
+        volumes:
+          - paperless_data:/usr/src/paperless/data
+          - paperless_media:/usr/src/paperless/media
+          - ./export:/usr/src/paperless/export
+          - ./consume:/usr/src/paperless/consume   # drop files here to ingest
+
+      paperless-starfruit:
+        image: ghcr.io/sabbaken/paperless-starfruit/api:latest
+        restart: unless-stopped
+        depends_on:
+          - paperless
+        ports:
+          - '7827:3000'
+        volumes:
+          - starfruit_data:/data
+        environment:
+          DATABASE_PATH: /data/app.db
+          ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
+
+    volumes:
+      redisdata:
+      paperless_data:
+      paperless_media:
+      starfruit_data:
+    ```
+
+    Generate the two secrets, start the stack, and create the paperless superuser:
+
+    ```bash
+    cat > .env <<EOF
+    ENCRYPTION_KEY=$(openssl rand -base64 32)
+    PAPERLESS_SECRET_KEY=$(openssl rand -base64 32)
+    EOF
+
+    docker compose up -d
+    docker compose run --rm paperless createsuperuser
+    ```
+
+    paperless-ngx comes up on `http://localhost:8000` — log in with the superuser you just
+    created. In the Starfruit UI, use `http://paperless:8000` as the paperless URL — the
+    in-network service name, not `localhost`.
+  </TabItem>
+</Tabs>
+
+Both files also live in the repo as
+[`docker/docker-compose.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.yml)
+and
+[`docker/docker-compose.full.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.full.yml).
+
+Then open **`http://localhost:7827`** — the container serves the API and the web UI on the
+same port. On first run the UI shows a *“create admin”* card; once you set the admin username
+and password, registration closes and only login works. There is no default password.
+
+<Aside type="note" title="Why port 7827?">
+It's “star” on a phone keypad — and, unlike 3000, almost certainly free on your host, so the
+files above work as-is. The app inside the container still listens on 3000; change the left
+side of the `ports:` mapping to publish it elsewhere.
+</Aside>
 
 <Aside type="caution" title="Keep ENCRYPTION_KEY stable">
-Rotating `ENCRYPTION_KEY` logs the admin out **and** makes every stored paperless/provider
-credential undecryptable — you would have to re-enter them all. Store it like any other
-production secret.
+`ENCRYPTION_KEY` encrypts your stored credentials **and** signs admin sessions. Rotating it
+logs the admin out and makes every stored paperless/provider credential undecryptable. Store
+it like any other production secret.
 </Aside>
 
 ## Environment variables
@@ -55,61 +164,22 @@ These are the *only* runtime variables. Everything else lives in the UI.
 |------------------|----------|----------------|---------|
 | `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials and signs admin sessions. |
 | `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path. Its directory is created if missing. |
-| `PORT`           | no       | `3000`         | HTTP port for the API + web UI. |
+| `PORT`           | no       | `3000`         | Port the app listens on *inside* the container (the compose files publish it as `7827`). |
 | `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down. |
 
-## Persistence
+## Operating notes
 
-The SQLite database holds **everything**: your config, prompts, the job queue, review items
-and audit history. It lives at `/data/app.db` on the named volume `paperless_starfruit_data`.
-
-```yaml
-volumes:
-  - paperless_starfruit_data:/data
-```
-
-Back that volume up and you have a complete snapshot of your setup.
-
-## Running alongside paperless-ngx
-
-Your container needs to reach paperless over the network. There are two common setups:
-
-<Tabs>
-  <TabItem label="Separate stacks">
-    If paperless is reachable on your LAN or a published port, just enter that URL in the
-    UI's Connection screen — for example `http://192.168.1.10:8000` or
-    `https://paperless.home.lan`.
-  </TabItem>
-  <TabItem label="Same Docker network">
-    To talk to paperless by its service name, attach this container to that stack's network.
-    Find it with `docker network ls` (usually `<paperless-project>_default`), then:
-
-    ```yaml
-    services:
-      paperless-starfruit:
-        networks: [default, paperless]
-    networks:
-      paperless:
-        external: true
-        name: paperless_default   # your paperless stack's network
-    ```
-
-    Then set the paperless URL to the in-network service name, e.g. `http://webserver:8000`
-    — **not** `http://localhost:8000` (localhost is this container).
-  </TabItem>
-</Tabs>
-
-## Behind a reverse proxy
-
-Auth is a **bearer token, not a cookie**, so no extra CORS or cookie configuration is needed.
-Put your TLS terminator (Caddy, Traefik, nginx) in front of port 3000. Set `CORS_ORIGIN`
-only if you want to restrict which origins may call the API.
-
-## Health
-
-The container exposes `GET /api/health` (used by the Docker `HEALTHCHECK`). Database
-migrations apply automatically on boot, so there is no separate migrate step for a normal run.
+- **Persistence.** Everything — config, prompts, job queue, review items, audit history — is
+  one SQLite file at `/data/app.db` on a named volume. Back that volume up and you have a
+  complete snapshot.
+- **Reverse proxy.** Auth is a bearer token, not a cookie, so no extra CORS or cookie
+  configuration is needed — put your TLS terminator (Caddy, Traefik, nginx) in front of the
+  published port (`7827` by default).
+- **Health.** `GET /api/health` backs the image's `HEALTHCHECK`. Migrations apply
+  automatically on boot; there is no separate migrate step.
+- **Building from source** (optional). Clone the repo and swap `image:` for the commented
+  `build:` block in `docker/docker-compose.yml`.
 
 ## Next
 
-With the container up, [connect your paperless instance →](/docs/connect-paperless/)
+[Connect your paperless instance →](/docs/connect-paperless/)

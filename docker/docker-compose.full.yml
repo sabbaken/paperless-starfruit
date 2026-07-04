@@ -14,7 +14,7 @@
 #
 # Then:
 #   http://localhost:8000   paperless-ngx (log in with the superuser you created)
-#   http://localhost:3000   Paperless Starfruit (first visit shows "create admin")
+#   http://localhost:7827   Paperless Starfruit (first visit shows "create admin")
 #
 # In the Starfruit UI, set the paperless URL to http://paperless:8000 — the
 # in-network service name, NOT http://localhost:8000 (inside the Starfruit
@@ -61,7 +61,10 @@ services:
     depends_on:
       - paperless
     ports:
-      - "3000:3000"
+      # Host port 7827 ("star" on a phone keypad) — deliberately uncommon so
+      # this file works as-is, unlike 3000 which is usually taken. The app
+      # inside the container still listens on 3000.
+      - "7827:3000"
     volumes:
       - starfruit_data:/data
     environment:

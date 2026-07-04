@@ -1,50 +1,48 @@
 ---
 title: Overview
-description: What Paperless Starfruit is, how it sits beside paperless-ngx, and the ideas you need to know before installing it.
+description: What Paperless Starfruit is, how it sits beside paperless-ngx, and the ideas to know before installing it.
 ---
 
 import { CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
 
 **Paperless Starfruit** is a self-hosted, bring-your-own-keys AI companion for
-[paperless-ngx](https://docs.paperless-ngx.com/). It gives your archive two things
-paperless can't do on its own: **higher-quality OCR** and **automatic metadata** —
-a clean title, tags, correspondent and date for every document you tag.
+[paperless-ngx](https://docs.paperless-ngx.com/). It adds the two things paperless can't do
+on its own: **higher-quality OCR** and **automatic metadata** — a clean title, tags,
+correspondent and date for every document you tag.
 
-Everything is configured from a web UI. The only thing you set outside it is a handful
-of environment variables for the process itself.
+Everything is configured from the web UI; the only outside setup is a handful of environment
+variables for the process itself.
 
 ## How it fits
 
-It runs as a **second container beside your paperless-ngx stack** and talks to paperless
-over the same REST API you already use. It never replaces paperless or touches your
-library directly — it reads the documents you tag, asks AI models *you* connect for
-metadata, and writes the result back.
+It runs as a **second container beside paperless-ngx** and talks to it over the same REST API
+you already use. It never touches your library directly — it reads the documents you tag,
+asks the AI models *you* connect for metadata, and writes the result back.
 
 <Aside type="tip" title="Bring your own keys">
-There is no account to create and no AI bundled in. You connect your own provider keys
-(Anthropic, OpenAI, Google, Mistral) or a model on your own hardware. Keys are encrypted
-at rest and requests go straight from your container to the provider — nothing routes
-through a vendor.
+No account, no bundled AI. Connect your own provider keys (Anthropic, OpenAI, Google,
+Mistral) or a model on your own hardware. Keys are encrypted at rest and requests go straight
+from your container to the provider — nothing routes through a vendor.
 </Aside>
 
 ## The ideas to know
 
-- **One trigger tag.** Add the `psf-process` tag to a document and it gets picked up.
-  Re-tag to reprocess; leave it untagged and it is never touched.
+- **One trigger tag.** Add `psf-process` to a document and it gets picked up. Re-tag to
+  reprocess; leave it untagged and it is never touched.
 - **OCR is optional.** Re-read the original with a vision model, or reuse the free text
-  paperless already extracted. Either way, extraction runs on that text.
+  paperless already extracted. Extraction runs on that text either way.
 - **Extraction is one call.** A single language-model request returns a title, tags,
   correspondent and date, validated against a strict schema.
-- **You decide how it applies.** *Auto-apply* writes changes straight back to paperless.
-  Turn it off and every suggestion waits in the **review queue** for your approval.
+- **You decide how it applies.** *Auto-apply* writes changes straight back to paperless;
+  turn it off and every suggestion waits in the **review queue** for your approval.
 - **Single container, single admin.** A Node process and a SQLite file — no Postgres,
   no Redis. On first run you create one admin account.
 
 ## Start here
 
 <CardGrid>
-  <LinkCard title="Installation" href="/docs/installation/" description="Deploy the container with Docker Compose and create your admin." />
+  <LinkCard title="Installation" href="/docs/installation/" description="Pull the official image and deploy with Docker Compose." />
   <LinkCard title="Connect paperless" href="/docs/connect-paperless/" description="Point it at your instance and set up the trigger tag." />
   <LinkCard title="AI providers & keys" href="/docs/providers/" description="Add the providers you want to use for OCR and extraction." />
-  <LinkCard title="How processing works" href="/docs/pipeline/" description="Follow a document through the full pipeline, step by step." />
+  <LinkCard title="How processing works" href="/docs/pipeline/" description="Follow a document through the pipeline, step by step." />
 </CardGrid>
