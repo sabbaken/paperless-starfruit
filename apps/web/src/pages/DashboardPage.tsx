@@ -1,5 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { Loader2, RotateCw } from 'lucide-react';
+import {
+  CheckCircle2,
+  Coins,
+  Inbox,
+  ListTodo,
+  Loader2,
+  type LucideIcon,
+  RotateCw,
+  TrendingUp,
+  TriangleAlert,
+} from 'lucide-react';
 import type { JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
 import { useRetryJob } from '@/api/jobs';
@@ -39,20 +49,22 @@ export function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Stat label="In queue" value={active} hint={`${queue.running} running`} />
+        <Stat label="In queue" icon={ListTodo} value={active} hint={`${queue.running} running`} />
         <Stat
           label="Awaiting review"
+          icon={Inbox}
           value={pendingReview}
           action={pendingReview > 0 ? <Button size="sm" variant="outline" onClick={() => navigate('/review')}>Review</Button> : undefined}
         />
-        <Stat label="Processed" value={queue.done} hint={queue.failed ? `${queue.failed} failed` : undefined} hintTone={queue.failed ? 'fault' : undefined} />
-        <Stat label="Processed (24h)" value={throughput} hint="completed today" />
+        <Stat label="Processed" icon={CheckCircle2} value={queue.done} hint={queue.failed ? `${queue.failed} failed` : undefined} hintTone={queue.failed ? 'fault' : undefined} />
+        <Stat label="Processed (24h)" icon={TrendingUp} value={throughput} hint="completed today" />
         <Stat
           label="Error rate"
+          icon={TriangleAlert}
           value={`${Math.round(errorRate * 100)}%`}
           hint={finished > 0 ? `${queue.failed} of ${finished} finished` : 'no jobs finished yet'}
         />
-        <Stat label="Tokens used" value={tokenSpend.toLocaleString()} />
+        <Stat label="Tokens used" icon={Coins} value={tokenSpend.toLocaleString()} />
       </div>
 
       <PageSection title="Recent activity">
@@ -125,12 +137,14 @@ export function DashboardPage() {
 
 function Stat({
   label,
+  icon: Icon,
   value,
   hint,
   hintTone,
   action,
 }: {
   label: string;
+  icon: LucideIcon;
   value: number | string;
   hint?: string;
   hintTone?: 'fault';
@@ -138,9 +152,12 @@ function Stat({
 }) {
   return (
     <div className="space-y-1 rounded-lg bg-muted/50 p-4">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-        {action}
+        <div className="flex shrink-0 items-center gap-2">
+          {action}
+          <Icon className="size-4 text-muted-foreground" />
+        </div>
       </div>
       <p className="text-2xl font-semibold tabular-nums">{value}</p>
       {hint && (
