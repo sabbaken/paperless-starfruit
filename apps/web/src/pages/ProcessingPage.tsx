@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Brain,
@@ -108,10 +108,9 @@ function PipelineStepper({
   };
 
   return (
-    <div className="grid grid-cols-[36px_1fr] gap-x-3.5">
+    <div>
       {/* --- Stage 1: OCR ----------------------------------------------- */}
-      <StageRail icon={ScanText} />
-      <div className="mb-4 rounded-xl border bg-card px-5 py-2">
+      <Stage icon={ScanText}>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
             <p className="text-sm font-medium">1. OCR</p>
@@ -133,7 +132,6 @@ function PipelineStepper({
         {ocrConfigured && form.ocrEnabled ? (
           <div className="divide-y border-t">
             <SelectRow
-              icon={<ScanText className="size-4" />}
               label="Model"
               value={describe(settings.ocrProviderId, settings.ocrModel)}
               onClick={() => setPicker("ocr")}
@@ -154,7 +152,6 @@ function PipelineStepper({
           // Keep the model row reachable — it's the only way to configure OCR.
           <div className="border-t">
             <SelectRow
-              icon={<ScanText className="size-4" />}
               label="Model"
               value={null}
               onClick={() => setPicker("ocr")}
@@ -169,11 +166,10 @@ function PipelineStepper({
             Using paperless's built-in text
           </p>
         )}
-      </div>
+      </Stage>
 
       {/* --- Stage 2: Extraction ----------------------------------------- */}
-      <StageRail icon={Brain} />
-      <div className="mb-4 rounded-xl border bg-card px-5 py-2">
+      <Stage icon={Brain}>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
             <p className="text-sm font-medium">2. Extraction</p>
@@ -186,7 +182,6 @@ function PipelineStepper({
 
         <div className="divide-y border-t">
           <SelectRow
-            icon={<Brain className="size-4" />}
             label="Model"
             value={describe(settings.llmProviderId, settings.llmModel)}
             onClick={() => setPicker("llm")}
@@ -223,11 +218,10 @@ function PipelineStepper({
             />
           </div>
         </div>
-      </div>
+      </Stage>
 
       {/* --- Stage 3: Apply ----------------------------------------------- */}
-      <StageRail icon={CheckCircle2} last />
-      <div className="rounded-xl border bg-card px-5 py-2">
+      <Stage icon={CheckCircle2} last>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
             <p className="text-sm font-medium">3. Apply</p>
@@ -263,7 +257,7 @@ function PipelineStepper({
             }}
           />
         </div>
-      </div>
+      </Stage>
 
       {picker && (
         <ModelPicker
@@ -286,14 +280,36 @@ function PipelineStepper({
   );
 }
 
-/** The stepper rail cell: stage icon in a circle, hairline down to the next stage. */
-function StageRail({ icon: Icon, last }: { icon: LucideIcon; last?: boolean }) {
+/**
+ * One pipeline stage: the card itself plus the rail icon hanging in the margin
+ * to its left. The rail is absolutely positioned so it never affects the card's
+ * width — every card on the page lines up — and hidden when the viewport has no
+ * spare margin to hang it in.
+ */
+function Stage({
+  icon: Icon,
+  last,
+  children,
+}: {
+  icon: LucideIcon;
+  last?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex flex-col items-center">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Icon className="size-4" />
+    <div className={cn("relative", !last && "mb-4")}>
+      <div
+        aria-hidden
+        className={cn(
+          "absolute top-0 -left-12 hidden w-8 flex-col items-center xl:flex",
+          !last && "-bottom-4",
+        )}
+      >
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Icon className="size-4" />
+        </div>
+        {!last && <div className="my-1.5 w-px flex-1 bg-border" />}
       </div>
-      {!last && <div className="my-1.5 w-px flex-1 bg-border" aria-hidden />}
+      <div className="rounded-xl border bg-card px-5 py-2">{children}</div>
     </div>
   );
 }
@@ -320,7 +336,7 @@ function ApplyOption({
       onClick={onSelect}
       className={cn(
         "cursor-pointer rounded-lg border p-3 text-left transition-colors",
-        selected ? "border-primary ring-1 ring-primary" : "hover:bg-muted/50",
+        selected ? "border-brand ring-1 ring-brand" : "hover:bg-muted/50",
       )}
     >
       <p
