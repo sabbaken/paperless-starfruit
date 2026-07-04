@@ -18,6 +18,7 @@ import { LlmService } from '../providers/llm.service';
 import { OcrService } from '../providers/ocr.service';
 import { buildLanguageModel, type ResolvedProvider } from '../providers/model.factory';
 import { SettingsService } from '../settings/settings.service';
+import { TagCommentsService } from '../taxonomy/tag-comments.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { PromptsService } from './prompts.service';
 import { extractionVars, ocrVars, renderTemplate } from './render';
@@ -37,6 +38,7 @@ export class PromptTestService {
     private readonly llm: LlmService,
     private readonly ocr: OcrService,
     private readonly taxonomy: TaxonomyService,
+    private readonly tagComments: TagCommentsService,
     private readonly prompts: PromptsService,
   ) {}
 
@@ -67,13 +69,16 @@ export class PromptTestService {
     const triggerNames = new Set<string>([DEFAULT_TRIGGER_TAG]);
     const triggerIds = new Set(snap.tags.filter((t) => triggerNames.has(t.name)).map((t) => t.id));
     const tagName = (id: number) => snap.tags.find((t) => t.id === id)?.name;
+    const tagHints = this.tagComments.map();
 
     const rendered = renderTemplate(
       body,
       extractionVars({
         content: (doc.content ?? '').trim(),
         language: settings.language,
-        allTags: snap.tags.filter((t) => !triggerIds.has(t.id)).map((t) => t.name),
+        allTags: snap.tags
+          .filter((t) => !triggerIds.has(t.id))
+          .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         allowNewTags: settings.createNewTags,
         allowNewCorrespondents: settings.createNewCorrespondents,

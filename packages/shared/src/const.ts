@@ -17,6 +17,9 @@ export const ACTIVE_JOB_STATUSES: JobStatus[] = [JOB_STATUS.QUEUED, JOB_STATUS.R
  */
 export const DEFAULT_TRIGGER_TAG = 'psf-process';
 
+/** Starfruit's brand yellow — the colour the trigger tag is created with. */
+export const TRIGGER_TAG_COLOR = '#EBC625';
+
 /** Review-item lifecycle. `pending` waits on the user; the rest are terminal. */
 export const REVIEW_STATUS = {
   PENDING: 'pending',

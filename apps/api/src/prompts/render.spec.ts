@@ -16,7 +16,7 @@ describe('extractionVars', () => {
   const base = {
     content: 'body',
     language: 'auto',
-    allTags: ['Invoice', 'Tax'],
+    allTags: [{ name: 'Invoice' }, { name: 'Tax' }],
     allCorrespondents: ['ACME'],
     allowNewTags: true,
     allowNewCorrespondents: true,
@@ -44,6 +44,51 @@ describe('extractionVars', () => {
     const flipped = extractionVars({ ...base, allowNewTags: false, allowNewCorrespondents: true });
     expect(flipped.tag_policy).toContain('Do not invent new tags');
     expect(flipped.correspondent_policy).toContain('may introduce a new correspondent');
+  });
+
+  it('keeps the comma list while no tag carries a hint', () => {
+    const v = extractionVars({ ...base, allTags: [{ name: 'Invoice', comment: null }, { name: 'Tax', comment: '  ' }] });
+    expect(v.all_tags).toBe('Invoice, Tax');
+    expect(extractionVars({ ...base, allTags: [] }).all_tags).toBe('(none)');
+  });
+
+  it('switches to a Markdown table of hinted tags once any tag has a hint', () => {
+    const v = extractionVars({
+      ...base,
+      allTags: [
+        { name: 'Invoice', comment: 'Bills we have to pay' },
+        { name: 'Tax', comment: null },
+        { name: 'Receipts', comment: '' },
+      ],
+    });
+    expect(v.all_tags).toBe(
+      '\n| Tag | When to use it |\n| --- | --- |\n| Invoice | Bills we have to pay |\n\nOther existing tags: Tax, Receipts\n',
+    );
+  });
+
+  it('omits the trailing list when every tag has a hint', () => {
+    const v = extractionVars({
+      ...base,
+      allTags: [{ name: 'Invoice', comment: 'Bills' }],
+    });
+    expect(v.all_tags).toBe('\n| Tag | When to use it |\n| --- | --- |\n| Invoice | Bills |\n');
+  });
+
+  it('contains hint text in its cell but leaves tag names verbatim for echo-matching', () => {
+    const v = extractionVars({
+      ...base,
+      allTags: [{ name: 'A|B', comment: 'line one\nline two, with | pipe' }],
+    });
+    expect(v.all_tags).toContain('| A|B | line one line two, with \\| pipe |');
+  });
+
+  it('stays a detached block when the placeholder sits mid-line', () => {
+    const out = renderTemplate(
+      'Existing tags: {{all_tags}} — always prefer these.',
+      extractionVars({ ...base, allTags: [{ name: 'Tax', comment: 'Tax office mail' }] }),
+    );
+    expect(out).toContain('| Tax | Tax office mail |\n');
+    expect(out).toContain('\n — always prefer these.');
   });
 
   it('truncates very long content', () => {

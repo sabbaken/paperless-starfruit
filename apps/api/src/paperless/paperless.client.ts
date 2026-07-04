@@ -82,10 +82,21 @@ export class PaperlessClient {
     return this.collectAll('/api/tags/', paperlessTagSchema);
   }
 
-  async createTag(name: string): Promise<PaperlessTag> {
+  async createTag(name: string, color?: string): Promise<PaperlessTag> {
     const { data } = await this.request('/api/tags/', paperlessTagSchema, {
       method: 'POST',
-      body: { name },
+      body: color ? { name, color } : { name },
+    });
+    return data;
+  }
+
+  async updateTag(
+    id: number,
+    patch: { name?: string; color?: string },
+  ): Promise<PaperlessTag> {
+    const { data } = await this.request(`/api/tags/${id}/`, paperlessTagSchema, {
+      method: 'PATCH',
+      body: patch,
     });
     return data;
   }

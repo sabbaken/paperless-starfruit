@@ -25,6 +25,10 @@ export const paginatedSchema = <T extends z.ZodTypeAny>(item: T) =>
 export const paperlessTagSchema = z.object({
   id: z.number().int(),
   name: z.string(),
+  /** Hex background colour, e.g. "#a6cee3"; paperless picks one when omitted. */
+  color: z.string().nullable().optional(),
+  /** How many documents carry the tag; shown in the tags admin table. */
+  document_count: z.number().int().optional(),
 });
 export type PaperlessTag = z.infer<typeof paperlessTagSchema>;
 
