@@ -1,18 +1,23 @@
 # Standalone compose for Paperless Starfruit — a single container, no external
-# services. The SQLite DB lives on the named volume; the paperless connection
-# and provider keys are configured from the web UI (not here).
+# services. Uses the pre-built image from ghcr.io, so this file works on its
+# own: no repo checkout or local build needed. The SQLite DB lives on the named
+# volume; the paperless connection and provider keys are configured from the
+# web UI (not here).
 #
 # ENCRYPTION_KEY is the ONE required secret: it encrypts stored credentials and
 # signs admin sessions, so it must be set and kept stable (rotating it logs the
 # admin out and makes saved credentials undecryptable). Provide it via the shell
 # or a `.env` file next to this compose file. Generate one with:
-#   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+#   openssl rand -base64 32
 services:
   paperless-starfruit:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    image: paperless-starfruit
+    # Published by CI on every master push. Tags: `latest`, or `sha-<commit>`
+    # to pin an exact build. To build from a repo checkout instead, replace
+    # `image:` with:
+    #   build:
+    #     context: ..
+    #     dockerfile: docker/Dockerfile
+    image: ghcr.io/sabbaken/paperless-starfruit/api:latest
     ports:
       - "3000:3000"
     volumes:
