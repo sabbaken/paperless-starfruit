@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Check, Inbox, Loader2, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import type { ReviewDetail, ReviewItemView } from '@paperless-starfruit/shared';
 import {
   useApproveReview,
@@ -8,6 +8,8 @@ import {
   useReviewDetail,
   useReviewList,
 } from '@/api/review';
+import { usePaperlessBaseUrl } from '@/api/connection';
+import { paperlessDocumentUrl } from '@/lib/paperless';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,18 +48,21 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
 
   if (items.length === 0) {
     return (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Inbox />
-          </EmptyMedia>
-          <EmptyTitle>Nothing to review</EmptyTitle>
-          <EmptyDescription>
-            When a document tagged <code className="font-mono">psf-process</code> is processed, its
-            AI suggestions land here for your approval.
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      // flex-1 fills the layout's column so the empty state sits mid-page.
+      <div className="flex flex-1 items-center justify-center">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Inbox />
+            </EmptyMedia>
+            <EmptyTitle>Nothing to review</EmptyTitle>
+            <EmptyDescription>
+              When a document tagged <code className="font-mono">psf-process</code> is processed, its
+              AI suggestions land here for your approval.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </div>
     );
   }
 
@@ -150,6 +155,7 @@ function ReviewDetailView({ id, onClose }: { id: number; onClose: () => void }) 
 
 function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () => void }) {
   const s = detail.suggestions;
+  const base = usePaperlessBaseUrl();
 
   const [title, setTitle] = useState(s.title);
   const [tags, setTags] = useState<Set<string>>(new Set(s.tags.map((t) => t.name)));
@@ -195,7 +201,22 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="md:max-h-[32rem]">
           <CardHeader>
-            <CardTitle className="text-sm">Document #{detail.documentId}</CardTitle>
+            <CardTitle className="text-sm">
+              {base ? (
+                <a
+                  href={paperlessDocumentUrl(base, detail.documentId)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Open in paperless"
+                  className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
+                >
+                  Document #{detail.documentId}
+                  <ExternalLink className="size-3.5 text-muted-foreground" />
+                </a>
+              ) : (
+                <>Document #{detail.documentId}</>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="max-h-[26rem] overflow-auto rounded-md bg-muted/40 p-3 text-xs whitespace-pre-wrap text-muted-foreground">

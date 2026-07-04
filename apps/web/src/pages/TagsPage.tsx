@@ -109,7 +109,7 @@ export function TagsPage() {
             <TableBody>
               {visible.map((tag) => (
                 <TableRow key={tag.id}>
-                  <TableCell className="pl-4">
+                  <TableCell className="py-3 pl-4">
                     <div className="flex items-center gap-2">
                       <span
                         aria-hidden
@@ -127,7 +127,7 @@ export function TagsPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="w-full max-w-0">
+                  <TableCell className="w-full max-w-0 py-3">
                     <p
                       className="truncate text-muted-foreground"
                       title={tag.comment ?? undefined}
@@ -137,7 +137,7 @@ export function TagsPage() {
                         : (tag.comment ?? '—')}
                     </p>
                   </TableCell>
-                  <TableCell className="text-right text-xs tabular-nums text-muted-foreground">
+                  <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
                     {tag.documentCount ?? ''}
                   </TableCell>
                   <TableCell className="py-0 pr-2 text-right">
