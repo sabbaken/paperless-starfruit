@@ -4,9 +4,17 @@ import type { JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
 import { useRetryJob } from '@/api/jobs';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/ui/page-section';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const STATUS_TONE: Record<JobSummary['status'], string> = {
   queued: 'text-muted-foreground',
@@ -58,38 +66,57 @@ export function DashboardPage() {
             No jobs yet. Tag a document in paperless with <code className="font-mono">psf-process</code> to get started.
           </p>
         ) : (
-          <ul className="divide-y">
-            {recentJobs.map((job) => (
-              <li key={job.id} className="flex items-center gap-3 py-2.5 text-sm">
-                <span className={cn('w-16 shrink-0 font-medium capitalize', STATUS_TONE[job.status])}>
-                  {job.status}
-                </span>
-                <span className="shrink-0 text-muted-foreground">doc #{job.documentId}</span>
-                <span className="min-w-0 flex-1 truncate text-destructive">{job.error ?? ''}</span>
-                {job.cost != null && (
-                  <Badge variant="outline" className="shrink-0 font-mono">
-                    {job.cost.toLocaleString()} tok
-                  </Badge>
-                )}
-                {job.status === 'failed' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 shrink-0 px-2"
-                    disabled={retry.isPending}
-                    onClick={() => retry.mutate(job.documentId)}
-                  >
-                    {retry.isPending && retry.variables === job.documentId ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <RotateCw className="size-3.5" />
-                    )}
-                    Retry
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-lg border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-4">Status</TableHead>
+                  <TableHead>Document</TableHead>
+                  <TableHead className="w-full">Error</TableHead>
+                  <TableHead className="text-right">Tokens</TableHead>
+                  <TableHead aria-label="Actions" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentJobs.map((job) => (
+                  <TableRow key={job.id} className="hover:bg-transparent">
+                    <TableCell className={cn('py-3 pl-4 font-medium capitalize', STATUS_TONE[job.status])}>
+                      {job.status}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <DocumentLink documentId={job.documentId} />
+                    </TableCell>
+                    <TableCell className="w-full max-w-0 py-3">
+                      <p className="truncate text-destructive" title={job.error ?? undefined}>
+                        {job.error ?? ''}
+                      </p>
+                    </TableCell>
+                    <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
+                      {job.cost != null ? job.cost.toLocaleString() : ''}
+                    </TableCell>
+                    <TableCell className="py-0 pr-2 text-right">
+                      {job.status === 'failed' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2"
+                          disabled={retry.isPending}
+                          onClick={() => retry.mutate(job.documentId)}
+                        >
+                          {retry.isPending && retry.variables === job.documentId ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <RotateCw className="size-3.5" />
+                          )}
+                          Retry
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </PageSection>
     </div>

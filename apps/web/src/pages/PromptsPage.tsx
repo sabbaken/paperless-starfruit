@@ -21,6 +21,7 @@ import {
   useTestPrompt,
   useUpdatePrompt,
 } from '@/api/prompts';
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { toastSave } from '@/lib/toast';
@@ -108,17 +109,41 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
   const update = useUpdatePrompt();
   const reset = useResetPrompt();
 
-  // After a save the query refetches; once prompt.body matches, the editor is no
-  // longer dirty. After a reset we explicitly snap the draft back to the default.
-  const dirty = body !== prompt.body;
   const canReset = prompt.customized || body !== prompt.default;
-  const canSave = dirty && body.trim().length > 0;
+
+  // Edits save themselves (like the settings pages) — a Save button here is easy
+  // to miss and "why weren't my changes saved?" is worse than an extra write.
+  // After a reset the pending timer must not re-save the old draft, so it's
+  // suppressed until the user types again.
+  const skipAutoSave = useRef(false);
+  const commitSave = useDebouncedCallback(() => {
+    if (skipAutoSave.current) return;
+    if (!body.trim() || body === prompt.body) return;
+    void toastSave(update.mutateAsync({ key: prompt.key, body }));
+  }, 800);
+
+  // Flush on unmount: switching prompts (the editor is keyed) or leaving the page
+  // inside the debounce window must not silently drop the last keystrokes.
+  const latest = useRef({ body, saved: prompt.body });
+  latest.current = { body, saved: prompt.body };
+  const flushRef = useRef(() => {
+    const { body: draft, saved } = latest.current;
+    if (skipAutoSave.current || !draft.trim() || draft === saved) return;
+    void toastSave(update.mutateAsync({ key: prompt.key, body: draft }));
+  });
+  useEffect(() => () => flushRef.current(), []);
+
+  const onEdit = (value: string) => {
+    skipAutoSave.current = false;
+    setBody(value);
+    commitSave();
+  };
 
   const insertVar = (name: string) => {
     const token = `{{${name}}}`;
     const el = textareaRef.current;
     if (!el) {
-      setBody((b) => b + token);
+      onEdit(body + token);
       return;
     }
     el.focus();
@@ -130,15 +155,12 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
       // Fallback if execCommand is unavailable; loses one undo step but works.
       const start = el.selectionStart ?? body.length;
       const end = el.selectionEnd ?? body.length;
-      setBody(body.slice(0, start) + token + body.slice(end));
+      onEdit(body.slice(0, start) + token + body.slice(end));
     }
   };
 
-  const onSave = () => {
-    void toastSave(update.mutateAsync({ key: prompt.key, body }));
-  };
-
   const onReset = () => {
+    skipAutoSave.current = true;
     void toastSave(
       reset.mutateAsync(prompt.key).then((cfg) => {
         setBody(cfg.body);
@@ -149,68 +171,59 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
 
   return (
     <div className="space-y-8">
-      <PageSection title={prompt.label} description={prompt.description}>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Variables</Label>
-            <p className="text-xs text-muted-foreground">
-              Click to insert at the cursor. They’re replaced with each document’s values at run time.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {prompt.variables.map((v) => (
-                <Button
-                  key={v.name}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  title={v.description}
-                  onClick={() => insertVar(v.name)}
-                  className="font-mono text-xs"
-                >
-                  {`{{${v.name}}}`}
-                </Button>
-              ))}
-            </div>
-          </div>
+      {/* Test panel first: prompt bodies differ in height, so anchoring it above
+          the editor keeps it in the same spot when switching prompts. */}
+      <TestPanel promptKey={prompt.key} body={body} />
 
-          <div className="space-y-2">
-            <Label htmlFor="prompt-body">Prompt</Label>
-            <Textarea
-              id="prompt-body"
-              ref={textareaRef}
-              value={body}
-              spellCheck={false}
-              onChange={(e) => setBody(e.target.value)}
-              className="min-h-72 font-mono text-xs leading-relaxed"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={onSave} disabled={!canSave || update.isPending}>
-              {update.isPending && <Loader2 className="size-4 animate-spin" />}
-              Save changes
-            </Button>
-            {dirty && (
-              <Button variant="ghost" onClick={() => setBody(prompt.body)}>
-                Discard
-              </Button>
-            )}
-            <div className="ml-auto">
+      {/* No section header: the selected prompt is already named in the rail. */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Variables</Label>
+          <p className="text-xs text-muted-foreground">
+            Click to insert at the cursor. They’re replaced with each document’s values at run time.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {prompt.variables.map((v) => (
               <Button
+                key={v.name}
+                type="button"
                 variant="outline"
-                onClick={onReset}
-                disabled={!canReset || reset.isPending}
-                title="Replace this prompt with the built-in default"
+                size="sm"
+                title={v.description}
+                onClick={() => insertVar(v.name)}
+                className="font-mono text-xs"
               >
-                <RotateCcw className="size-4" />
-                Reset to default
+                {`{{${v.name}}}`}
               </Button>
-            </div>
+            ))}
           </div>
         </div>
-      </PageSection>
 
-      <TestPanel promptKey={prompt.key} body={body} />
+        <div className="space-y-2">
+          <Label htmlFor="prompt-body">Prompt</Label>
+          <Textarea
+            id="prompt-body"
+            ref={textareaRef}
+            value={body}
+            spellCheck={false}
+            onChange={(e) => onEdit(e.target.value)}
+            className="min-h-72 font-mono text-xs leading-relaxed"
+          />
+          <p className="text-xs text-muted-foreground">Changes are saved automatically.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onReset}
+            disabled={!canReset || reset.isPending}
+            title="Replace this prompt with the built-in default"
+          >
+            <RotateCcw className="size-4" />
+            Reset to default
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

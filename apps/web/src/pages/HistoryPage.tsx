@@ -8,11 +8,19 @@ import {
 import { useAuditDetail, useAuditLog } from '@/api/audit';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const PAGE_SIZE = 25;
 
@@ -114,11 +122,24 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
         </Empty>
       ) : (
         <>
-          <ul className="divide-y rounded-lg border bg-card">
-            {items.map((item) => (
-              <HistoryRow key={item.id} item={item} onOpen={onOpen} />
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-lg border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="pl-4">Decision</TableHead>
+                  <TableHead>Document</TableHead>
+                  <TableHead className="w-full">When</TableHead>
+                  <TableHead className="text-right">Tokens</TableHead>
+                  <TableHead aria-label="Open" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <HistoryRow key={item.id} item={item} onOpen={onOpen} />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           <Pager
             offset={offset}
             total={total}
@@ -133,35 +154,38 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
 
 function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: number) => void }) {
   return (
-    <li>
-      <button
-        type="button"
-        onClick={() => onOpen(item.id)}
-        disabled={!item.hasDetail}
-        className={cn(
-          'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm',
-          item.hasDetail ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default',
+    <TableRow
+      onClick={item.hasDetail ? () => onOpen(item.id) : undefined}
+      className={cn(!item.hasDetail && 'hover:bg-transparent', item.hasDetail && 'cursor-pointer')}
+    >
+      <TableCell className={cn('py-3 pl-4 font-medium', decisionTone(item.decision))}>
+        {item.decision ?? 'unknown'}
+      </TableCell>
+      <TableCell className="py-3">
+        <DocumentLink documentId={item.documentId} />
+      </TableCell>
+      <TableCell className="w-full py-3 text-xs text-muted-foreground">
+        {formatTime(item.createdAt)}
+      </TableCell>
+      <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
+        {item.tokensCost != null ? item.tokensCost.toLocaleString() : ''}
+      </TableCell>
+      <TableCell className="py-3 pr-4 text-right text-xs text-muted-foreground">
+        {/* Row click covers the mouse; a real button keeps the detail reachable by keyboard. */}
+        {item.hasDetail && (
+          <button
+            type="button"
+            onClick={() => onOpen(item.id)}
+            className="cursor-pointer hover:text-foreground"
+          >
+            view →
+          </button>
         )}
-      >
-        <span className={cn('w-28 shrink-0 truncate font-medium', decisionTone(item.decision))}>
-          {item.decision ?? 'unknown'}
-        </span>
-        <span className="shrink-0 text-muted-foreground">doc #{item.documentId}</span>
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {formatTime(item.createdAt)}
-        </span>
-        {item.tokensCost != null && (
-          <Badge variant="outline" className="shrink-0 font-mono">
-            {item.tokensCost.toLocaleString()} tok
-          </Badge>
-        )}
-        <span className="w-12 shrink-0 text-right text-xs text-muted-foreground">
-          {item.hasDetail ? 'view →' : ''}
-        </span>
-      </button>
-    </li>
+      </TableCell>
+    </TableRow>
   );
 }
+
 
 function Pager({
   offset,
@@ -243,7 +267,7 @@ function HistoryDetail({ entry, onClose }: { entry: AuditEntryDetail; onClose: (
         <span className={cn('font-medium', decisionTone(entry.decision))}>
           {entry.decision ?? 'unknown'}
         </span>
-        <span className="text-muted-foreground">doc #{entry.documentId}</span>
+        <DocumentLink documentId={entry.documentId} />
         {entry.jobId != null && <span className="text-muted-foreground">job #{entry.jobId}</span>}
         {entry.tokensCost != null && (
           <span className="text-muted-foreground">{entry.tokensCost.toLocaleString()} tokens</span>
