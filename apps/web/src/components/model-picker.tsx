@@ -242,6 +242,7 @@ export function ModelPicker({
   const models = useAvailableModels();
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [showLocked, setShowLocked] = useState(false);
   const [sort, setSort] = useState<Sort>({ key: 'provider', dir: 'asc' });
   // The OCR picker (visionOnly) costs more per page than plain text analysis.
   const ocr = !!visionOnly;
@@ -268,7 +269,17 @@ export function ModelPicker({
       locked: true,
     }));
 
-  const allGroups = [...connectedApi.map(fromConnected), ...lockedGroups, ...local.map(fromConnected)];
+  // Hidden by default: search/sort over models you can't pick is noise. Forced
+  // visible when nothing is connected yet — an empty picker would hide that
+  // adding a key unlocks these.
+  const nothingConnected = connectedApi.length === 0 && local.length === 0;
+  const includeLocked = showLocked || nothingConnected;
+
+  const allGroups = [
+    ...connectedApi.map(fromConnected),
+    ...(includeLocked ? lockedGroups : []),
+    ...local.map(fromConnected),
+  ];
   // In OCR mode, surface dedicated OCR models (e.g. Mistral OCR) per provider kind —
   // they aren't language models, so they never come from the catalog/`/models` probe.
   const displayGroups = ocr ? allGroups.map(withOcrModels) : allGroups;
@@ -324,9 +335,20 @@ export function ModelPicker({
               className="pl-8"
             />
           </div>
+          <label
+            className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap text-muted-foreground"
+            title="Also list providers you haven't added an API key for"
+          >
+            <Switch
+              checked={includeLocked}
+              disabled={nothingConnected}
+              onCheckedChange={setShowLocked}
+            />
+            Unavailable providers
+          </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap text-muted-foreground">
             <Switch checked={showAll} onCheckedChange={setShowAll} />
-            Show all models
+            Show all versions
           </label>
           <Button variant="outline" size="sm" onClick={onAddKey}>
             Add API key
