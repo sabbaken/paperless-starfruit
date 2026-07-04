@@ -25,6 +25,7 @@ const DEFAULT_SETTINGS: Settings = {
   autoApply: false,
   createNewTags: false,
   createNewCorrespondents: true,
+  extractionEnabled: true,
   extractMaxPages: null,
   language: 'auto',
   ocrEnabled: false,
@@ -492,7 +493,7 @@ describe('PipelineService.process — OCR (M5)', () => {
   });
 
   it('reports the OCR tokens spent on a skipped identical rerun', async () => {
-    const { pipeline, llm } = makePipeline({
+    const { pipeline, client, llm } = makePipeline({
       doc: { tags: [9, TRIGGER_TAG] },
       settings: OCR_ON,
       hasCompleted: true,
@@ -504,5 +505,225 @@ describe('PipelineService.process — OCR (M5)', () => {
     // OCR ran (to compute the hash) but extraction was skipped.
     expect(result.cost).toBe(150);
     expect(llm.generateStructured).not.toHaveBeenCalled();
+    // The doc's content had drifted from the recognised text — the skip PATCH
+    // restores it alongside the trigger-tag drop rather than discarding paid OCR.
+    expect(client.patchDocument).toHaveBeenCalledWith(5, {
+      content: 'OCR text of the document',
+      tags: [9],
+    });
+  });
+});
+
+describe('PipelineService.process — extraction disabled (OCR-only)', () => {
+  const EXTRACTION_OFF: Partial<Settings> = { ...OCR_ON, extractionEnabled: false };
+
+  it('OCRs, writes the text back and drops the trigger tag in one PATCH — no extraction', async () => {
+    const { pipeline, client, ocr, llm, review, audit, prompts } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG], content: 'stale' },
+      settings: EXTRACTION_OFF,
+      ocrText: 'freshly recognised text',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result).toMatchObject({ decision: 'ocr-only', cost: 150 });
+    expect(ocr.ocr).toHaveBeenCalledOnce();
+    expect(llm.generateStructured).not.toHaveBeenCalled();
+    expect(prompts.render).not.toHaveBeenCalledWith('extraction', expect.anything());
+    expect(review.create).not.toHaveBeenCalled();
+    // One PATCH folds the content write-back and the trigger-tag drop together.
+    expect(client.patchDocument).toHaveBeenCalledOnce();
+    expect(client.patchDocument).toHaveBeenCalledWith(5, {
+      content: 'freshly recognised text',
+      tags: [9],
+    });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({ decision: 'ocr-only', tokensCost: 150 }),
+    );
+  });
+
+  it('requires no LLM model while extraction is off', async () => {
+    const { pipeline } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'stale' },
+      settings: { ...EXTRACTION_OFF, llmProviderId: null, llmModel: null },
+      ocrText: 'recognised text',
+    });
+    const result = await pipeline.process(JOB);
+    expect(result.decision).toBe('ocr-only');
+  });
+
+  it('drops only the trigger tag when the OCR text came out unchanged', async () => {
+    const { pipeline, client } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG], content: 'identical text' },
+      settings: EXTRACTION_OFF,
+      ocrText: 'identical text',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('ocr-only');
+    expect(client.patchDocument).toHaveBeenCalledOnce();
+    expect(client.patchDocument).toHaveBeenCalledWith(5, { tags: [9] });
+  });
+
+  it("stores a hash a later extraction-on run won't match (re-enabling reprocesses)", async () => {
+    const { pipeline } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'stale' },
+      settings: EXTRACTION_OFF,
+      ocrText: 'recognised text',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    const extractionOnHash = contentHash(
+      'recognised text',
+      configFingerprint({
+        llm: { kind: 'anthropic', model: 'claude-haiku-4-5' },
+        ocr: { kind: 'anthropic', model: 'claude-haiku-4-5' },
+      }),
+    );
+    expect(result.contentHash).not.toBe(extractionOnHash);
+  });
+
+  it('skips an identical OCR-only rerun, restoring drifted content in the trigger-drop PATCH', async () => {
+    const { pipeline, client, review } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG] }, // content differs from the (re-)recognised text
+      settings: EXTRACTION_OFF,
+      hasCompleted: true,
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result).toMatchObject({ decision: 'skipped', cost: 150 });
+    // The OCR text was paid for either way — write it back alongside the tag
+    // drop, or the explicit re-tag would bill OCR and change nothing.
+    expect(client.patchDocument).toHaveBeenCalledOnce();
+    expect(client.patchDocument).toHaveBeenCalledWith(5, {
+      content: 'OCR text of the document',
+      tags: [9],
+    });
+    expect(review.create).not.toHaveBeenCalled();
+  });
+
+  it('skips an identical rerun with a tags-only PATCH when the content did not drift', async () => {
+    const { pipeline, client } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG], content: 'identical text' },
+      settings: EXTRACTION_OFF,
+      ocrText: 'identical text',
+      hasCompleted: true,
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('skipped');
+    expect(client.patchDocument).toHaveBeenCalledOnce();
+    expect(client.patchDocument).toHaveBeenCalledWith(5, { tags: [9] });
+  });
+
+  it('completes without any PATCH when the text is unchanged and the trigger tag is already gone', async () => {
+    // Reachable state: a crash after the ocr-only PATCH but before the job was
+    // recorded as done retries against a doc that is already fully settled.
+    const { pipeline, client } = makePipeline({
+      doc: { tags: [9], content: 'identical text' },
+      settings: EXTRACTION_OFF,
+      ocrText: 'identical text',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('ocr-only');
+    expect(client.patchDocument).not.toHaveBeenCalled();
+  });
+
+  it('reuses the OCR result across a retry, then re-OCRs after the job succeeds', async () => {
+    const { pipeline, client, ocr } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'stale' },
+      settings: EXTRACTION_OFF,
+      ocrText: 'recognised text',
+    });
+
+    // First attempt: OCR succeeds, then the completion PATCH fails.
+    client.patchDocument.mockRejectedValueOnce(new Error('paperless 500'));
+    await expect(pipeline.process(JOB)).rejects.toThrow(/paperless 500/);
+    expect(ocr.ocr).toHaveBeenCalledTimes(1);
+
+    // Retry (same job): the OCR result is reused from cache — no re-download, no re-bill.
+    const result = await pipeline.process(JOB);
+    expect(result).toMatchObject({ decision: 'ocr-only', cost: 150 });
+    expect(ocr.ocr).toHaveBeenCalledTimes(1);
+    expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
+
+    // After the job settles the cache is evicted, so an explicit reprocess OCRs afresh.
+    await pipeline.process(JOB);
+    expect(ocr.ocr).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips (drops the trigger tag) when the document is over the OCR page limit', async () => {
+    const { pipeline, client, ocr, audit } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG], page_count: 30 },
+      settings: { ...EXTRACTION_OFF, ocrMaxPages: 10 },
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result).toMatchObject({ decision: 'skipped', cost: null });
+    expect(ocr.ocr).not.toHaveBeenCalled();
+    expect(client.downloadOriginal).not.toHaveBeenCalled();
+    expect(client.patchDocument).toHaveBeenCalledWith(5, { tags: [9] });
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'skipped' }));
+    // The skip's hash must NOT match what a real OCR-only completion would
+    // produce — raising the limit and re-tagging must reprocess, not look "done".
+    const ocrFp = configFingerprint({
+      llm: null,
+      ocr: { kind: 'anthropic', model: 'claude-haiku-4-5' },
+    });
+    expect(result.contentHash).not.toBe(contentHash('OCR text of the document', ocrFp));
+    expect(result.contentHash).not.toBe(
+      contentHash('Invoice from ACME total 42 dated 2024-03-02', ocrFp),
+    );
+  });
+
+  it('ignores the extraction page limit — only the OCR limit governs', async () => {
+    const { pipeline, ocr } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'stale', page_count: 100 },
+      settings: { ...EXTRACTION_OFF, extractMaxPages: 50, ocrMaxPages: 200 },
+      ocrText: 'recognised text',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('ocr-only');
+    expect(ocr.ocr).toHaveBeenCalledOnce();
+  });
+
+  it('fails loudly (config dead end) when OCR is off too', async () => {
+    const { pipeline, client } = makePipeline({
+      settings: { extractionEnabled: false },
+    });
+    const promise = pipeline.process(JOB);
+    await expect(promise).rejects.toThrow(
+      /Extraction is disabled and OCR cannot run — enable OCR/i,
+    );
+    // A real failure, NOT a defer — a defer never burns attempts, so a dead-end
+    // config would silently re-poll forever instead of going terminal.
+    await expect(promise).rejects.not.toBeInstanceOf(DeferJobError);
+    // The trigger tag is kept — the failure must stay visible and retryable.
+    expect(client.patchDocument).not.toHaveBeenCalled();
+  });
+
+  it('fails with a model hint when OCR is on but has no model', async () => {
+    const { pipeline } = makePipeline({
+      settings: {
+        extractionEnabled: false,
+        ocrEnabled: true,
+        ocrProviderId: null,
+        ocrModel: null,
+      },
+    });
+    const promise = pipeline.process(JOB);
+    await expect(promise).rejects.toThrow(
+      /Extraction is disabled and OCR cannot run — select an OCR model/i,
+    );
+    await expect(promise).rejects.not.toBeInstanceOf(DeferJobError);
   });
 });

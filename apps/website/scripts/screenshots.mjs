@@ -200,6 +200,7 @@ const settings = {
   autoApply: false,
   createNewTags: true,
   createNewCorrespondents: true,
+  extractionEnabled: true,
   extractMaxPages: 100,
   language: 'auto',
   ocrEnabled: true,

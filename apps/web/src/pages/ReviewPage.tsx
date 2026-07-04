@@ -9,6 +9,7 @@ import {
   useReviewList,
 } from '@/api/review';
 import { usePaperlessBaseUrl } from '@/api/connection';
+import { useSettings } from '@/api/settings';
 import { paperlessDocumentUrl } from '@/lib/paperless';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,9 +21,12 @@ import { Label } from '@/components/ui/label';
 
 export function ReviewPage() {
   const items = useReviewList('pending');
+  const settings = useSettings();
   const [openId, setOpenId] = useState<number | null>(null);
 
-  if (items.isLoading) {
+  // Wait for settings too — the empty-state copy depends on extractionEnabled,
+  // and rendering before it resolves would flash the wrong explanation.
+  if (items.isLoading || settings.isLoading) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
   }
 
@@ -30,10 +34,24 @@ export function ReviewPage() {
     return <ReviewDetailView id={openId} onClose={() => setOpenId(null)} />;
   }
 
-  return <ReviewList items={items.data ?? []} onOpen={setOpenId} />;
+  return (
+    <ReviewList
+      items={items.data ?? []}
+      extractionEnabled={settings.data?.extractionEnabled ?? true}
+      onOpen={setOpenId}
+    />
+  );
 }
 
-function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: number) => void }) {
+function ReviewList({
+  items,
+  extractionEnabled,
+  onOpen,
+}: {
+  items: ReviewItemView[];
+  extractionEnabled: boolean;
+  onOpen: (id: number) => void;
+}) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const bulk = useBulkApproveReview();
@@ -57,8 +75,17 @@ function ReviewList({ items, onOpen }: { items: ReviewItemView[]; onOpen: (id: n
             </EmptyMedia>
             <EmptyTitle>Nothing to review</EmptyTitle>
             <EmptyDescription>
-              When a document tagged <code className="font-mono">psf-process</code> is processed, its
-              AI suggestions land here for your approval.
+              {extractionEnabled ? (
+                <>
+                  When a document tagged <code className="font-mono">psf-process</code> is processed,
+                  its AI suggestions land here for your approval.
+                </>
+              ) : (
+                <>
+                  Extraction is turned off — documents are only OCR&apos;d, so no suggestions are
+                  queued. Re-enable it in Settings → Processing.
+                </>
+              )}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

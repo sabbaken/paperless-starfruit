@@ -70,6 +70,7 @@ function toSettings(row: SettingsRow): Settings {
     autoApply: row.autoApply,
     createNewTags: row.createNewTags,
     createNewCorrespondents: row.createNewCorrespondents,
+    extractionEnabled: row.extractionEnabled,
     extractMaxPages: row.extractMaxPages ?? null,
     language: row.language,
     ocrEnabled: row.ocrEnabled,

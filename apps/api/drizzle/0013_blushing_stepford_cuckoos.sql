@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `extraction_enabled` integer DEFAULT true NOT NULL;

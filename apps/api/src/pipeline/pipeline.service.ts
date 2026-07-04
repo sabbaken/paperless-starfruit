@@ -28,7 +28,7 @@ import { DeferJobError } from './defer-job.error';
 import { PromptsService } from '../prompts/prompts.service';
 import { extractionVars, ocrVars } from '../prompts/render';
 
-export type Decision = 'auto-applied' | 'review-queued' | 'skipped';
+export type Decision = 'auto-applied' | 'review-queued' | 'ocr-only' | 'skipped';
 
 export interface ProcessResult {
   contentHash: string;
@@ -74,7 +74,10 @@ export class PipelineService {
     if (!client) throw new Error('No paperless connection is configured.');
 
     const settings = this.settings.get();
-    const provider = this.resolveProvider(settings.llmProviderId, settings.llmModel, 'LLM');
+    // `null` = extraction is off (OCR-only mode) — no LLM model is required then.
+    const provider = settings.extractionEnabled
+      ? this.resolveProvider(settings.llmProviderId, settings.llmModel, 'LLM')
+      : null;
 
     const doc = await client.getDocument(job.documentId);
     const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
@@ -88,10 +91,14 @@ export class PipelineService {
     // The extraction limit is the OUTER gate: a document too large to extract gets
     // neither OCR nor extraction. We leave whatever paperless already recognised,
     // drop the trigger tag so it isn't re-polled, and record the skip. Re-tagging it
-    // (or raising the limit) is the explicit "process me anyway" signal.
-    if (overLimit(settings.extractMaxPages)) {
+    // (or raising the limit) is the explicit "process me anyway" signal. With
+    // extraction off the gate doesn't apply — only the OCR limit governs then.
+    if (settings.extractionEnabled && overLimit(settings.extractMaxPages)) {
       await this.dropTriggerTags(client, doc, triggerTagId);
       this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
+      // A previous attempt may have OCR'd before the limit was lowered — the
+      // gate settles the job, so honour the cache's evict-on-settle contract.
+      this.ocrCache.delete(job.documentId);
       this.logger.log(
         `job ${job.id} (doc ${job.documentId}) skipped: ${pageCount} pages over the extraction limit (${settings.extractMaxPages})`,
       );
@@ -106,7 +113,7 @@ export class PipelineService {
     // document is within the OCR page limit; otherwise reuse paperless's existing
     // Tesseract text (free). ---
     const ocrModelSelected = settings.ocrProviderId != null && !!settings.ocrModel;
-    if (settings.ocrEnabled && !ocrModelSelected) {
+    if (settings.extractionEnabled && settings.ocrEnabled && !ocrModelSelected) {
       // Don't fail the job over a missing model — degrade to paperless's text and
       // say so. The Processing UI also disables the OCR controls until a model is set.
       this.logger.warn(
@@ -114,6 +121,28 @@ export class PipelineService {
       );
     }
     const runOcr = settings.ocrEnabled && ocrModelSelected && !overLimit(settings.ocrMaxPages);
+
+    // OCR-only mode with no runnable OCR step: nothing this pipeline can do.
+    // Over the page limit that mirrors the extraction gate above (skip + drop
+    // the trigger tag; raising the limit and re-tagging reprocesses). Anything
+    // else is a config dead end — fail the job loudly (it goes terminal and
+    // shows on the dashboard) instead of silently un-tagging documents.
+    if (!settings.extractionEnabled && !runOcr) {
+      if (settings.ocrEnabled && ocrModelSelected) {
+        await this.dropTriggerTags(client, doc, triggerTagId);
+        this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
+        // As above: a prior attempt's cached OCR must not outlive the settled job.
+        this.ocrCache.delete(job.documentId);
+        this.logger.log(
+          `job ${job.id} (doc ${job.documentId}) skipped: ${pageCount} pages over the OCR limit (${settings.ocrMaxPages}) and extraction is off`,
+        );
+        return { contentHash: contentHash(String(pageCount), 'skipped:oversized'), cost: null, decision: 'skipped' };
+      }
+      const fix = !settings.ocrEnabled ? 'enable OCR' : 'select an OCR model';
+      throw new Error(
+        `Extraction is disabled and OCR cannot run — ${fix} in Settings → Processing, or re-enable extraction.`,
+      );
+    }
     const existing = (doc.content ?? '').trim();
     let ocrProvider: ResolvedProvider | null = null;
     let ocrUsage: LlmUsage | undefined;
@@ -164,24 +193,31 @@ export class PipelineService {
     }
 
     // --- Step 4: fingerprint (post-OCR text + full config) + skip check. ---
-    // Tag hints shape the prompt, so they're part of the fingerprint: editing a
-    // hint and re-tagging a document must re-run it, not skip-as-identical.
-    const tagHints = this.tagComments.map();
+    // Tag hints shape the extraction prompt, so they're part of the fingerprint
+    // (only while extraction runs): editing a hint and re-tagging a document
+    // must re-run it, not skip-as-identical.
+    const tagHints = provider ? this.tagComments.map() : new Map<number, string>();
     const fingerprint = configFingerprint({
-      llm: { kind: provider.kind, model: provider.model },
+      llm: provider ? { kind: provider.kind, model: provider.model } : null,
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
       hintsDigest: tagHintsDigest(tagHints),
     });
     const hash = contentHash(text, fingerprint);
 
-    // Skip a byte-for-byte-identical rerun (same text + same config fingerprint).
-    // An identical result was already produced — and that run already wrote this
-    // exact OCR text back — so just clear the trigger tag so the document isn't
-    // re-polled forever. No pending review item can exist at this point (the
-    // poller's pending-check guards against re-enqueuing one). We still report any
-    // OCR tokens we just spent computing the hash.
+    // Skip a byte-for-byte-identical rerun (same text + same config fingerprint):
+    // an identical result was already produced, so clear the trigger tag so the
+    // document isn't re-polled forever. The completed run wrote this OCR text
+    // back then, but paperless's `content` may have drifted since (paperless
+    // re-OCR, manual edit) — restore it in the same PATCH, or an explicit re-tag
+    // would bill OCR and change nothing. No pending review item can exist at
+    // this point (the poller's pending-check guards against re-enqueuing one).
+    // We still report any OCR tokens we just spent computing the hash.
     if (this.queue.hasCompletedWithHash(job.documentId, hash)) {
-      await this.dropTriggerTags(client, doc, triggerTagId);
+      const tags = doc.tags.filter((id) => id !== triggerTagId);
+      const patch: DocumentPatch = {};
+      if (runOcr && text !== existing) patch.content = text;
+      if (tags.length !== doc.tags.length) patch.tags = tags;
+      if (Object.keys(patch).length > 0) await client.patchDocument(doc.id, patch);
       this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
       this.ocrCache.delete(job.documentId);
       return { contentHash: hash, cost: ocrUsage?.totalTokens ?? null, decision: 'skipped' };
@@ -190,6 +226,21 @@ export class PipelineService {
     // OCR text replaces the document's `content`; it is not a reviewable suggestion.
     // Write it back only when it actually changed, to avoid a needless re-index PATCH.
     const ocrChanged = runOcr && text !== existing;
+
+    // OCR-only mode: the run is complete once the text is written back. Fold the
+    // content write-back and the trigger-tag drop into a single PATCH (one
+    // re-index), the same way applyAuto folds them into the metadata PATCH.
+    if (!provider) {
+      const tags = doc.tags.filter((id) => id !== triggerTagId);
+      const patch: DocumentPatch = {};
+      if (ocrChanged) patch.content = text;
+      if (tags.length !== doc.tags.length) patch.tags = tags;
+      if (Object.keys(patch).length > 0) await client.patchDocument(doc.id, patch);
+      const cost = ocrUsage?.totalTokens ?? null;
+      this.audit.record({ jobId: job.id, documentId: job.documentId, tokensCost: cost, decision: 'ocr-only' });
+      this.ocrCache.delete(job.documentId);
+      return { contentHash: hash, cost, decision: 'ocr-only' };
+    }
 
     const snap = await this.taxonomy.getSnapshot(client);
     const isTrigger = (id: number) => id === triggerTagId;

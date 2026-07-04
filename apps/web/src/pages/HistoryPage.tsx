@@ -27,6 +27,7 @@ const PAGE_SIZE = 25;
 const DECISION_TONE: Record<string, string> = {
   'auto-applied': 'text-emerald-600 dark:text-emerald-500',
   'review-queued': 'text-blue-600 dark:text-blue-400',
+  'ocr-only': 'text-cyan-600 dark:text-cyan-400',
   approved: 'text-emerald-600 dark:text-emerald-500',
   rejected: 'text-destructive',
   skipped: 'text-muted-foreground',
@@ -282,7 +283,7 @@ function HistoryDetail({ entry, onClose }: { entry: AuditEntryDetail; onClose: (
         <CardContent>
           <Block
             text={entry.prompt}
-            empty="No prompt was recorded — skips and review approvals don't call the model."
+            empty="No prompt was recorded — skips, OCR-only runs and review approvals don't call the extraction model."
           />
         </CardContent>
       </Card>

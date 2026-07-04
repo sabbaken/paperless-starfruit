@@ -11,6 +11,7 @@ describe('SettingsService', () => {
       autoApply: true,
       createNewTags: false,
       createNewCorrespondents: true,
+      extractionEnabled: true,
       extractMaxPages: 100,
       language: 'auto',
       ocrEnabled: true,
@@ -20,6 +21,7 @@ describe('SettingsService', () => {
       llmModel: null,
       ocrProviderId: null,
       ocrModel: null,
+      checkForUpdates: true,
     });
   });
 

@@ -12,6 +12,7 @@ import { z } from 'zod';
 export const AUDIT_DECISIONS = [
   'auto-applied',
   'review-queued',
+  'ocr-only',
   'skipped',
   'approved',
   'rejected',
