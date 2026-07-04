@@ -74,6 +74,7 @@ function PipelineStepper({
   // Read live from the prop (not local form state) so picking an OCR model
   // re-enables the OCR controls immediately on the next refetch.
   const ocrConfigured = settings.ocrProviderId != null && settings.ocrModel != null;
+  const llmConfigured = settings.llmProviderId != null && settings.llmModel != null;
 
   const save = useUpdateSettings();
   const commit = (patch: SettingsUpdate) =>
@@ -177,47 +178,83 @@ function PipelineStepper({
               Title, tags, correspondent and date
             </p>
           </div>
-          <span className="text-xs text-muted-foreground">always on</span>
+          {/* Unlike OCR the switch is never disabled: turning extraction OFF is
+              exactly what an OCR-only user with no LLM key configured needs. */}
+          <Switch
+            aria-label="Run extraction"
+            checked={form.extractionEnabled}
+            onCheckedChange={(v) => {
+              setForm((f) => ({ ...f, extractionEnabled: v }));
+              commit({ extractionEnabled: v });
+            }}
+          />
         </div>
 
-        <div className="divide-y border-t">
-          <SelectRow
-            label="Model"
-            value={describe(settings.llmProviderId, settings.llmModel)}
-            onClick={() => setPicker("llm")}
-          />
-          <div className="py-3">
-            <SwitchRow
-              label="Create new tags"
-              checked={form.createNewTags}
-              onCheckedChange={(v) => {
-                setForm((f) => ({ ...f, createNewTags: v }));
-                commit({ createNewTags: v });
-              }}
+        {form.extractionEnabled && llmConfigured ? (
+          <div className="divide-y border-t">
+            <SelectRow
+              label="Model"
+              value={describe(settings.llmProviderId, settings.llmModel)}
+              onClick={() => setPicker("llm")}
             />
+            <div className="py-3">
+              <SwitchRow
+                label="Create new tags"
+                checked={form.createNewTags}
+                onCheckedChange={(v) => {
+                  setForm((f) => ({ ...f, createNewTags: v }));
+                  commit({ createNewTags: v });
+                }}
+              />
+            </div>
+            <div className="py-3">
+              <SwitchRow
+                label="Create new correspondents"
+                checked={form.createNewCorrespondents}
+                onCheckedChange={(v) => {
+                  setForm((f) => ({ ...f, createNewCorrespondents: v }));
+                  commit({ createNewCorrespondents: v });
+                }}
+              />
+            </div>
+            <div className="py-3">
+              <MaxPagesField
+                label="Skip extraction above"
+                hint="Larger files are skipped entirely"
+                value={form.extractMaxPages}
+                onChange={(v) => {
+                  setForm((f) => ({ ...f, extractMaxPages: v }));
+                  commitLimits();
+                }}
+              />
+            </div>
           </div>
-          <div className="py-3">
-            <SwitchRow
-              label="Create new correspondents"
-              checked={form.createNewCorrespondents}
-              onCheckedChange={(v) => {
-                setForm((f) => ({ ...f, createNewCorrespondents: v }));
-                commit({ createNewCorrespondents: v });
-              }}
+        ) : form.extractionEnabled ? (
+          // Keep the model row reachable — it's the only way to configure extraction.
+          <div className="border-t">
+            <SelectRow
+              label="Model"
+              value={null}
+              onClick={() => setPicker("llm")}
             />
+            <p className="pb-3 text-xs text-muted-foreground">
+              Pick a language model to run extraction.
+            </p>
           </div>
-          <div className="py-3">
-            <MaxPagesField
-              label="Skip extraction above"
-              hint="Larger files are skipped entirely"
-              value={form.extractMaxPages}
-              onChange={(v) => {
-                setForm((f) => ({ ...f, extractMaxPages: v }));
-                commitLimits();
-              }}
-            />
+        ) : (
+          <div className="border-t py-3">
+            <p className="text-xs text-muted-foreground">
+              Documents keep their existing metadata — only OCR runs.
+            </p>
+            {(!ocrConfigured || !form.ocrEnabled) && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+                {!ocrConfigured
+                  ? "No OCR model is configured either, so documents can't be processed — pick one in the OCR step or re-enable extraction."
+                  : "OCR is off too, so documents can't be processed — enable at least one step."}
+              </p>
+            )}
           </div>
-        </div>
+        )}
       </Stage>
 
       {/* --- Stage 3: Apply ----------------------------------------------- */}
@@ -231,32 +268,39 @@ function PipelineStepper({
           </div>
         </div>
 
-        <div
-          role="radiogroup"
-          aria-label="Apply mode"
-          className="grid grid-cols-2 gap-2 border-t py-3"
-        >
-          <ApplyOption
-            icon={Inbox}
-            title="Queue for review"
-            description="You approve each document before paperless is touched"
-            selected={!form.autoApply}
-            onSelect={() => {
-              setForm((f) => ({ ...f, autoApply: false }));
-              commit({ autoApply: false });
-            }}
-          />
-          <ApplyOption
-            icon={Zap}
-            title="Apply automatically"
-            description="Suggestions land in paperless immediately"
-            selected={form.autoApply}
-            onSelect={() => {
-              setForm((f) => ({ ...f, autoApply: true }));
-              commit({ autoApply: true });
-            }}
-          />
-        </div>
+        {form.extractionEnabled ? (
+          <div
+            role="radiogroup"
+            aria-label="Apply mode"
+            className="grid grid-cols-2 gap-2 border-t py-3"
+          >
+            <ApplyOption
+              icon={Inbox}
+              title="Queue for review"
+              description="You approve each document before paperless is touched"
+              selected={!form.autoApply}
+              onSelect={() => {
+                setForm((f) => ({ ...f, autoApply: false }));
+                commit({ autoApply: false });
+              }}
+            />
+            <ApplyOption
+              icon={Zap}
+              title="Apply automatically"
+              description="Suggestions land in paperless immediately"
+              selected={form.autoApply}
+              onSelect={() => {
+                setForm((f) => ({ ...f, autoApply: true }));
+                commit({ autoApply: true });
+              }}
+            />
+          </div>
+        ) : (
+          <p className="border-t py-3 text-xs text-muted-foreground">
+            Extraction is off — there are no suggestions to apply. OCR text is
+            written straight to the document.
+          </p>
+        )}
       </Stage>
 
       {picker && (

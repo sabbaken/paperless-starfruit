@@ -39,6 +39,28 @@ describe('configFingerprint', () => {
     expect(a).not.toBe(b);
   });
 
+  it('encodes extraction as "llm:off" when no LLM model is given (OCR-only mode)', () => {
+    const ocr = { kind: 'mistral', model: 'mistral-ocr-latest' };
+    expect(configFingerprint({ llm: null, ocr })).toContain('llm:off');
+  });
+
+  it('pins the exact byte format — a silent format change would mass-reprocess every install', () => {
+    expect(configFingerprint({ llm, ocr: null })).toBe(
+      'v1|llm:anthropic/claude-haiku-4-5|ocr:off',
+    );
+    expect(
+      configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } }),
+    ).toBe('v1|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest');
+    expect(
+      configFingerprint({ llm: null, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } }),
+    ).toBe('v1|llm:off|ocr:mistral/mistral-ocr-latest');
+  });
+
+  it('differs between extraction off and on (toggling extraction reprocesses)', () => {
+    const ocr = { kind: 'mistral', model: 'mistral-ocr-latest' };
+    expect(configFingerprint({ llm: null, ocr })).not.toBe(configFingerprint({ llm, ocr }));
+  });
+
   it('stays on the historical format while no tag hints exist', () => {
     expect(configFingerprint({ llm, hintsDigest: null })).toBe(configFingerprint({ llm }));
     expect(configFingerprint({ llm })).not.toContain('hints:');

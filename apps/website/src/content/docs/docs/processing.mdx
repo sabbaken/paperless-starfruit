@@ -29,6 +29,10 @@ If you haven't connected a provider yet, the picker links you to the API Keys sc
 
 ### Extraction
 
+- **Run extraction** — when off, the pipeline stops after OCR (OCR-only mode): the
+  recognised text is written back, the trigger tag is dropped, and the document's metadata
+  is left untouched. No language model is required then. Turning *both* extraction and OCR
+  off leaves the pipeline nothing to do — jobs fail with a configuration error.
 - **Create new tags** — let the AI create tags that don't exist yet.
 - **Create new correspondents** — let the AI create correspondents that don't exist yet.
 - **Skip extraction above … pages** — larger files are skipped *entirely* — no OCR, no
@@ -63,6 +67,7 @@ skipped. See [How processing works](/docs/pipeline/).
 | Auto-apply | **on** |
 | Create new tags | off |
 | Create new correspondents | on |
+| Run extraction | on |
 | Skip extraction above | `100` pages |
 | Run OCR | on (once a model is picked) |
 | Skip OCR above | `20` pages |

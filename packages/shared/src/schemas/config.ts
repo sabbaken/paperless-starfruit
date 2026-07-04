@@ -131,6 +131,8 @@ export const settingsSchema = z.object({
   autoApply: z.boolean().default(true),
   createNewTags: z.boolean().default(false),
   createNewCorrespondents: z.boolean().default(true),
+  /** Run LLM metadata extraction; off = OCR-only mode (text write-back, no metadata). */
+  extractionEnabled: z.boolean().default(true),
   /** Skip extraction (and OCR) for documents with more pages than this. `null` = no limit. */
   extractMaxPages: z.number().int().positive().nullable().default(100),
   language: z.string().default('auto'),

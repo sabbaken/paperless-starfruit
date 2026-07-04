@@ -87,6 +87,10 @@ export const settings = sqliteTable('settings', {
   createNewCorrespondents: integer('create_new_correspondents', { mode: 'boolean' })
     .notNull()
     .default(true),
+  /** Run LLM metadata extraction; off = OCR-only mode. */
+  extractionEnabled: integer('extraction_enabled', { mode: 'boolean' })
+    .notNull()
+    .default(true),
   /** Skip extraction (and OCR) for documents with more pages than this; null = no limit. */
   extractMaxPages: integer('extract_max_pages').default(100),
   language: text('language').notNull().default('auto'),
