@@ -182,6 +182,19 @@ const providers = [
   { id: 3, name: 'Ollama (home server)', kind: 'openai-compatible', baseUrl: 'http://localhost:11434/v1' },
 ];
 
+// The Tags page: paperless tags merged with their local AI hints (TagView[]).
+const tags = [
+  { id: 21, name: 'housing', color: '#fdbf6f', documentCount: 23, comment: 'Rent, mortgage and everything about the apartment.', isTrigger: false },
+  { id: 12, name: 'insurance', color: '#b2df8a', documentCount: 17, comment: 'Anything from an insurance company: policies, claims, renewal letters. Not marketing.', isTrigger: false },
+  { id: 9, name: 'invoice', color: '#cab2d6', documentCount: 58, comment: null, isTrigger: false },
+  { id: 4, name: 'psf-process', color: '#EBC625', documentCount: 3, comment: null, isTrigger: true },
+  { id: 30, name: 'receipts', color: '#8dd3c7', documentCount: 96, comment: null, isTrigger: false },
+  { id: 14, name: 'tax', color: '#fb9a99', documentCount: 12, comment: 'Documents from or for the tax office.', isTrigger: false },
+  { id: 7, name: 'utilities', color: '#a6cee3', documentCount: 42, comment: 'Electricity, water, heating and internet bills.', isTrigger: false },
+];
+
+const version = { current: '1.3.0', updateAvailable: false, latest: '1.3.0', releaseUrl: null };
+
 const settings = {
   pollIntervalSec: 60,
   autoApply: false,
@@ -207,6 +220,8 @@ function fixtureFor(apiPath) {
   if (apiPath === '/prompts/documents') return testDocuments;
   if (apiPath === '/providers') return providers;
   if (apiPath === '/settings') return settings;
+  if (apiPath === '/tags') return tags;
+  if (apiPath === '/version') return version;
   if (/^\/review\/\d+$/.test(apiPath)) return reviewDetail;
   if (apiPath === '/review') return reviewList;
   return null;
@@ -233,6 +248,13 @@ const TARGETS = [
     },
   },
   {
+    name: 'tags',
+    path: '/tags',
+    // A hinted tag row proves the table (and the AI-hint column) rendered.
+    prep: async (page) =>
+      page.getByText('insurance', { exact: true }).waitFor({ timeout: 15000 }),
+  },
+  {
     name: 'prompts',
     path: '/settings/prompts',
     prep: async (page) => page.getByText('Variables').first().waitFor({ timeout: 15000 }),
@@ -240,7 +262,7 @@ const TARGETS = [
   {
     name: 'api-keys',
     path: '/settings/api-keys',
-    prep: async (page) => page.getByText('Cloud providers').waitFor({ timeout: 15000 }),
+    prep: async (page) => page.getByText('Add local endpoint').waitFor({ timeout: 15000 }),
   },
 ];
 
@@ -339,7 +361,7 @@ async function main() {
       console.log(`  → ${file}`);
     }
 
-    console.log('\nDone. 4 screenshots written to apps/website/public/screenshots/');
+    console.log(`\nDone. ${TARGETS.length} screenshots written to apps/website/public/screenshots/`);
   } finally {
     if (browser) await browser.close();
     killServer();
