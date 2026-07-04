@@ -30,27 +30,69 @@ environment variables for the process itself (below).
 
 ## Deploy (self-hosting)
 
-A single container, no Postgres/Redis. SQLite lives on a mounted volume.
+A single container, no Postgres/Redis. SQLite lives on a mounted volume. Pre-built images
+are published to GitHub Container Registry on every push to master, so there is nothing to
+clone or build:
 
-```bash
-# Generate the one required secret (keep it stable — see below):
-export ENCRYPTION_KEY="$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
-
-docker compose -f docker/docker-compose.yml up -d --build
+```
+ghcr.io/sabbaken/paperless-starfruit/api:latest    # or sha-<commit> to pin an exact build
 ```
 
-Then open **http://localhost:3000** — the container serves both the API and the web UI on
+Pick the compose file that matches your setup:
+
+### Already running paperless-ngx
+
+Use the standalone compose — one service, attached to your existing stack:
+
+```bash
+mkdir paperless-starfruit && cd paperless-starfruit
+curl -fsSLO https://raw.githubusercontent.com/sabbaken/paperless-starfruit/master/docker/docker-compose.yml
+
+# Generate the one required secret (keep it stable — see below):
+echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
+
+docker compose up -d
+```
+
+To let the container reach paperless, attach it to your paperless stack's Docker network
+(see the commented example at the bottom of the compose file) and use the in-network service
+name (e.g. `http://webserver:8000`) as the paperless URL in the UI — not `localhost`.
+
+### Starting from scratch (paperless-ngx included)
+
+`docker-compose.full.yml` brings up Redis + paperless-ngx + Paperless Starfruit together:
+
+```bash
+mkdir paperless && cd paperless
+curl -fsSLO https://raw.githubusercontent.com/sabbaken/paperless-starfruit/master/docker/docker-compose.full.yml
+
+cat > .env <<EOF
+ENCRYPTION_KEY=$(openssl rand -base64 32)
+PAPERLESS_SECRET_KEY=$(openssl rand -base64 32)
+EOF
+
+docker compose -f docker-compose.full.yml up -d
+docker compose -f docker-compose.full.yml run --rm paperless createsuperuser
+```
+
+paperless-ngx comes up on **http://localhost:8000** (log in with the superuser you just
+created). In the Starfruit UI, set the paperless URL to `http://paperless:8000` — the
+in-network service name, not `localhost`.
+
+### First run
+
+Open **http://localhost:3000** — the container serves both the API and the web UI on
 the same port. On first run, the UI shows a **"create admin"** card; once you set the admin
 username/password, registration closes and only login works (there is no default password).
 
-- **Persistence:** the SQLite database is at `/data/app.db` on the `paperless_starfruit_data`
-  volume. Back that up to keep your config, prompts, queue and audit history.
+- **Persistence:** the SQLite database is at `/data/app.db` on a named volume. Back that up
+  to keep your config, prompts, queue and audit history.
 - **Behind a reverse proxy:** put your TLS terminator (Caddy/Traefik/nginx) in front of port
   3000. Auth is a bearer token, not a cookie, so no extra CORS/cookie config is needed; set
   `CORS_ORIGIN` only if you want to restrict it.
-- **Alongside an existing paperless-ngx stack:** attach the container to that stack's Docker
-  network (see the commented example in `docker/docker-compose.yml`) and point the paperless
-  URL in the UI at the in-network service name (e.g. `http://webserver:8000`), not `localhost`.
+- **Building from source** (optional): clone the repo, swap `image:` for the commented
+  `build:` block in `docker/docker-compose.yml`, then
+  `docker compose -f docker/docker-compose.yml up -d --build`.
 
 ### Configuration (environment variables)
 

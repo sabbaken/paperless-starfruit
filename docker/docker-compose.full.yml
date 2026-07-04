@@ -1,0 +1,82 @@
+# Full-stack example: paperless-ngx + Paperless Starfruit in one stack, using
+# the pre-built Starfruit image from ghcr.io — no repo checkout or local build
+# needed, this file works on its own. If you ALREADY run paperless-ngx, use
+# docker-compose.yml instead and attach it to your existing stack's network.
+#
+# Put this file on your server with a `.env` next to it holding the two
+# required secrets (generate each with `openssl rand -base64 32`):
+#
+#   ENCRYPTION_KEY=...
+#   PAPERLESS_SECRET_KEY=...
+#
+#   docker compose -f docker-compose.full.yml up -d
+#   docker compose -f docker-compose.full.yml run --rm paperless createsuperuser
+#
+# Then:
+#   http://localhost:8000   paperless-ngx (log in with the superuser you created)
+#   http://localhost:3000   Paperless Starfruit (first visit shows "create admin")
+#
+# In the Starfruit UI, set the paperless URL to http://paperless:8000 — the
+# in-network service name, NOT http://localhost:8000 (inside the Starfruit
+# container, localhost is the container itself).
+services:
+  broker:
+    image: docker.io/library/redis:8
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
+  paperless:
+    # Pin a specific version (e.g. :2.18) if you prefer deliberate upgrades.
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - broker
+    ports:
+      - "8000:8000"
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?set PAPERLESS_SECRET_KEY in .env — any long random string}
+      # The URL paperless is reached at in the browser (needed for CSRF).
+      # Change this when serving behind a reverse proxy / real hostname.
+      PAPERLESS_URL: ${PAPERLESS_URL:-http://localhost:8000}
+      PAPERLESS_TIME_ZONE: ${TZ:-UTC}
+      # PAPERLESS_OCR_LANGUAGE: eng
+      # No PAPERLESS_DBHOST -> paperless uses its built-in SQLite database,
+      # plenty for a personal archive. See the paperless-ngx docs to switch to
+      # Postgres.
+    volumes:
+      - paperless_data:/usr/src/paperless/data
+      - paperless_media:/usr/src/paperless/media
+      - ./export:/usr/src/paperless/export
+      # Drop PDFs/images into ./consume (next to this file) to have paperless
+      # ingest them.
+      - ./consume:/usr/src/paperless/consume
+
+  paperless-starfruit:
+    # Published by CI on every master push. Tags: `latest`, or `sha-<commit>`
+    # to pin an exact build.
+    image: ghcr.io/sabbaken/paperless-starfruit/api:latest
+    restart: unless-stopped
+    depends_on:
+      - paperless
+    ports:
+      - "3000:3000"
+    volumes:
+      - starfruit_data:/data
+    environment:
+      DATABASE_PATH: /data/app.db
+      # Encrypts stored credentials and signs admin sessions. Keep it stable:
+      # rotating it logs the admin out and makes saved credentials
+      # undecryptable.
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env — generate with `openssl rand -base64 32`}
+      # Optional: lock CORS to specific origins (comma-separated). Unset
+      # reflects the request origin, which is fine since auth is a bearer
+      # token, not a cookie.
+      # CORS_ORIGIN: https://paperless-ai.home.lan
+
+volumes:
+  redisdata:
+  paperless_data:
+  paperless_media:
+  starfruit_data:
