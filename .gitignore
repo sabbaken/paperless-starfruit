@@ -14,6 +14,7 @@ data/
 .DS_Store
 /tmp
 CLAUDE.md
+.idea
 
 # Dev paperless-ngx consume folder (drop files here to ingest)
 docker/paperless-consume/
