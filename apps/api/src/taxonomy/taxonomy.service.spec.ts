@@ -88,10 +88,10 @@ describe('TaxonomyService', () => {
     expect(client.createTag).not.toHaveBeenCalled();
   });
 
-  it('creates the trigger tag when it is missing', async () => {
+  it('creates the trigger tag in brand yellow when it is missing', async () => {
     const client = fakeClient([]);
     const id = await svc.resolveTriggerTag(client);
-    expect(client.createTag).toHaveBeenCalledWith('psf-process');
+    expect(client.createTag).toHaveBeenCalledWith('psf-process', '#EBC625');
     expect(id).not.toBeNull();
   });
 });

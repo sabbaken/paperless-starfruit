@@ -64,6 +64,18 @@ export const promptTemplate = sqliteTable(
   },
 );
 
+/**
+ * A user-written hint for one paperless tag, injected into the extraction
+ * prompt so the model knows when the tag applies. Keyed by paperless's own tag
+ * id (no FK — the tag lives in paperless); a missing row means "no hint".
+ */
+export const tagComment = sqliteTable('tag_comment', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  tagId: integer('tag_id').notNull().unique(),
+  comment: text('comment').notNull(),
+  updatedAt: timestamp('updated_at'),
+});
+
 /** Single-row application settings (id = 1). */
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
@@ -169,4 +181,5 @@ export type Provider = typeof provider.$inferSelect;
 export type NewProvider = typeof provider.$inferInsert;
 export type SettingsRow = typeof settings.$inferSelect;
 export type ReviewItem = typeof reviewItem.$inferSelect;
+export type TagComment = typeof tagComment.$inferSelect;
 export type AuditLog = typeof auditLog.$inferSelect;

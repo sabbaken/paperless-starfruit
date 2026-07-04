@@ -17,12 +17,13 @@ import { LlmService, type LlmUsage } from '../providers/llm.service';
 import { OcrService } from '../providers/ocr.service';
 import { buildLanguageModel, type ResolvedProvider } from '../providers/model.factory';
 import { SettingsService } from '../settings/settings.service';
+import { TagCommentsService } from '../taxonomy/tag-comments.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { mergeTagIds } from '../taxonomy/tags';
 import { ReviewService } from '../review/review.service';
 import { QueueService } from '../queue/queue.service';
 import { AuditService } from '../audit/audit.service';
-import { configFingerprint, contentHash } from './fingerprint';
+import { configFingerprint, contentHash, tagHintsDigest } from './fingerprint';
 import { DeferJobError } from './defer-job.error';
 import { PromptsService } from '../prompts/prompts.service';
 import { extractionVars, ocrVars } from '../prompts/render';
@@ -61,6 +62,7 @@ export class PipelineService {
     private readonly llm: LlmService,
     private readonly ocr: OcrService,
     private readonly taxonomy: TaxonomyService,
+    private readonly tagComments: TagCommentsService,
     private readonly review: ReviewService,
     private readonly queue: QueueService,
     private readonly audit: AuditService,
@@ -162,9 +164,13 @@ export class PipelineService {
     }
 
     // --- Step 4: fingerprint (post-OCR text + full config) + skip check. ---
+    // Tag hints shape the prompt, so they're part of the fingerprint: editing a
+    // hint and re-tagging a document must re-run it, not skip-as-identical.
+    const tagHints = this.tagComments.map();
     const fingerprint = configFingerprint({
       llm: { kind: provider.kind, model: provider.model },
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
+      hintsDigest: tagHintsDigest(tagHints),
     });
     const hash = contentHash(text, fingerprint);
 
@@ -193,7 +199,9 @@ export class PipelineService {
       extractionVars({
         content: text,
         language: settings.language,
-        allTags: snap.tags.filter((t) => !isTrigger(t.id)).map((t) => t.name),
+        allTags: snap.tags
+          .filter((t) => !isTrigger(t.id))
+          .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         // The prompt reflects the user's intent (the raw setting), not the
         // auto-gated `create` below — so in review mode the model still proposes
@@ -232,13 +240,17 @@ export class PipelineService {
     const createTags = isAuto && settings.createNewTags;
     const createCorrespondents = isAuto && settings.createNewCorrespondents;
 
+    // Resolve against the same snapshot the prompt was rendered from: a Tags-page
+    // edit during the (long) LLM call must not shift the ground under this job —
+    // e.g. a rename would otherwise re-create the old name as a duplicate tag.
     const resolvedTags = await this.taxonomy.resolveTags(client, extraction.tags, {
       create: createTags,
+      snapshot: snap,
     });
     const resolvedCorrespondent = await this.taxonomy.resolveCorrespondent(
       client,
       extraction.correspondent,
-      { create: createCorrespondents, blacklist: settings.correspondentBlacklist },
+      { create: createCorrespondents, blacklist: settings.correspondentBlacklist, snapshot: snap },
     );
 
     const auditBase = {

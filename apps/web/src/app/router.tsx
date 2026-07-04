@@ -8,6 +8,7 @@ import { HistoryPage } from '@/pages/HistoryPage';
 import { ProcessingPage } from '@/pages/ProcessingPage';
 import { PromptsPage } from '@/pages/PromptsPage';
 import { ReviewPage } from '@/pages/ReviewPage';
+import { TagsPage } from '@/pages/TagsPage';
 
 export function AppRouter() {
   return (
@@ -23,6 +24,7 @@ export function AppRouter() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/review" element={<ReviewPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/tags" element={<TagsPage />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
           <Route path="/settings/general" element={<GeneralPage />} />
           <Route path="/settings/connection" element={<ConnectionPage />} />

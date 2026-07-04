@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configFingerprint, contentHash } from './fingerprint';
+import { configFingerprint, contentHash, tagHintsDigest } from './fingerprint';
 
 describe('contentHash', () => {
   const fp = configFingerprint({ llm: { kind: 'anthropic', model: 'claude-haiku-4-5' } });
@@ -37,5 +37,34 @@ describe('configFingerprint', () => {
     const a = configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } });
     const b = configFingerprint({ llm, ocr: { kind: 'openai', model: 'gpt-4o' } });
     expect(a).not.toBe(b);
+  });
+
+  it('stays on the historical format while no tag hints exist', () => {
+    expect(configFingerprint({ llm, hintsDigest: null })).toBe(configFingerprint({ llm }));
+    expect(configFingerprint({ llm })).not.toContain('hints:');
+  });
+
+  it('changes when a hint appears or changes (editing a hint reprocesses on re-tag)', () => {
+    const none = configFingerprint({ llm });
+    const a = configFingerprint({ llm, hintsDigest: tagHintsDigest(new Map([[1, 'bills']])) });
+    const b = configFingerprint({ llm, hintsDigest: tagHintsDigest(new Map([[1, 'invoices']])) });
+    expect(a).not.toBe(none);
+    expect(a).not.toBe(b);
+  });
+});
+
+describe('tagHintsDigest', () => {
+  it('is null with no hints and insensitive to map insertion order', () => {
+    expect(tagHintsDigest(new Map())).toBeNull();
+    const ab = tagHintsDigest(new Map([[1, 'a'], [2, 'b']]));
+    const ba = tagHintsDigest(new Map([[2, 'b'], [1, 'a']]));
+    expect(ab).toBe(ba);
+    expect(ab).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it('distinguishes which tag carries which hint', () => {
+    expect(tagHintsDigest(new Map([[1, 'a'], [2, 'b']]))).not.toBe(
+      tagHintsDigest(new Map([[1, 'b'], [2, 'a']])),
+    );
   });
 });

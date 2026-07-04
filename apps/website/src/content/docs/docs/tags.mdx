@@ -1,0 +1,46 @@
+---
+title: Tags & AI hints
+description: Manage your paperless tags from Starfruit and give each one a hint that teaches the AI when to apply it.
+---
+
+The **Tags** page lists every tag in your paperless instance. You can create new tags and
+rename or recolor existing ones — changes are written straight to paperless.
+
+Its real purpose, though, is the **AI hint**: a short note attached to a tag that tells the
+model when the tag applies. Tag names alone are often ambiguous — *"Insurance"* could mean
+policies, claims, or the company's ads — and the model can only guess. A hint removes the
+guessing:
+
+> **Insurance** — Anything from an insurance company: policies, claims, renewal letters.
+> Not marketing.
+
+## How hints reach the model
+
+Hints are injected through the `{{all_tags}}` variable of the
+[extraction prompt](/docs/prompts/). While no tag has a hint, the variable renders as the
+usual comma-separated list. As soon as at least one tag carries a hint, the hinted tags
+become a Markdown table the model can read row by row, with the rest listed compactly below:
+
+```markdown
+| Tag | When to use it |
+| --- | --- |
+| Insurance | Anything from an insurance company: policies, claims, renewal letters. |
+| Tax | Documents from or for the tax office. |
+
+Other existing tags: Receipts, Manuals, Warranty
+```
+
+Tags without a hint stay in the compact list — still offered for reuse, just without
+guidance (and without a table row each, so hints don't bloat the prompt).
+
+A few practical notes:
+
+- **Keep hints short.** One or two sentences (500 characters max). Every hint is included in
+  every extraction prompt, so long hints cost tokens on each document.
+- **Hints live in Starfruit**, not in paperless — they're stored in Starfruit's own database,
+  keyed by the paperless tag. Deleting a tag in paperless orphans its hint harmlessly.
+- **Editing a hint doesn't touch processed documents by itself** — but hints are part of the
+  processing fingerprint, so re-adding the trigger tag to a document after a hint change
+  re-runs it with the new guidance (it won't be skipped as an identical run).
+- The **trigger tag** is shown with a badge and can't be edited here — Starfruit finds
+  documents by its name.

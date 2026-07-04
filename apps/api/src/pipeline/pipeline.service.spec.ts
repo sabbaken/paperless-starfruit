@@ -9,6 +9,7 @@ import type { ProviderService } from '../providers/provider.service';
 import type { SettingsService } from '../settings/settings.service';
 import type { LlmService } from '../providers/llm.service';
 import type { OcrService } from '../providers/ocr.service';
+import type { TagCommentsService } from '../taxonomy/tag-comments.service';
 import type { TaxonomyService } from '../taxonomy/taxonomy.service';
 import type { ReviewService } from '../review/review.service';
 import type { QueueService } from '../queue/queue.service';
@@ -131,6 +132,8 @@ function makePipeline(o: Overrides = {}) {
     render: vi.fn((_key: string, vars: Record<string, string>) => JSON.stringify(vars)),
   } as unknown as PromptsService & { render: ReturnType<typeof vi.fn> };
 
+  const tagComments = { map: vi.fn().mockReturnValue(new Map()) } as unknown as TagCommentsService;
+
   const pipeline = new PipelineService(
     connection,
     providers,
@@ -138,6 +141,7 @@ function makePipeline(o: Overrides = {}) {
     llm,
     ocr,
     taxonomy,
+    tagComments,
     review,
     queue,
     audit,
@@ -183,9 +187,11 @@ describe('PipelineService.process', () => {
 
     await pipeline.process(JOB);
 
-    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(expect.anything(), ['invoice'], {
-      create: true,
-    });
+    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(
+      expect.anything(),
+      ['invoice'],
+      expect.objectContaining({ create: true }),
+    );
     expect(vi.mocked(taxonomy.resolveCorrespondent)).toHaveBeenCalledWith(
       expect.anything(),
       'ACME',
@@ -201,9 +207,11 @@ describe('PipelineService.process', () => {
 
     await pipeline.process(JOB);
 
-    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(expect.anything(), ['invoice'], {
-      create: false,
-    });
+    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(
+      expect.anything(),
+      ['invoice'],
+      expect.objectContaining({ create: false }),
+    );
     expect(vi.mocked(taxonomy.resolveCorrespondent)).toHaveBeenCalledWith(
       expect.anything(),
       'ACME',

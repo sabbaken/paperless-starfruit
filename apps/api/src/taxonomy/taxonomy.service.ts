@@ -1,12 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { DEFAULT_TRIGGER_TAG, type ResolvedTag } from '@paperless-starfruit/shared';
+import {
+  DEFAULT_TRIGGER_TAG,
+  TRIGGER_TAG_COLOR,
+  type ResolvedTag,
+} from '@paperless-starfruit/shared';
 import type { PaperlessClient } from '../paperless/paperless.client';
 import type { PaperlessCorrespondent, PaperlessTag } from '../paperless/paperless.schemas';
 
-interface Snapshot {
-  fetchedAt: number;
+/** One consistent view of the paperless taxonomy (what `getSnapshot` returns). */
+export interface TaxonomySnapshot {
   tags: PaperlessTag[];
   correspondents: PaperlessCorrespondent[];
+}
+
+interface Snapshot extends TaxonomySnapshot {
+  fetchedAt: number;
 }
 
 const SNAPSHOT_TTL_MS = 60_000;
@@ -24,10 +32,7 @@ export class TaxonomyService {
   private snapshot: Snapshot | null = null;
   private triggerTagId: number | null = null;
 
-  async getSnapshot(
-    client: PaperlessClient,
-    force = false,
-  ): Promise<{ tags: PaperlessTag[]; correspondents: PaperlessCorrespondent[] }> {
+  async getSnapshot(client: PaperlessClient, force = false): Promise<TaxonomySnapshot> {
     if (!force && this.snapshot && Date.now() - this.snapshot.fetchedAt < SNAPSHOT_TTL_MS) {
       return this.snapshot;
     }
@@ -39,24 +44,26 @@ export class TaxonomyService {
     return this.snapshot;
   }
 
-  /** Resolve (creating if missing) the trigger tag id. Cached for the process. */
+  /** Resolve (creating if missing, in brand yellow) the trigger tag id. Cached for the process. */
   async resolveTriggerTag(client: PaperlessClient): Promise<number> {
     if (this.triggerTagId != null) return this.triggerTagId;
-    this.triggerTagId = await this.ensureTag(client, DEFAULT_TRIGGER_TAG);
+    this.triggerTagId = await this.ensureTag(client, DEFAULT_TRIGGER_TAG, TRIGGER_TAG_COLOR);
     return this.triggerTagId;
   }
 
   /**
    * Map suggested tag names to ids. With `create`, missing tags are created in
    * paperless now; without it, they come back with `id: null` (creation deferred
-   * to review approval). Names are de-duplicated case-insensitively.
+   * to review approval). Names are de-duplicated case-insensitively. Pass
+   * `snapshot` to resolve against a caller-pinned taxonomy view (the pipeline
+   * pins the one its prompt was rendered from).
    */
   async resolveTags(
     client: PaperlessClient,
     names: string[],
-    opts: { create: boolean },
+    opts: { create: boolean; snapshot?: TaxonomySnapshot },
   ): Promise<ResolvedTag[]> {
-    const snap = await this.getSnapshot(client);
+    const snap = opts.snapshot ?? (await this.getSnapshot(client));
     const out: ResolvedTag[] = [];
     const seen = new Set<string>();
     for (const raw of names) {
@@ -82,13 +89,13 @@ export class TaxonomyService {
   async resolveCorrespondent(
     client: PaperlessClient,
     name: string | null,
-    opts: { create: boolean; blacklist: string[] },
+    opts: { create: boolean; blacklist: string[]; snapshot?: TaxonomySnapshot },
   ): Promise<ResolvedTag | null> {
     const trimmed = name?.trim();
     if (!trimmed) return null;
     if (opts.blacklist.some((b) => norm(b) === norm(trimmed))) return null;
 
-    const snap = await this.getSnapshot(client);
+    const snap = opts.snapshot ?? (await this.getSnapshot(client));
     const existing = snap.correspondents.find((c) => norm(c.name) === norm(trimmed));
     if (existing) return { id: existing.id, name: existing.name, isNew: false };
     if (opts.create) {
@@ -119,11 +126,20 @@ export class TaxonomyService {
     this.triggerTagId = null;
   }
 
-  private async ensureTag(client: PaperlessClient, name: string): Promise<number> {
+  /** Drop only the tag/correspondent snapshot (after editing the taxonomy). */
+  invalidateSnapshot(): void {
+    this.snapshot = null;
+  }
+
+  private async ensureTag(
+    client: PaperlessClient,
+    name: string,
+    color?: string,
+  ): Promise<number> {
     const snap = await this.getSnapshot(client);
     const existing = snap.tags.find((t) => norm(t.name) === norm(name));
     if (existing) return existing.id;
-    const created = await client.createTag(name);
+    const created = await client.createTag(name, color);
     snap.tags.push(created);
     return created.id;
   }
