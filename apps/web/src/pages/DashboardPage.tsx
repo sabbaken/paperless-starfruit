@@ -1,13 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
-  Coins,
+  ChevronRight,
   Inbox,
   ListTodo,
   Loader2,
   type LucideIcon,
   RotateCw,
-  TrendingUp,
   TriangleAlert,
 } from 'lucide-react';
 import type { JobSummary } from '@paperless-starfruit/shared';
@@ -45,26 +44,105 @@ export function DashboardPage() {
   const { queue, pendingReview, tokenSpend, throughput, errorRate, recentJobs } = stats.data;
   const active = queue.queued + queue.running;
   const finished = queue.done + queue.failed;
+  const failedDocIds = [
+    ...new Set(recentJobs.filter((j) => j.status === 'failed').map((j) => j.documentId)),
+  ];
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Stat label="In queue" icon={ListTodo} value={active} hint={`${queue.running} running`} />
-        <Stat
-          label="Awaiting review"
-          icon={Inbox}
-          value={pendingReview}
-          action={pendingReview > 0 ? <Button size="sm" variant="outline" onClick={() => navigate('/review')}>Review</Button> : undefined}
+      <div className="rounded-xl border bg-card p-5 sm:p-6">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Document pipeline
+        </p>
+
+        <div className="mt-4 grid grid-cols-2 gap-x-2 gap-y-5 sm:flex sm:items-stretch">
+          <Stage
+            icon={ListTodo}
+            label="In queue"
+            value={active}
+            hint={`${queue.running} running`}
+          />
+          <StageArrow />
+          <Stage
+            icon={Inbox}
+            label="Awaiting review"
+            value={pendingReview}
+            hint={pendingReview === 0 ? 'nothing to review' : undefined}
+            action={
+              pendingReview > 0 ? (
+                <Button size="sm" variant="outline" className="h-7 px-2.5" onClick={() => navigate('/review')}>
+                  Review
+                </Button>
+              ) : undefined
+            }
+          />
+          <StageArrow />
+          <Stage
+            icon={CheckCircle2}
+            label="Done"
+            value={queue.done}
+            tone={queue.done > 0 ? 'success' : undefined}
+            hint={`${throughput} today`}
+          />
+          <div className="hidden self-stretch border-l sm:mx-4 sm:block" aria-hidden />
+          <Stage
+            icon={TriangleAlert}
+            label="Failed"
+            value={queue.failed}
+            tone={queue.failed > 0 ? 'danger' : undefined}
+            hint={queue.failed === 0 ? 'no failures' : undefined}
+            action={
+              failedDocIds.length > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2.5"
+                  disabled={retry.isPending}
+                  onClick={() => failedDocIds.forEach((id) => retry.mutate(id))}
+                >
+                  {retry.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <RotateCw className="size-3.5" />
+                  )}
+                  Retry all
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
+
+        {finished > 0 && (
+          <div className="mt-6">
+            <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="bg-emerald-500 transition-[width] duration-500"
+                style={{ width: `${(queue.done / finished) * 100}%` }}
+              />
+              <div
+                className="bg-destructive transition-[width] duration-500"
+                style={{ width: `${(queue.failed / finished) * 100}%` }}
+              />
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {queue.done} of {finished} succeeded
+              </span>
+              <span className={queue.failed > 0 ? 'text-destructive' : 'text-muted-foreground'}>
+                {Math.round(errorRate * 100)}% error rate
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <Metric label="Processed today" value={throughput} />
+        <Metric label="Tokens used" value={tokenSpend.toLocaleString()} />
+        <Metric
+          label="Avg tokens per doc"
+          value={queue.done > 0 ? Math.round(tokenSpend / queue.done).toLocaleString() : '—'}
         />
-        <Stat label="Processed" icon={CheckCircle2} value={queue.done} hint={queue.failed ? `${queue.failed} failed` : undefined} hintTone={queue.failed ? 'fault' : undefined} />
-        <Stat label="Processed (24h)" icon={TrendingUp} value={throughput} hint="completed today" />
-        <Stat
-          label="Error rate"
-          icon={TriangleAlert}
-          value={`${Math.round(errorRate * 100)}%`}
-          hint={finished > 0 ? `${queue.failed} of ${finished} finished` : 'no jobs finished yet'}
-        />
-        <Stat label="Tokens used" icon={Coins} value={tokenSpend.toLocaleString()} />
       </div>
 
       <PageSection title="Recent activity">
@@ -135,36 +213,62 @@ export function DashboardPage() {
   );
 }
 
-function Stat({
-  label,
+function Stage({
   icon: Icon,
+  label,
   value,
   hint,
-  hintTone,
+  tone,
   action,
 }: {
-  label: string;
   icon: LucideIcon;
-  value: number | string;
+  label: string;
+  value: number;
   hint?: string;
-  hintTone?: 'fault';
+  tone?: 'success' | 'danger';
   action?: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1 rounded-lg bg-muted/50 p-4">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-        <div className="flex shrink-0 items-center gap-2">
-          {action}
-          <Icon className="size-4 text-muted-foreground" />
-        </div>
-      </div>
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-      {hint && (
-        <p className={cn('text-xs', hintTone === 'fault' ? 'text-destructive' : 'text-muted-foreground')}>
-          {hint}
-        </p>
-      )}
+    <div className="min-w-0 flex-1">
+      <p
+        className={cn(
+          'flex items-center gap-1.5 text-xs font-medium',
+          tone === 'danger' ? 'text-destructive' : 'text-muted-foreground',
+        )}
+      >
+        <Icon className="size-3.5 shrink-0" />
+        {label}
+      </p>
+      <p
+        className={cn(
+          'mt-1 text-2xl font-semibold tabular-nums',
+          tone === 'success' && 'text-emerald-600 dark:text-emerald-500',
+          tone === 'danger' && 'text-destructive',
+        )}
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+      {action && <div className="mt-1.5">{action}</div>}
+    </div>
+  );
+}
+
+function StageArrow() {
+  return (
+    <ChevronRight
+      className="hidden size-4 shrink-0 self-center text-muted-foreground/50 sm:mx-2 sm:block"
+      aria-hidden
+    />
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number | string }) {
+  return (
+    // Same chrome as the pipeline card above, so the tiles read as one family.
+    <div className="rounded-xl border bg-card p-4">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
