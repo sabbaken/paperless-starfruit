@@ -19,7 +19,10 @@ services:
     #     dockerfile: docker/Dockerfile
     image: ghcr.io/sabbaken/paperless-starfruit/api:latest
     ports:
-      - "3000:3000"
+      # Host port 7827 ("star" on a phone keypad) — deliberately uncommon so
+      # this file works as-is, unlike 3000 which is usually taken. The app
+      # inside the container still listens on 3000.
+      - "7827:3000"
     volumes:
       - paperless_starfruit_data:/data
     environment:

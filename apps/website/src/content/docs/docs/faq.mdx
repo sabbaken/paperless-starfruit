@@ -7,8 +7,6 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## I tagged a document but nothing happened
 
-Work through these:
-
 - Is the tag exactly **`psf-process`**? It's case-sensitive.
 - Is the [paperless connection](/docs/connect-paperless/) saved and testing green?
 - Have you selected a **language model** on the [Processing](/docs/processing/) screen?
@@ -22,7 +20,7 @@ Work through these:
 ## How much will it cost?
 
 You pay your providers directly for the tokens (or pages, for Mistral OCR) each run uses.
-At a typical ~50 documents/week this is small, but you control it:
+At a typical ~50 documents/week this is small, and you control it:
 
 - Leave **OCR off** to reuse paperless's free text and only pay for extraction.
 - Use a cheaper model for OCR than for extraction.
@@ -42,14 +40,13 @@ to force a real re-run.
 
 Only if paperless's built-in Tesseract OCR isn't good enough for your documents. Vision-model
 OCR can be markedly better on messy scans, but it's billed per token (or per page for Mistral
-OCR), whereas reusing paperless's text is free. Many people leave OCR off and only enable it
-for tricky documents.
+OCR), whereas reusing paperless's text is free.
 
 ## Where is my data?
 
 Everything — config, prompts, the job queue, review items and audit history — is in a single
-SQLite file at `/data/app.db` on the `paperless_starfruit_data` volume. Back that volume up
-and you have a complete snapshot.
+SQLite file at `/data/app.db` on the container's data volume. Back that volume up and you
+have a complete snapshot.
 
 ## I lost the admin password
 

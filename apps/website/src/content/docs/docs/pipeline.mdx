@@ -5,7 +5,7 @@ description: Follow a tagged document through the full pipeline — the page-cap
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-Every tagged document follows the same path. Here is what happens, in order.
+Every tagged document follows the same path.
 
 <Steps>
 
@@ -71,5 +71,4 @@ attempt.
 ## Worker model
 
 One worker, one job at a time, one SQLite file. At single-user scale (~50 docs/week)
-throughput is a non-issue, so concurrency is fixed at 1 by design — simplicity over
-machinery. The UI stays current by polling, so there's no websocket to run.
+throughput is a non-issue, so concurrency is fixed at 1 by design.
