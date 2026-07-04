@@ -132,8 +132,9 @@ const shots = [
   .slide {
     margin: 0;
     flex: none;
-    /* Big: nearly the whole container, with the next slide peeking in. */
-    width: min(960px, 86vw);
+    /* Large but viewport-friendly: the whole slide (plus caption) stays visible
+       without precise page-scrolling, and the next slide still peeks in. */
+    width: min(720px, 80vw);
     scroll-snap-align: center;
   }
 

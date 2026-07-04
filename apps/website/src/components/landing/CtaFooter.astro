@@ -19,29 +19,34 @@ const year = 2026;
 </section>
 
 <footer class="foot">
-  <div class="container foot__inner">
-    <div class="foot__brand">
-      <img src="/paperless-starfruit.png" width="26" height="26" alt="" />
-      <span>Paperless Starfruit</span>
+  <div class="container">
+    <div class="foot__row">
+      <div class="foot__brand">
+        <img src="/paperless-starfruit.png" width="26" height="26" alt="" />
+        <span>Paperless Starfruit</span>
+      </div>
+
+      <nav class="foot__links" aria-label="Footer">
+        <a href="/docs/">Documentation</a>
+        <a href="/docs/installation/">Install</a>
+        <a href="https://github.com/sabbaken/paperless-starfruit">GitHub</a>
+        <a href="https://docs.paperless-ngx.com/">paperless-ngx</a>
+      </nav>
     </div>
 
-    <nav class="foot__links" aria-label="Footer">
-      <a href="/docs/">Documentation</a>
-      <a href="/docs/installation/">Install</a>
-      <a href="https://github.com/sabbaken/paperless-starfruit">GitHub</a>
-      <a href="https://docs.paperless-ngx.com/">paperless-ngx</a>
-    </nav>
-
-    <p class="foot__note">
-      An independent companion for paperless-ngx — not affiliated with the paperless-ngx
-      project. © {year}
-    </p>
+    <div class="foot__meta">
+      <p>
+        An independent companion for paperless-ngx — not affiliated with the paperless-ngx
+        project.
+      </p>
+      <p>© {year}</p>
+    </div>
   </div>
 </footer>
 
 <style>
   .cta {
-    padding-block: clamp(72px, 11vw, 132px);
+    padding-block: clamp(56px, 8vw, 96px);
     background:
       radial-gradient(70% 130% at 50% 0%, rgba(235, 198, 37, 0.22), transparent 62%),
       var(--paper);
@@ -80,13 +85,14 @@ const year = 2026;
     border-top: 1px solid var(--line);
     background: var(--ink);
     color: var(--paper);
-    padding-block: 40px;
+    padding-block: 34px;
   }
-  .foot__inner {
+  .foot__row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 18px 32px;
+    justify-content: space-between;
+    gap: 16px 32px;
   }
   .foot__brand {
     display: flex;
@@ -101,7 +107,7 @@ const year = 2026;
   .foot__links {
     display: flex;
     flex-wrap: wrap;
-    gap: 22px;
+    gap: 12px 22px;
     font-size: 0.92rem;
   }
   .foot__links a {
@@ -112,21 +118,16 @@ const year = 2026;
   .foot__links a:hover {
     color: var(--gold);
   }
-  .foot__note {
-    width: 100%;
+  .foot__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 24px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-family: var(--font-mono);
     font-size: 11.5px;
     color: color-mix(in srgb, var(--paper) 50%, transparent);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 18px;
-  }
-
-  @media (min-width: 720px) {
-    .foot__note {
-      margin-left: auto;
-      width: auto;
-      border-top: 0;
-      padding-top: 0;
-    }
   }
 </style>
