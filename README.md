@@ -1,7 +1,23 @@
-# Paperless Starfruit
+# <img src="apps/website/public/paperless-starfruit.png" height="36" alt="" /> Paperless Starfruit
 
 A self-hosted, bring-your-own-keys AI companion for [paperless-ngx](https://docs.paperless-ngx.com/):
-better OCR and automatic metadata (title, tags, correspondent, date), all configured from a web UI.
+better OCR and automatic titles, tags, correspondents and dates — configured entirely from a web UI.
+
+**[Website](https://paperless-starfruit.vercel.app/)** · **[Docs](https://paperless-starfruit.vercel.app/docs/)** · **[Install](https://paperless-starfruit.vercel.app/docs/installation/)**
+
+[![CI status](https://github.com/sabbaken/paperless-starfruit/actions/workflows/ci.yml/badge.svg)](https://github.com/sabbaken/paperless-starfruit/actions/workflows/ci.yml)
+[![Docker image status](https://github.com/sabbaken/paperless-starfruit/actions/workflows/api-publish.yml/badge.svg)](https://github.com/sabbaken/paperless-starfruit/actions/workflows/api-publish.yml)
+
+<table>
+  <tr>
+    <td><img src="apps/website/public/screenshots/dashboard.png" alt="Dashboard — queue, throughput and recent runs" /></td>
+    <td><img src="apps/website/public/screenshots/review.png" alt="Review queue — AI suggestions side-by-side with the document" /></td>
+  </tr>
+  <tr>
+    <td><img src="apps/website/public/screenshots/tags.png" alt="Tags — per-tag hints the AI follows" /></td>
+    <td><img src="apps/website/public/screenshots/prompts.png" alt="Prompts — edit and test what each model is asked" /></td>
+  </tr>
+</table>
 
 ## Stack
 
