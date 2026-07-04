@@ -111,7 +111,7 @@ img {
 }
 
 .section {
-  padding-block: clamp(64px, 10vw, 128px);
+  padding-block: clamp(48px, 7vw, 88px);
 }
 
 /* ---- the mono eyebrow used to label sections (encodes the "data" voice) ---- */
