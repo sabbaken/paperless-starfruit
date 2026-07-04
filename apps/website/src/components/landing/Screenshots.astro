@@ -1,9 +1,7 @@
 ---
-// Screenshots gallery.
-//
-// To drop in a real screenshot: put the image in `public/screenshots/` and set
-// its `src` below (e.g. src: '/screenshots/dashboard.png'). While `src` is null
-// a labelled placeholder is shown instead.
+// Screenshots — one big horizontally-scrollable carousel. Slides are plain
+// bordered images (no window chrome); scroll-snap does the work, the arrow
+// buttons are a JS-only nicety on top. Drop images into `public/screenshots/`.
 const shots = [
   { label: 'Dashboard', caption: 'Queue depth, throughput and recent runs.', src: '/screenshots/dashboard.png' },
   { label: 'Review queue', caption: 'Suggestions side-by-side with the document.', src: '/screenshots/review.png' },
@@ -13,135 +11,151 @@ const shots = [
 ---
 
 <section class="shots section" id="screenshots">
-  <div class="container">
-    <p class="eyebrow">Screenshots</p>
-    <h2 class="section-title">A look at the app.</h2>
-    <p class="lead">Everything is configured from one web UI — no config files to hand-edit.</p>
-
-    <div class="shots__grid">
-      {
-        shots.map((s) => (
-          <figure class="shot">
-            <div class="shot__bar" aria-hidden="true">
-              <span class="dot" /><span class="dot" /><span class="dot" />
-              <span class="shot__addr">localhost:7827</span>
-            </div>
-            <div class="shot__body">
-              {
-                s.src ? (
-                  <img src={s.src} alt={`${s.label} — Paperless Starfruit`} loading="lazy" />
-                ) : (
-                  <div class="ph">
-                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <rect width="18" height="18" x="3" y="3" rx="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
-                    </svg>
-                    <span class="ph__label">{s.label}</span>
-                    <span class="ph__hint">Screenshot coming soon</span>
-                  </div>
-                )
-              }
-            </div>
-            <figcaption class="shot__cap">{s.caption}</figcaption>
-          </figure>
-        ))
-      }
+  <div class="container shots__head">
+    <div>
+      <p class="eyebrow">Screenshots</p>
+      <h2 class="section-title">A look at the app.</h2>
+    </div>
+    <div class="shots__nav" aria-hidden="true">
+      <button class="shots__btn" type="button" data-dir="-1" aria-label="Previous screenshot" tabindex="-1">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="shots__btn" type="button" data-dir="1" aria-label="Next screenshot" tabindex="-1">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
     </div>
   </div>
+
+  <div
+    class="shots__track"
+    role="region"
+    aria-label="App screenshots — scrolls horizontally"
+    tabindex="0"
+  >
+    {
+      shots.map((s) => (
+        <figure class="slide">
+          <img
+            src={s.src}
+            alt={`${s.label} — Paperless Starfruit`}
+            loading="lazy"
+            draggable="false"
+          />
+          <figcaption class="slide__cap">
+            <strong>{s.label}</strong> — {s.caption}
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
 </section>
+
+<script>
+  // Arrow buttons: scroll the track one slide at a time. Scroll/drag/keyboard
+  // work without this — the buttons are only an extra affordance.
+  document.querySelectorAll<HTMLElement>('.shots').forEach((root) => {
+    const track = root.querySelector<HTMLElement>('.shots__track');
+    if (!track) return;
+    const slideStep = () => {
+      const slide = track.querySelector<HTMLElement>('.slide');
+      return slide ? slide.offsetWidth + 24 : track.clientWidth * 0.9;
+    };
+    root.querySelectorAll<HTMLButtonElement>('.shots__btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        track.scrollBy({ left: slideStep() * Number(btn.dataset.dir), behavior: 'smooth' });
+      });
+    });
+  });
+</script>
 
 <style>
   .shots {
     border-top: 1px solid var(--line-soft);
     border-bottom: 1px solid var(--line-soft);
     background: var(--paper-2);
-  }
-
-  .shots__grid {
-    margin-top: clamp(40px, 6vw, 60px);
-    display: grid;
-    gap: clamp(22px, 3vw, 32px);
-  }
-
-  .shot {
-    margin: 0;
-  }
-
-  .shot__bar {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 10px 14px;
-    background: var(--paper-3);
-    border: 1px solid var(--line);
-    border-bottom: 0;
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-  .dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--white);
-  }
-  .shot__addr {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    color: var(--ink-faint);
-    margin-left: 10px;
-  }
-
-  .shot__body {
-    aspect-ratio: 16 / 10;
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: 0 0 var(--radius) var(--radius);
     overflow: hidden;
   }
-  .shot__body img {
+
+  .shots__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .shots__nav {
+    display: flex;
+    gap: 8px;
+    flex: none;
+  }
+  /* The buttons only do something with JS; without it the track still scrolls. */
+  html:not(.js) .shots__nav {
+    display: none;
+  }
+  .shots__btn {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--white);
+    color: var(--ink-soft);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: color 0.15s, transform 0.15s;
+  }
+  .shots__btn:hover {
+    color: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  /* Full-bleed scroll area whose first slide still lines up with the container. */
+  .shots__track {
+    margin-top: clamp(32px, 5vw, 48px);
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-inline: max(24px, calc((100vw - var(--container)) / 2 + 24px));
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .shots__track::-webkit-scrollbar {
+    display: none;
+  }
+  .shots__track:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 4px;
+  }
+
+  .slide {
+    margin: 0;
+    flex: none;
+    /* Big: nearly the whole container, with the next slide peeking in. */
+    width: min(960px, 86vw);
+    scroll-snap-align: center;
+  }
+
+  .slide img {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 10;
     object-fit: cover;
     object-position: top;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    user-select: none;
   }
 
-  .ph {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    color: var(--ink-faint);
-    background:
-      repeating-linear-gradient(
-        135deg,
-        transparent 0 11px,
-        color-mix(in srgb, var(--paper-3) 55%, transparent) 11px 12px
-      ),
-      var(--paper);
-  }
-  .ph__label {
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--ink-soft);
-  }
-  .ph__hint {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.03em;
-  }
-
-  .shot__cap {
-    margin-top: 12px;
+  .slide__cap {
+    margin-top: 14px;
     color: var(--ink-soft);
     font-size: 0.92rem;
   }
-
-  @media (min-width: 760px) {
-    .shots__grid {
-      grid-template-columns: 1fr 1fr;
-    }
+  .slide__cap strong {
+    color: var(--ink);
+    font-weight: 600;
   }
 </style>

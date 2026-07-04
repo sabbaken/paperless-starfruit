@@ -1,104 +1,147 @@
 ---
-// The processing pipeline — a genuine ordered sequence, hence the numbering.
+// How it works — the same vertical stepper the app's Processing settings use:
+// icon circles on a rail, one compact card per stage, top to bottom = the
+// document's journey. Kept to one short line per step on purpose.
 const steps = [
   {
-    t: 'You tag it',
-    d: 'Add <code>psf-process</code> to any document. That one tag is the only trigger.',
-    note: 'manual or a paperless rule',
+    t: 'Tag a document',
+    d: 'Add <code>psf-process</code> in paperless — that one tag is the whole trigger.',
+    icon: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/>',
   },
   {
     t: 'OCR',
-    d: 'Re-read the original with your OCR model — or reuse paperless&rsquo;s text, free.',
-    note: 'optional · page-capped',
+    d: 'A vision model re-reads the scan — or skip it and reuse paperless&rsquo;s own text.',
+    icon: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/>',
+    note: 'optional',
   },
   {
-    t: 'Extract the metadata',
-    d: 'One model call returns a clean title, tags, correspondent and date.',
-    note: 'title · tags · correspondent · date',
+    t: 'Extract',
+    d: 'One model call returns the title, tags, correspondent and date.',
+    icon: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   },
   {
-    t: 'Applied — or queued for review',
-    d: 'It&rsquo;s written back to paperless automatically, or it waits for your approval.',
-    note: 'auto-apply or review',
+    t: 'Apply — or review',
+    d: 'Written back to paperless automatically, or queued for your approval.',
+    icon: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
   },
 ];
 ---
 
 <section class="pipe section" id="pipeline">
   <div class="container">
-    <p class="eyebrow">The pipeline</p>
-    <h2 class="section-title">From a tag to a tidy document, in four steps.</h2>
-    <p class="lead">
-      Every document takes the same path. Re-tag to run it again — unchanged content is
-      skipped, so a re-run is free.
-    </p>
+    <p class="eyebrow">How it works</p>
+    <h2 class="section-title">One tag in. A filed document out.</h2>
 
-    <ol class="steps">
+    <ol class="flow">
       {
         steps.map((s, i) => (
-          <li class="step">
-            <span class="step__n">{String(i + 1).padStart(2, '0')}</span>
-            <div class="step__body">
-              <h3 class="step__t">{s.t}</h3>
-              <p class="step__d" set:html={s.d} />
-              <span class="step__note">{s.note}</span>
+          <li class="flow__step">
+            <span class="flow__rail" aria-hidden="true">
+              <span class="flow__icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  set:html={s.icon}
+                />
+              </span>
+              {i < steps.length - 1 && <span class="flow__line" />}
+            </span>
+            <div class="flow__card">
+              <div class="flow__head">
+                <h3 class="flow__t">{s.t}</h3>
+                {s.note && <span class="flow__note-chip">{s.note}</span>}
+              </div>
+              <p class="flow__d" set:html={s.d} />
             </div>
           </li>
         ))
       }
     </ol>
+
+    <p class="flow__foot">
+      Re-tag to run a document again — unchanged content is skipped, so re-runs are free.
+    </p>
   </div>
 </section>
 
 <style>
-  .steps {
+  .flow {
     list-style: none;
-    margin: clamp(44px, 6vw, 68px) 0 0;
+    margin: clamp(40px, 6vw, 60px) auto 0;
     padding: 0;
-    display: grid;
-    gap: 0;
-    counter-reset: step;
-    position: relative;
+    max-width: 660px;
   }
 
-  .step {
+  .flow__step {
     display: grid;
-    grid-template-columns: 64px 1fr;
-    gap: 22px;
-    padding: 26px 0;
-    border-top: 1px solid var(--line);
-    position: relative;
-  }
-  .step:last-child {
-    border-bottom: 1px solid var(--line);
+    grid-template-columns: 48px 1fr;
+    gap: 16px;
   }
 
-  .step__n {
-    font-family: var(--font-mono);
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--gold-deep);
-    width: 50px;
-    height: 50px;
+  .flow__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .flow__icon {
+    width: 48px;
+    height: 48px;
+    flex: none;
     display: grid;
     place-items: center;
-    border: 1.5px solid var(--gold);
     border-radius: 50%;
     background: var(--gold-tint);
-    align-self: start;
+    border: 1.5px solid var(--gold);
+    color: var(--gold-deep);
+  }
+  .flow__line {
+    width: 1.5px;
+    flex: 1;
+    margin-block: 6px;
+    background: var(--line);
   }
 
-  .step__t {
-    font-size: 1.22rem;
+  .flow__card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+  .flow__step:last-child .flow__card {
+    margin-bottom: 0;
+  }
+
+  .flow__head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .flow__t {
+    font-size: 1.1rem;
     letter-spacing: -0.015em;
   }
-  .step__d {
-    margin-top: 8px;
-    color: var(--ink-soft);
-    font-size: 1rem;
-    max-width: 60ch;
+  .flow__note-chip {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--rind);
   }
-  .step__d :global(code) {
+
+  .flow__d {
+    margin-top: 5px;
+    color: var(--ink-soft);
+    font-size: 0.96rem;
+  }
+  .flow__d :global(code) {
     font-family: var(--font-mono);
     font-size: 0.85em;
     background: var(--gold-tint);
@@ -107,24 +150,13 @@ const steps = [
     padding: 1px 6px;
     border-radius: 6px;
   }
-  .step__note {
-    display: inline-block;
-    margin-top: 12px;
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    letter-spacing: 0.04em;
-    color: var(--rind);
-  }
-  .step__note::before {
-    content: '↳ ';
-    opacity: 0.6;
-  }
 
-  @media (min-width: 820px) {
-    .step {
-      grid-template-columns: 96px 1fr;
-      gap: 32px;
-      padding: 30px 0;
-    }
+  .flow__foot {
+    margin: 26px auto 0;
+    max-width: 660px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-faint);
   }
 </style>
