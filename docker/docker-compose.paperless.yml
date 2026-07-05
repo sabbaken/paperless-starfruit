@@ -25,14 +25,14 @@ services:
     depends_on:
       - broker
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       PAPERLESS_REDIS: redis://broker:6379
       PAPERLESS_URL: http://localhost:8000
       PAPERLESS_SECRET_KEY: dev-secret-not-for-production
       PAPERLESS_TIME_ZONE: Europe/Stockholm
       PAPERLESS_OCR_LANGUAGE: eng
-      PAPERLESS_WEBSERVER_WORKERS: "1"
+      PAPERLESS_WEBSERVER_WORKERS: '1'
       # Superuser is created on first boot only (when no users exist yet).
       PAPERLESS_ADMIN_USER: admin
       PAPERLESS_ADMIN_PASSWORD: admin

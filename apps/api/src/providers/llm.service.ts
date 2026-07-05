@@ -25,9 +25,7 @@ type GenerateObjectFn = (opts: {
   prompt: string;
   maxOutputTokens?: number;
   abortSignal?: AbortSignal;
-  experimental_repairText?: (o: {
-    text: string;
-  }) => Promise<string | null>;
+  experimental_repairText?: (o: { text: string }) => Promise<string | null>;
 }) => Promise<{
   object: unknown;
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
@@ -101,9 +99,7 @@ export class LlmService {
     });
   }
 
-  private async run<T>(
-    args: GenerateStructuredArgs<T>,
-  ): Promise<GenerateStructuredResult<T>> {
+  private async run<T>(args: GenerateStructuredArgs<T>): Promise<GenerateStructuredResult<T>> {
     const result = await generateObjectFn({
       model: args.model,
       schema: args.schema,

@@ -47,7 +47,13 @@ describe('extractionVars', () => {
   });
 
   it('keeps the comma list while no tag carries a hint', () => {
-    const v = extractionVars({ ...base, allTags: [{ name: 'Invoice', comment: null }, { name: 'Tax', comment: '  ' }] });
+    const v = extractionVars({
+      ...base,
+      allTags: [
+        { name: 'Invoice', comment: null },
+        { name: 'Tax', comment: '  ' },
+      ],
+    });
     expect(v.all_tags).toBe('Invoice, Tax');
     expect(extractionVars({ ...base, allTags: [] }).all_tags).toBe('(none)');
   });
@@ -110,7 +116,10 @@ describe('extractionVars', () => {
 
 describe('ocrVars', () => {
   it('exposes language and filename', () => {
-    expect(ocrVars({ language: 'de', filename: 'a.pdf' })).toEqual({ language: 'de', filename: 'a.pdf' });
+    expect(ocrVars({ language: 'de', filename: 'a.pdf' })).toEqual({
+      language: 'de',
+      filename: 'a.pdf',
+    });
     expect(ocrVars({ language: 'auto', filename: null }).filename).toBe('(none)');
   });
 });

@@ -1,6 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Coffee, History, Inbox, LayoutDashboard, LogOut, SlidersHorizontal, Tags } from 'lucide-react';
+import {
+  ChevronRight,
+  Coffee,
+  History,
+  Inbox,
+  LayoutDashboard,
+  LogOut,
+  SlidersHorizontal,
+  Tags,
+} from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useLogout } from '@/api/auth';
 import { useStats } from '@/api/stats';
@@ -35,15 +44,38 @@ import { UpdateNotice } from '@/components/update-notice';
 import type { NavItem } from '@/types/nav';
 
 const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
-  '/dashboard': { title: 'Dashboard', description: 'Queue, throughput and recent activity', width: 'wide' },
-  '/review': { title: 'Review queue', description: 'Approve, edit or reject AI suggestions', width: 'wide' },
-  '/history': { title: 'History', description: 'Inspect the prompts and model responses behind each run', width: 'wide' },
-  '/tags': { title: 'Tags', description: 'Your paperless tags and the hints that guide the AI', width: 'wide' },
+  '/dashboard': {
+    title: 'Dashboard',
+    description: 'Queue, throughput and recent activity',
+    width: 'wide',
+  },
+  '/review': {
+    title: 'Review queue',
+    description: 'Approve, edit or reject AI suggestions',
+    width: 'wide',
+  },
+  '/history': {
+    title: 'History',
+    description: 'Inspect the prompts and model responses behind each run',
+    width: 'wide',
+  },
+  '/tags': {
+    title: 'Tags',
+    description: 'Your paperless tags and the hints that guide the AI',
+    width: 'wide',
+  },
   '/settings/general': { title: 'General', description: 'Theme and app preferences' },
   '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
   '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
-  '/settings/processing': { title: 'Processing', description: 'Models & how documents are enriched' },
-  '/settings/prompts': { title: 'Prompts', description: 'Customise what each model is asked', width: 'wide' },
+  '/settings/processing': {
+    title: 'Processing',
+    description: 'Models & how documents are enriched',
+  },
+  '/settings/prompts': {
+    title: 'Prompts',
+    description: 'Customise what each model is asked',
+    width: 'wide',
+  },
 };
 
 /** The GitHub mark, inlined — lucide dropped its brand icons. Sized by the menu button's svg styles. */
@@ -166,7 +198,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="GitHub">
-                <a href="https://github.com/sabbaken/paperless-starfruit" target="_blank" rel="noreferrer">
+                <a
+                  href="https://github.com/sabbaken/paperless-starfruit"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   <GithubIcon />
                   <span>GitHub</span>
                 </a>

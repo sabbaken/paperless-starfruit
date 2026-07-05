@@ -3,11 +3,27 @@
 // bordered images (no window chrome); scroll-snap does the work, the arrow
 // buttons are a JS-only nicety on top. Drop images into `public/screenshots/`.
 const shots = [
-  { label: 'Dashboard', caption: 'Queue depth, throughput and recent runs.', src: '/screenshots/dashboard.png' },
-  { label: 'Review queue', caption: 'Suggestions side-by-side with the document.', src: '/screenshots/review.png' },
+  {
+    label: 'Dashboard',
+    caption: 'Queue depth, throughput and recent runs.',
+    src: '/screenshots/dashboard.png',
+  },
+  {
+    label: 'Review queue',
+    caption: 'Suggestions side-by-side with the document.',
+    src: '/screenshots/review.png',
+  },
   { label: 'Tags', caption: 'Give each tag a hint the AI follows.', src: '/screenshots/tags.png' },
-  { label: 'Prompts', caption: 'Edit and test the prompts each model receives.', src: '/screenshots/prompts.png' },
-  { label: 'API keys', caption: 'Add, test and mask your provider keys.', src: '/screenshots/api-keys.png' },
+  {
+    label: 'Prompts',
+    caption: 'Edit and test the prompts each model receives.',
+    src: '/screenshots/prompts.png',
+  },
+  {
+    label: 'API keys',
+    caption: 'Add, test and mask your provider keys.',
+    src: '/screenshots/api-keys.png',
+  },
 ];
 ---
 
@@ -18,11 +34,41 @@ const shots = [
       <h2 class="section-title">A look at the app.</h2>
     </div>
     <div class="shots__nav" aria-hidden="true">
-      <button class="shots__btn" type="button" data-dir="-1" aria-label="Previous screenshot" tabindex="-1">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      <button
+        class="shots__btn"
+        type="button"
+        data-dir="-1"
+        aria-label="Previous screenshot"
+        tabindex="-1"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
+        >
       </button>
-      <button class="shots__btn" type="button" data-dir="1" aria-label="Next screenshot" tabindex="-1">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      <button
+        class="shots__btn"
+        type="button"
+        data-dir="1"
+        aria-label="Next screenshot"
+        tabindex="-1"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg
+        >
       </button>
     </div>
   </div>
@@ -104,7 +150,9 @@ const shots = [
     color: var(--ink-soft);
     cursor: pointer;
     box-shadow: var(--shadow-sm);
-    transition: color 0.15s, transform 0.15s;
+    transition:
+      color 0.15s,
+      transform 0.15s;
   }
   .shots__btn:hover {
     color: var(--ink);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Returns a stable, debounced wrapper around `callback`. Each invocation resets a
@@ -6,10 +6,7 @@ import { useCallback, useEffect, useRef } from "react";
  * The latest `callback` closure is always used, and any pending run is cancelled on
  * unmount.
  */
-export function useDebouncedCallback(
-  callback: () => void,
-  delayMs: number,
-): () => void {
+export function useDebouncedCallback(callback: () => void, delayMs: number): () => void {
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 

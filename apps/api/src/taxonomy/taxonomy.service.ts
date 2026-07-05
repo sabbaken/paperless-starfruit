@@ -131,11 +131,7 @@ export class TaxonomyService {
     this.snapshot = null;
   }
 
-  private async ensureTag(
-    client: PaperlessClient,
-    name: string,
-    color?: string,
-  ): Promise<number> {
+  private async ensureTag(client: PaperlessClient, name: string, color?: string): Promise<number> {
     const snap = await this.getSnapshot(client);
     const existing = snap.tags.find((t) => norm(t.name) === norm(name));
     if (existing) return existing.id;

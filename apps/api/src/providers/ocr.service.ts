@@ -103,8 +103,7 @@ function fallbackOcrPrompt(language: string): string {
 
 function isMistralOcr(p: ResolvedProvider): boolean {
   return (
-    p.kind === PROVIDER_KIND.MISTRAL &&
-    p.model.toLowerCase().startsWith(MISTRAL_OCR_MODEL_PREFIX)
+    p.kind === PROVIDER_KIND.MISTRAL && p.model.toLowerCase().startsWith(MISTRAL_OCR_MODEL_PREFIX)
   );
 }
 

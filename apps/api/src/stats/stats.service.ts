@@ -1,6 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { desc, eq } from 'drizzle-orm';
-import { JOB_STATUS, REVIEW_STATUS, type JobSummary, type Stats } from '@paperless-starfruit/shared';
+import {
+  JOB_STATUS,
+  REVIEW_STATUS,
+  type JobSummary,
+  type Stats,
+} from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
 import { job, reviewItem, type Job } from '../db/schema';

@@ -27,7 +27,9 @@ describe('SettingsService', () => {
 
   it('persists a partial update and leaves other fields untouched', () => {
     const db = createTestDb();
-    db.insert(provider).values({ id: 3, name: 'p', kind: 'anthropic', apiKeyEncrypted: 'enc' }).run();
+    db.insert(provider)
+      .values({ id: 3, name: 'p', kind: 'anthropic', apiKeyEncrypted: 'enc' })
+      .run();
     const svc = new SettingsService(db);
     const updated = svc.update({ autoApply: true, llmProviderId: 3, llmModel: 'claude-haiku-4-5' });
     expect(updated.autoApply).toBe(true);

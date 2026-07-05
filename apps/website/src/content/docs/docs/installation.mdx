@@ -66,6 +66,7 @@ Two compose files, depending on where you start:
 
       and use `http://webserver:8000` as the paperless URL — **not** `localhost`, which is
       this container.
+
   </TabItem>
   <TabItem label="From scratch (paperless-ngx included)">
     A full stack — Redis + paperless-ngx + Paperless Starfruit. Save as `docker-compose.yml`:
@@ -132,6 +133,7 @@ Two compose files, depending on where you start:
     paperless-ngx comes up on `http://localhost:8000` — log in with the superuser you just
     created. In the Starfruit UI, use `http://paperless:8000` as the paperless URL — the
     in-network service name, not `localhost`.
+
   </TabItem>
 </Tabs>
 
@@ -141,31 +143,31 @@ and
 [`docker/docker-compose.full.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.full.yml).
 
 Then open **`http://localhost:7827`** — the container serves the API and the web UI on the
-same port. On first run the UI shows a *“create admin”* card; once you set the admin username
+same port. On first run the UI shows a _“create admin”_ card; once you set the admin username
 and password, registration closes and only login works. There is no default password.
 
 <Aside type="note" title="Why port 7827?">
-It's “star” on a phone keypad — and, unlike 3000, almost certainly free on your host, so the
-files above work as-is. The app inside the container still listens on 3000; change the left
-side of the `ports:` mapping to publish it elsewhere.
+  It's “star” on a phone keypad — and, unlike 3000, almost certainly free on your host, so the files
+  above work as-is. The app inside the container still listens on 3000; change the left side of the
+  `ports:` mapping to publish it elsewhere.
 </Aside>
 
 <Aside type="caution" title="Keep ENCRYPTION_KEY stable">
-`ENCRYPTION_KEY` encrypts your stored credentials **and** signs admin sessions. Rotating it
-logs the admin out and makes every stored paperless/provider credential undecryptable. Store
-it like any other production secret.
+  `ENCRYPTION_KEY` encrypts your stored credentials **and** signs admin sessions. Rotating it logs
+  the admin out and makes every stored paperless/provider credential undecryptable. Store it like
+  any other production secret.
 </Aside>
 
 ## Environment variables
 
-These are the *only* runtime variables. Everything else lives in the UI.
+These are the _only_ runtime variables. Everything else lives in the UI.
 
-| Variable         | Required | Default        | Purpose |
-|------------------|----------|----------------|---------|
-| `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials and signs admin sessions. |
-| `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path. Its directory is created if missing. |
-| `PORT`           | no       | `3000`         | Port the app listens on *inside* the container (the compose files publish it as `7827`). |
-| `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down. |
+| Variable         | Required | Default        | Purpose                                                                                  |
+| ---------------- | -------- | -------------- | ---------------------------------------------------------------------------------------- |
+| `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials and signs admin sessions.       |
+| `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path. Its directory is created if missing.                                   |
+| `PORT`           | no       | `3000`         | Port the app listens on _inside_ the container (the compose files publish it as `7827`). |
+| `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down.            |
 
 ## Operating notes
 

@@ -37,20 +37,63 @@ export const PROMPT_META: Record<PromptKey, PromptMeta> = {
  */
 export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
   [PROMPT_KEY.EXTRACTION]: [
-    { name: 'content', label: 'Document text', description: 'The recognised text (OCR output, or paperless’s existing text).' },
-    { name: 'language', label: 'Language', description: 'The configured output language, or “auto”.' },
-    { name: 'all_tags', label: 'Existing tags', description: 'Every tag already in paperless — encourages reuse over invention. When any tag has a hint (Tags page), hinted tags render as a Markdown table of tag → hint, the rest as a list below it.' },
-    { name: 'all_correspondents', label: 'Existing correspondents', description: 'Every correspondent already in paperless.' },
-    { name: 'tag_policy', label: 'Tag policy', description: 'A sentence stating whether the model may introduce new tags (reflects the “Create new tags” setting).' },
-    { name: 'correspondent_policy', label: 'Correspondent policy', description: 'A sentence stating whether the model may introduce a new correspondent (reflects the “Create new correspondents” setting).' },
-    { name: 'title', label: 'Current title', description: 'The document’s current title in paperless.' },
+    {
+      name: 'content',
+      label: 'Document text',
+      description: 'The recognised text (OCR output, or paperless’s existing text).',
+    },
+    {
+      name: 'language',
+      label: 'Language',
+      description: 'The configured output language, or “auto”.',
+    },
+    {
+      name: 'all_tags',
+      label: 'Existing tags',
+      description:
+        'Every tag already in paperless — encourages reuse over invention. When any tag has a hint (Tags page), hinted tags render as a Markdown table of tag → hint, the rest as a list below it.',
+    },
+    {
+      name: 'all_correspondents',
+      label: 'Existing correspondents',
+      description: 'Every correspondent already in paperless.',
+    },
+    {
+      name: 'tag_policy',
+      label: 'Tag policy',
+      description:
+        'A sentence stating whether the model may introduce new tags (reflects the “Create new tags” setting).',
+    },
+    {
+      name: 'correspondent_policy',
+      label: 'Correspondent policy',
+      description:
+        'A sentence stating whether the model may introduce a new correspondent (reflects the “Create new correspondents” setting).',
+    },
+    {
+      name: 'title',
+      label: 'Current title',
+      description: 'The document’s current title in paperless.',
+    },
     { name: 'tags', label: 'Current tags', description: 'The document’s current tag names.' },
-    { name: 'correspondent', label: 'Current correspondent', description: 'The document’s current correspondent, if any.' },
-    { name: 'created', label: 'Current date', description: 'The document’s current date (YYYY-MM-DD).' },
+    {
+      name: 'correspondent',
+      label: 'Current correspondent',
+      description: 'The document’s current correspondent, if any.',
+    },
+    {
+      name: 'created',
+      label: 'Current date',
+      description: 'The document’s current date (YYYY-MM-DD).',
+    },
     { name: 'filename', label: 'File name', description: 'The document’s original file name.' },
   ],
   [PROMPT_KEY.OCR]: [
-    { name: 'language', label: 'Language', description: 'The configured output language, or “auto”.' },
+    {
+      name: 'language',
+      label: 'Language',
+      description: 'The configured output language, or “auto”.',
+    },
     { name: 'filename', label: 'File name', description: 'The document’s original file name.' },
   ],
 };

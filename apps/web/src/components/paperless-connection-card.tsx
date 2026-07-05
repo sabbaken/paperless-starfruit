@@ -17,7 +17,12 @@ import {
   type ConnectionTestResult,
   type PaperlessConnectionInput,
 } from '@paperless-starfruit/shared';
-import { useConnection, useDisconnect, useSaveConnection, useTestConnection } from '@/api/connection';
+import {
+  useConnection,
+  useDisconnect,
+  useSaveConnection,
+  useTestConnection,
+} from '@/api/connection';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -212,9 +217,7 @@ export function PaperlessConnectionCard({ className, onConnected }: PaperlessCon
                 })}
               />
               {formState.errors.apiVersion ? (
-                <p className="text-sm text-destructive">
-                  {formState.errors.apiVersion.message}
-                </p>
+                <p className="text-sm text-destructive">{formState.errors.apiVersion.message}</p>
               ) : (
                 <p className="text-xs text-muted-foreground">
                   Leave blank to detect the server&apos;s API version automatically.

@@ -23,7 +23,7 @@ If you haven't connected a provider yet, the picker links you to the API Keys sc
 
 - **Run OCR before extraction** — when on, each original is re-read with your OCR model and
   the result is written back to paperless's `content`. When off, paperless's own (free)
-  Tesseract text is reused. *Disabled until you pick an OCR model.*
+  Tesseract text is reused. _Disabled until you pick an OCR model._
 - **Skip OCR above … pages** — larger files reuse paperless's text instead of paying for
   OCR. Blank means no limit.
 
@@ -31,18 +31,18 @@ If you haven't connected a provider yet, the picker links you to the API Keys sc
 
 - **Run extraction** — when off, the pipeline stops after OCR (OCR-only mode): the
   recognised text is written back, the trigger tag is dropped, and the document's metadata
-  is left untouched. No language model is required then. Turning *both* extraction and OCR
+  is left untouched. No language model is required then. Turning _both_ extraction and OCR
   off leaves the pipeline nothing to do — jobs fail with a configuration error.
 - **Create new tags** — let the AI create tags that don't exist yet.
 - **Create new correspondents** — let the AI create correspondents that don't exist yet.
-- **Skip extraction above … pages** — larger files are skipped *entirely* — no OCR, no
+- **Skip extraction above … pages** — larger files are skipped _entirely_ — no OCR, no
   extraction. Blank means no limit.
 
 <Aside type="tip" title="Two caps, two jobs">
-The **extraction** cap is the outer gate (over it → skip everything) and the **OCR** cap is
-the inner gate (over it → reuse paperless text, but still extract). So with OCR ≤ 20pp and
-extraction ≤ 100pp, a 50-page file extracts on paperless's text, and a 1000-page book is
-skipped. See [How processing works](/docs/pipeline/).
+  The **extraction** cap is the outer gate (over it → skip everything) and the **OCR** cap is the
+  inner gate (over it → reuse paperless text, but still extract). So with OCR ≤ 20pp and extraction
+  ≤ 100pp, a 50-page file extracts on paperless's text, and a 1000-page book is skipped. See [How
+  processing works](/docs/pipeline/).
 </Aside>
 
 ### Apply
@@ -61,15 +61,15 @@ skipped. See [How processing works](/docs/pipeline/).
 
 ## Defaults
 
-| Setting | Default |
-|---------|---------|
-| Poll interval | `60s` (minimum `15s`) |
-| Auto-apply | **on** |
-| Create new tags | off |
-| Create new correspondents | on |
-| Run extraction | on |
-| Skip extraction above | `100` pages |
-| Run OCR | on (once a model is picked) |
-| Skip OCR above | `20` pages |
-| Output language | `auto` |
-| Max attempts per job | `3` |
+| Setting                   | Default                     |
+| ------------------------- | --------------------------- |
+| Poll interval             | `60s` (minimum `15s`)       |
+| Auto-apply                | **on**                      |
+| Create new tags           | off                         |
+| Create new correspondents | on                          |
+| Run extraction            | on                          |
+| Skip extraction above     | `100` pages                 |
+| Run OCR                   | on (once a model is picked) |
+| Skip OCR above            | `20` pages                  |
+| Output language           | `auto`                      |
+| Max attempts per job      | `3`                         |

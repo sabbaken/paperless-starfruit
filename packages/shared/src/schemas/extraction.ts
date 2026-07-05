@@ -12,13 +12,8 @@ export const EXTRACTION_SCHEMA_DESCRIPTION =
  * correspondent, date.
  */
 export const extractionSchema = z.object({
-  title: z
-    .string()
-    .min(1)
-    .describe('A concise, human-readable document title.'),
-  tags: z
-    .array(z.string().min(1))
-    .describe('Relevant topical tags for the document.'),
+  title: z.string().min(1).describe('A concise, human-readable document title.'),
+  tags: z.array(z.string().min(1)).describe('Relevant topical tags for the document.'),
   correspondent: z
     .string()
     .min(1)

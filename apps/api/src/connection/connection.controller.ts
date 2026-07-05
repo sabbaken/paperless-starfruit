@@ -22,9 +22,7 @@ export class ConnectionController {
   /** Probe a candidate connection without saving it. */
   @Post('test')
   @HttpCode(200)
-  test(
-    @Body(inputPipe) input: PaperlessConnectionInput,
-  ): Promise<ConnectionTestResult> {
+  test(@Body(inputPipe) input: PaperlessConnectionInput): Promise<ConnectionTestResult> {
     return this.connection.test(input);
   }
 

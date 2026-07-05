@@ -5,13 +5,14 @@ import { TAG_COMMENT_MAX, type TagUpdate, type TagView } from '@paperless-starfr
 import { useCreateTag, useTags, useUpdateTag } from '@/api/tags';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -190,13 +191,8 @@ export function TagsPage() {
                     </div>
                   </TableCell>
                   <TableCell className="w-full max-w-0 py-3">
-                    <p
-                      className="truncate text-muted-foreground"
-                      title={tag.comment ?? undefined}
-                    >
-                      {tag.isTrigger
-                        ? 'Marks documents for processing'
-                        : (tag.comment ?? '—')}
+                    <p className="truncate text-muted-foreground" title={tag.comment ?? undefined}>
+                      {tag.isTrigger ? 'Marks documents for processing' : (tag.comment ?? '—')}
                     </p>
                   </TableCell>
                   <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
@@ -258,8 +254,7 @@ function TagForm({ tag, onDone }: { tag?: TagView; onDone: () => void }) {
   const editing = !!tag;
   // paperless may hold no (or a malformed) color; a native color input coerces
   // anything invalid to #000000, so only a valid hex counts as "current".
-  const currentColor =
-    tag?.color && /^#[0-9a-fA-F]{6}$/.test(tag.color) ? tag.color : null;
+  const currentColor = tag?.color && /^#[0-9a-fA-F]{6}$/.test(tag.color) ? tag.color : null;
   const { register, handleSubmit, watch, formState } = useForm<FormValues>({
     defaultValues: {
       name: tag?.name ?? '',

@@ -1,32 +1,20 @@
-import { useId, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Brain,
-  CheckCircle2,
-  Inbox,
-  Loader2,
-  type LucideIcon,
-  ScanText,
-  Zap,
-} from "lucide-react";
-import type {
-  ProviderConfig,
-  Settings,
-  SettingsUpdate,
-} from "@paperless-starfruit/shared";
-import { useProviders } from "@/api/providers";
-import { useSettings, useUpdateSettings } from "@/api/settings";
-import { ModelPicker } from "@/components/model-picker";
-import { PageSection } from "@/components/ui/page-section";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SelectRow } from "@/components/ui/select-row";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { SwitchRow } from "@/components/ui/switch-row";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
-import { toastSave } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { useId, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Brain, CheckCircle2, Inbox, Loader2, type LucideIcon, ScanText, Zap } from 'lucide-react';
+import type { ProviderConfig, Settings, SettingsUpdate } from '@paperless-starfruit/shared';
+import { useProviders } from '@/api/providers';
+import { useSettings, useUpdateSettings } from '@/api/settings';
+import { ModelPicker } from '@/components/model-picker';
+import { PageSection } from '@/components/ui/page-section';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SelectRow } from '@/components/ui/select-row';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { SwitchRow } from '@/components/ui/switch-row';
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
+import { toastSave } from '@/lib/toast';
+import { cn } from '@/lib/utils';
 
 export function ProcessingPage() {
   const navigate = useNavigate();
@@ -34,9 +22,7 @@ export function ProcessingPage() {
   const providers = useProviders();
 
   if (settings.isLoading || providers.isLoading || !settings.data) {
-    return (
-      <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
-    );
+    return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
   }
 
   return (
@@ -44,14 +30,14 @@ export function ProcessingPage() {
       <PipelineStepper
         settings={settings.data}
         providers={providers.data ?? []}
-        onGoToProviders={() => navigate("/settings/api-keys")}
+        onGoToProviders={() => navigate('/settings/api-keys')}
       />
       <GeneralForm initial={settings.data} />
     </div>
   );
 }
 
-type PickerTarget = "llm" | "ocr";
+type PickerTarget = 'llm' | 'ocr';
 
 /**
  * The pipeline as a vertical stepper — one card per stage (OCR → extraction →
@@ -77,8 +63,7 @@ function PipelineStepper({
   const llmConfigured = settings.llmProviderId != null && settings.llmModel != null;
 
   const save = useUpdateSettings();
-  const commit = (patch: SettingsUpdate) =>
-    void toastSave(save.mutateAsync(patch));
+  const commit = (patch: SettingsUpdate) => void toastSave(save.mutateAsync(patch));
 
   // Toggles commit instantly; page-limit inputs commit a short pause after the
   // last keystroke. A limit is sent only when blank (cleared) or a positive
@@ -92,15 +77,14 @@ function PipelineStepper({
     if (Object.keys(patch).length > 0) commit(patch);
   }, 600);
 
-  const providerName = (id: number | null) =>
-    providers.find((p) => p.id === id)?.name ?? null;
+  const providerName = (id: number | null) => providers.find((p) => p.id === id)?.name ?? null;
   const describe = (id: number | null, model: string | null) =>
-    model ? `${providerName(id) ?? "Unknown"} · ${model}` : null;
+    model ? `${providerName(id) ?? 'Unknown'} · ${model}` : null;
 
   const onSelectModel = (providerId: number, model: string) => {
     void toastSave(
       save.mutateAsync(
-        picker === "ocr"
+        picker === 'ocr'
           ? { ocrProviderId: providerId, ocrModel: model }
           : { llmProviderId: providerId, llmModel: model },
       ),
@@ -135,7 +119,7 @@ function PipelineStepper({
             <SelectRow
               label="Model"
               value={describe(settings.ocrProviderId, settings.ocrModel)}
-              onClick={() => setPicker("ocr")}
+              onClick={() => setPicker('ocr')}
             />
             <div className="py-3">
               <MaxPagesField
@@ -152,14 +136,9 @@ function PipelineStepper({
         ) : !ocrConfigured ? (
           // Keep the model row reachable — it's the only way to configure OCR.
           <div className="border-t">
-            <SelectRow
-              label="Model"
-              value={null}
-              onClick={() => setPicker("ocr")}
-            />
+            <SelectRow label="Model" value={null} onClick={() => setPicker('ocr')} />
             <p className="pb-3 text-xs text-muted-foreground">
-              Pick an OCR model to enable OCR — until then paperless's own text
-              is used.
+              Pick an OCR model to enable OCR — until then paperless's own text is used.
             </p>
           </div>
         ) : (
@@ -174,9 +153,7 @@ function PipelineStepper({
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
             <p className="text-sm font-medium">2. Extraction</p>
-            <p className="text-xs text-muted-foreground">
-              Title, tags, correspondent and date
-            </p>
+            <p className="text-xs text-muted-foreground">Title, tags, correspondent and date</p>
           </div>
           {/* Unlike OCR the switch is never disabled: turning extraction OFF is
               exactly what an OCR-only user with no LLM key configured needs. */}
@@ -195,7 +172,7 @@ function PipelineStepper({
             <SelectRow
               label="Model"
               value={describe(settings.llmProviderId, settings.llmModel)}
-              onClick={() => setPicker("llm")}
+              onClick={() => setPicker('llm')}
             />
             <div className="py-3">
               <SwitchRow
@@ -232,11 +209,7 @@ function PipelineStepper({
         ) : form.extractionEnabled ? (
           // Keep the model row reachable — it's the only way to configure extraction.
           <div className="border-t">
-            <SelectRow
-              label="Model"
-              value={null}
-              onClick={() => setPicker("llm")}
-            />
+            <SelectRow label="Model" value={null} onClick={() => setPicker('llm')} />
             <p className="pb-3 text-xs text-muted-foreground">
               Pick a language model to run extraction.
             </p>
@@ -262,9 +235,7 @@ function PipelineStepper({
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
             <p className="text-sm font-medium">3. Apply</p>
-            <p className="text-xs text-muted-foreground">
-              What happens with the suggestions
-            </p>
+            <p className="text-xs text-muted-foreground">What happens with the suggestions</p>
           </div>
         </div>
 
@@ -297,18 +268,18 @@ function PipelineStepper({
           </div>
         ) : (
           <p className="border-t py-3 text-xs text-muted-foreground">
-            Extraction is off — there are no suggestions to apply. OCR text is
-            written straight to the document.
+            Extraction is off — there are no suggestions to apply. OCR text is written straight to
+            the document.
           </p>
         )}
       </Stage>
 
       {picker && (
         <ModelPicker
-          title={picker === "ocr" ? "OCR model" : "Language model"}
-          visionOnly={picker === "ocr"}
+          title={picker === 'ocr' ? 'OCR model' : 'Language model'}
+          visionOnly={picker === 'ocr'}
           selected={
-            picker === "ocr"
+            picker === 'ocr'
               ? { providerId: settings.ocrProviderId, model: settings.ocrModel }
               : { providerId: settings.llmProviderId, model: settings.llmModel }
           }
@@ -340,12 +311,12 @@ function Stage({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("relative", !last && "mb-4")}>
+    <div className={cn('relative', !last && 'mb-4')}>
       <div
         aria-hidden
         className={cn(
-          "absolute top-0 -left-12 hidden w-8 flex-col items-center xl:flex",
-          !last && "-bottom-4",
+          'absolute top-0 -left-12 hidden w-8 flex-col items-center xl:flex',
+          !last && '-bottom-4',
         )}
       >
         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -379,14 +350,14 @@ function ApplyOption({
       aria-checked={selected}
       onClick={onSelect}
       className={cn(
-        "cursor-pointer rounded-lg border p-3 text-left transition-colors",
-        selected ? "border-brand ring-1 ring-brand" : "hover:bg-muted/50",
+        'cursor-pointer rounded-lg border p-3 text-left transition-colors',
+        selected ? 'border-brand ring-1 ring-brand' : 'hover:bg-muted/50',
       )}
     >
       <p
         className={cn(
-          "flex items-center gap-1.5 text-sm font-medium",
-          !selected && "text-muted-foreground",
+          'flex items-center gap-1.5 text-sm font-medium',
+          !selected && 'text-muted-foreground',
         )}
       >
         <Icon className="size-4" />
@@ -399,21 +370,18 @@ function ApplyOption({
 
 function GeneralForm({ initial }: { initial: Settings }) {
   const [form, setForm] = useState<Settings>(initial);
-  const [blacklistText, setBlacklistText] = useState(
-    initial.correspondentBlacklist.join("\n"),
-  );
+  const [blacklistText, setBlacklistText] = useState(initial.correspondentBlacklist.join('\n'));
 
   const save = useUpdateSettings();
-  const commit = (patch: SettingsUpdate) =>
-    void toastSave(save.mutateAsync(patch));
+  const commit = (patch: SettingsUpdate) => void toastSave(save.mutateAsync(patch));
 
   // Free-text fields commit a short pause after the last keystroke so we don't
   // fire a request per character.
   const commitText = useDebouncedCallback(() => {
     const patch: SettingsUpdate = {
-      language: form.language.trim() || "auto",
+      language: form.language.trim() || 'auto',
       correspondentBlacklist: blacklistText
-        .split("\n")
+        .split('\n')
         .map((s) => s.trim())
         .filter(Boolean),
     };
@@ -465,9 +433,7 @@ function GeneralForm({ initial }: { initial: Settings }) {
           <Label htmlFor="blacklist">Correspondent blacklist</Label>
           <Textarea
             id="blacklist"
-            placeholder={
-              "One name per line\nNever assigned or created as a correspondent"
-            }
+            placeholder={'One name per line\nNever assigned or created as a correspondent'}
             value={blacklistText}
             onChange={(e) => {
               setBlacklistText(e.target.value);
@@ -511,10 +477,8 @@ function MaxPagesField({
           inputMode="numeric"
           placeholder="No limit"
           disabled={disabled}
-          value={value ?? ""}
-          onChange={(e) =>
-            onChange(e.target.value === "" ? null : Number(e.target.value))
-          }
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
           className="w-28"
         />
         <span className="text-xs text-muted-foreground">pages</span>

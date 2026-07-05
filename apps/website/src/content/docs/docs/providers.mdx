@@ -13,11 +13,11 @@ providers you want, and the keys never leave your server.
 Each takes a single API key; models come from a curated catalog. Pick the provider, paste
 the key, and hit **Test** — a probe call confirms it's reachable.
 
-| Provider  | Kind        | Example models |
-|-----------|-------------|----------------|
-| Anthropic | `anthropic` | Claude Opus 4.5, Sonnet 4.6, Haiku 4.5 |
-| OpenAI    | `openai`    | GPT-4.1, GPT-4.1 mini, GPT-4o, GPT-4o mini, o4-mini |
-| Google    | `google`    | Gemini 2.5 Pro, 2.5 Flash, 2.0 Flash |
+| Provider  | Kind        | Example models                                           |
+| --------- | ----------- | -------------------------------------------------------- |
+| Anthropic | `anthropic` | Claude Opus 4.5, Sonnet 4.6, Haiku 4.5                   |
+| OpenAI    | `openai`    | GPT-4.1, GPT-4.1 mini, GPT-4o, GPT-4o mini, o4-mini      |
+| Google    | `google`    | Gemini 2.5 Pro, 2.5 Flash, 2.0 Flash                     |
 | Mistral   | `mistral`   | Mistral Large, Mistral Small, Pixtral Large, Mistral OCR |
 
 ## Local & OpenAI-compatible
@@ -29,17 +29,17 @@ one). Models are **discovered live** from the server rather than a fixed catalog
 can add as many endpoints as you like.
 
 <Aside type="note" title="Vision support varies">
-OCR needs a vision-capable model. PDFs are sent as a file to providers that accept them
-(Anthropic, OpenAI, Google); generic OpenAI-compatible and Mistral endpoints take images.
-The model picker flags which catalog models are vision-capable.
+  OCR needs a vision-capable model. PDFs are sent as a file to providers that accept them
+  (Anthropic, OpenAI, Google); generic OpenAI-compatible and Mistral endpoints take images. The
+  model picker flags which catalog models are vision-capable.
 </Aside>
 
 ## How keys are protected
 
 - **Encrypted at rest** (AES-GCM) with a key derived from `ENCRYPTION_KEY`, which only your
   server holds.
-- **Never returned to the browser** — editing a saved key shows a *“leave blank to keep
-  current key”* placeholder, not the value.
+- **Never returned to the browser** — editing a saved key shows a _“leave blank to keep
+  current key”_ placeholder, not the value.
 - **No vendor in the middle** — requests go straight from your container to the provider.
 
 ## Picking models

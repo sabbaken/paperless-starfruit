@@ -73,8 +73,14 @@
  * header reads identically on the landing and in the docs. */
 .site-title {
   gap: 10px;
-  font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Space Grotesk Variable',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-size: 1.02rem;
   font-weight: 600;
   letter-spacing: -0.02em;

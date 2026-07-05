@@ -12,11 +12,7 @@ import { LoginThrottleGuard } from './login-throttle.guard';
  */
 @Module({
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    LoginThrottleGuard,
-    { provide: APP_GUARD, useClass: AuthGuard },
-  ],
+  providers: [AuthService, LoginThrottleGuard, { provide: APP_GUARD, useClass: AuthGuard }],
   exports: [AuthService],
 })
 export class AuthModule {}

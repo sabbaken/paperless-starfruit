@@ -12,8 +12,7 @@ export const promptsApi = {
 
   documents: () => http.get<TestDocument[]>('/prompts/documents'),
 
-  update: (key: PromptKey, body: string) =>
-    http.put<PromptConfig>(`/prompts/${key}`, { body }),
+  update: (key: PromptKey, body: string) => http.put<PromptConfig>(`/prompts/${key}`, { body }),
 
   reset: (key: PromptKey) => http.post<PromptConfig>(`/prompts/${key}/reset`),
 

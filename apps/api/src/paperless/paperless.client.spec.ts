@@ -69,7 +69,14 @@ describe('PaperlessClient', () => {
           next: 'http://internal-paperless:8000/api/documents/?page=2&page_size=200',
           previous: null,
           results: [
-            { id: 1, title: 'a', content: '', tags: [], correspondent: null, created: '2024-01-01T00:00:00Z' },
+            {
+              id: 1,
+              title: 'a',
+              content: '',
+              tags: [],
+              correspondent: null,
+              created: '2024-01-01T00:00:00Z',
+            },
           ],
         }),
       )
@@ -79,8 +86,22 @@ describe('PaperlessClient', () => {
           next: null,
           previous: null,
           results: [
-            { id: 2, title: 'b', content: '', tags: [], correspondent: null, created: '2024-01-01T00:00:00Z' },
-            { id: 3, title: 'c', content: '', tags: [], correspondent: null, created: '2024-01-01T00:00:00Z' },
+            {
+              id: 2,
+              title: 'b',
+              content: '',
+              tags: [],
+              correspondent: null,
+              created: '2024-01-01T00:00:00Z',
+            },
+            {
+              id: 3,
+              title: 'c',
+              content: '',
+              tags: [],
+              correspondent: null,
+              created: '2024-01-01T00:00:00Z',
+            },
           ],
         }),
       );
@@ -133,10 +154,12 @@ describe('PaperlessClient', () => {
   it('wraps a non-2xx response in a PaperlessError carrying the status', async () => {
     fetchMock.mockResolvedValue(new Response('forbidden', { status: 403 }));
 
-    const err = await client().probe().then(
-      () => null,
-      (e: unknown) => e,
-    );
+    const err = await client()
+      .probe()
+      .then(
+        () => null,
+        (e: unknown) => e,
+      );
     expect(err).toBeInstanceOf(PaperlessError);
     expect((err as PaperlessError).status).toBe(403);
   });
@@ -144,10 +167,12 @@ describe('PaperlessClient', () => {
   it('wraps a network failure in a PaperlessError with no status', async () => {
     fetchMock.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    const err = await client().probe().then(
-      () => null,
-      (e: unknown) => e,
-    );
+    const err = await client()
+      .probe()
+      .then(
+        () => null,
+        (e: unknown) => e,
+      );
     expect(err).toBeInstanceOf(PaperlessError);
     expect((err as PaperlessError).status).toBeUndefined();
   });

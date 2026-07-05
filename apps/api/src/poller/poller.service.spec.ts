@@ -34,7 +34,9 @@ function makePoller({
 }
 
 const docs = (ids: number[]) => ({
-  listDocuments: vi.fn().mockResolvedValue({ count: ids.length, results: ids.map((id) => ({ id })) }),
+  listDocuments: vi
+    .fn()
+    .mockResolvedValue({ count: ids.length, results: ids.map((id) => ({ id })) }),
 });
 
 describe('PollerService.pollOnce', () => {
