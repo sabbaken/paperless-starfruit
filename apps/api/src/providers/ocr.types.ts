@@ -1,4 +1,26 @@
+import { PROVIDER_KIND } from '@paperless-starfruit/shared';
 import type { LlmUsage } from './llm.service';
+
+/** Provider kinds whose vision models accept a PDF `file` part directly (per the
+ *  AI SDK). Mistral chat (e.g. Pixtral) and generic OpenAI-compatible endpoints
+ *  only take images — a PDF must go to one of these, or to Mistral's OCR endpoint. */
+export const PDF_FILE_PART_KINDS = new Set<string>([
+  PROVIDER_KIND.ANTHROPIC,
+  PROVIDER_KIND.OPENAI,
+  PROVIDER_KIND.GOOGLE,
+]);
+
+/**
+ * Marks a content part as an Anthropic prompt-cache breakpoint (5-minute TTL).
+ * The OCR call writes the document block into the cache and the extraction call
+ * that follows re-reads it at ~10% of the input price — provided both requests
+ * share the same model and an identical prefix up to this part, which is why the
+ * document part always goes FIRST in the user message. `providerOptions` are
+ * namespaced per provider, so every other provider ignores this key.
+ */
+export const ANTHROPIC_CACHE_CONTROL = {
+  anthropic: { cacheControl: { type: 'ephemeral' } },
+} as const;
 
 /** The original document bytes pulled from paperless, plus its declared type. */
 export interface OcrInput {

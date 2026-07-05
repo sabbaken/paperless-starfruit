@@ -141,7 +141,12 @@ export const settingsSchema = z.object({
   extractMaxPages: z.number().int().positive().nullable().default(100),
   language: z.string().default('auto'),
   ocrEnabled: z.boolean().default(true),
-  /** Skip OCR (reuse paperless's own text) for documents with more pages than this. `null` = no limit. */
+  /**
+   * The "too big for a vision model" threshold, doing double duty: documents
+   * with more pages than this skip OCR (paperless's own text is reused) AND
+   * attach only their first and last pages to extraction instead of the whole
+   * original. `null` = no limit.
+   */
   ocrMaxPages: z.number().int().positive().nullable().default(20),
   correspondentBlacklist: z.array(z.string()).default([]),
   /** The credential + model the extraction pipeline runs on; null until chosen. */
