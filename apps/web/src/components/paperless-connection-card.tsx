@@ -26,14 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -56,12 +49,41 @@ export interface PaperlessConnectionCardProps {
   onConnected?: () => void;
 }
 
+/** The settings-page presentation: the bare form wrapped in card chrome. */
+export function PaperlessConnectionCard({ className, onConnected }: PaperlessConnectionCardProps) {
+  return (
+    <Card className={cn('w-full max-w-md', className)}>
+      <CardHeader>
+        <CardTitle>Connect paperless</CardTitle>
+        <CardDescription>
+          Read-only access, verified before saving. The token is encrypted at rest.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <PaperlessConnectionForm onConnected={onConnected} showDisconnect />
+      </CardContent>
+    </Card>
+  );
+}
+
+export interface PaperlessConnectionFormProps {
+  className?: string;
+  /** Called after the connection is successfully saved. */
+  onConnected?: () => void;
+  /** Offer disconnect when connected — wanted in settings, not in onboarding. */
+  showDisconnect?: boolean;
+}
+
 /**
  * Self-contained paperless-ngx connection form: URL + token, a read-only test,
- * and save/disconnect — with live status feedback. Owns its own data (react-query),
- * so it drops straight into the settings page or the onboarding flow unchanged.
+ * and save — with live status feedback. Owns its own data (react-query), so it
+ * drops straight into the settings card or the onboarding flow unchanged.
  */
-export function PaperlessConnectionCard({ className, onConnected }: PaperlessConnectionCardProps) {
+export function PaperlessConnectionForm({
+  className,
+  onConnected,
+  showDisconnect = false,
+}: PaperlessConnectionFormProps) {
   const connection = useConnection();
   const status = connection.data;
 
@@ -119,116 +141,105 @@ export function PaperlessConnectionCard({ className, onConnected }: PaperlessCon
   });
 
   return (
-    <Card className={cn('w-full max-w-md', className)}>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle>Connect paperless</CardTitle>
+    <div className={cn('w-full', className)}>
+      <form id="connect-form" onSubmit={onSave} className="space-y-4" noValidate>
+        <div className="space-y-2">
+          <Label htmlFor="baseUrl">paperless-ngx URL</Label>
+          <div className="relative">
+            <Globe className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-muted-foreground" />
+            <Input
+              id="baseUrl"
+              className="pl-9"
+              placeholder="https://paperless.home.lan"
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={!!formState.errors.baseUrl}
+              {...register('baseUrl')}
+            />
+          </div>
+          {formState.errors.baseUrl && (
+            <p className="text-sm text-destructive">{formState.errors.baseUrl.message}</p>
+          )}
         </div>
-        <CardDescription>
-          Read-only access, verified before saving. The token is encrypted at rest.
-        </CardDescription>
-      </CardHeader>
 
-      <CardContent>
-        <form id="connect-form" onSubmit={onSave} className="space-y-4" noValidate>
-          <div className="space-y-2">
-            <Label htmlFor="baseUrl">paperless-ngx URL</Label>
-            <div className="relative">
-              <Globe className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-muted-foreground" />
-              <Input
-                id="baseUrl"
-                className="pl-9"
-                placeholder="https://paperless.home.lan"
-                autoComplete="off"
-                spellCheck={false}
-                aria-invalid={!!formState.errors.baseUrl}
-                {...register('baseUrl')}
-              />
-            </div>
-            {formState.errors.baseUrl && (
-              <p className="text-sm text-destructive">{formState.errors.baseUrl.message}</p>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="token">API token</Label>
+            <a
+              href={TOKEN_DOCS_URL}
+              target="_blank"
+              rel="noreferrer"
+              tabIndex={-1}
+              className="inline-flex items-center gap-0.5 text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-500"
+            >
+              Where to get it?
+              <ArrowUpRight className="size-3.5" />
+            </a>
+          </div>
+          <div className="relative">
+            <Input
+              id="token"
+              type={showToken ? 'text' : 'password'}
+              className="pr-9"
+              placeholder={connected ? 're-enter to update' : 'paperless API token'}
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={!!formState.errors.token}
+              {...register('token')}
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowToken((v) => !v)}
+              aria-label={showToken ? 'Hide token' : 'Show token'}
+              className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+            >
+              {showToken ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+          {formState.errors.token && (
+            <p className="text-sm text-destructive">{formState.errors.token.message}</p>
+          )}
+        </div>
+
+        <ConnectionStatusAlert view={view} />
+
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+            Advanced
+          </summary>
+          <div className="space-y-2 pt-3">
+            <Label htmlFor="apiVersion">API version</Label>
+            <Input
+              id="apiVersion"
+              type="number"
+              min={1}
+              placeholder="auto-detect"
+              className="max-w-32"
+              aria-invalid={!!formState.errors.apiVersion}
+              {...register('apiVersion', {
+                // Empty/blank/non-numeric -> undefined (auto-detect from the
+                // server) rather than NaN, which would fail validation silently.
+                setValueAs: (v) => {
+                  if (v === '' || v == null) return undefined;
+                  const n = Number(v);
+                  return Number.isNaN(n) ? undefined : n;
+                },
+              })}
+            />
+            {formState.errors.apiVersion ? (
+              <p className="text-sm text-destructive">{formState.errors.apiVersion.message}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Leave blank to detect the server&apos;s API version automatically.
+              </p>
             )}
           </div>
+        </details>
+      </form>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="token">API token</Label>
-              <a
-                href={TOKEN_DOCS_URL}
-                target="_blank"
-                rel="noreferrer"
-                tabIndex={-1}
-                className="inline-flex items-center gap-0.5 text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-500"
-              >
-                Where to get it?
-                <ArrowUpRight className="size-3.5" />
-              </a>
-            </div>
-            <div className="relative">
-              <Input
-                id="token"
-                type={showToken ? 'text' : 'password'}
-                className="pr-9"
-                placeholder={connected ? 're-enter to update' : 'paperless API token'}
-                autoComplete="off"
-                spellCheck={false}
-                aria-invalid={!!formState.errors.token}
-                {...register('token')}
-              />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowToken((v) => !v)}
-                aria-label={showToken ? 'Hide token' : 'Show token'}
-                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
-              >
-                {showToken ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-            {formState.errors.token && (
-              <p className="text-sm text-destructive">{formState.errors.token.message}</p>
-            )}
-          </div>
-
-          <ConnectionStatusAlert view={view} />
-
-          <details className="group">
-            <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
-              <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
-              Advanced
-            </summary>
-            <div className="space-y-2 pt-3">
-              <Label htmlFor="apiVersion">API version</Label>
-              <Input
-                id="apiVersion"
-                type="number"
-                min={1}
-                placeholder="auto-detect"
-                className="max-w-32"
-                aria-invalid={!!formState.errors.apiVersion}
-                {...register('apiVersion', {
-                  // Empty/blank/non-numeric -> undefined (auto-detect from the
-                  // server) rather than NaN, which would fail validation silently.
-                  setValueAs: (v) => {
-                    if (v === '' || v == null) return undefined;
-                    const n = Number(v);
-                    return Number.isNaN(n) ? undefined : n;
-                  },
-                })}
-              />
-              {formState.errors.apiVersion ? (
-                <p className="text-sm text-destructive">{formState.errors.apiVersion.message}</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to detect the server&apos;s API version automatically.
-                </p>
-              )}
-            </div>
-          </details>
-        </form>
-      </CardContent>
-
-      <CardFooter className="flex-col gap-2">
+      <div className="mt-5 flex flex-col gap-2">
         <div className="flex w-full gap-2">
           <Button
             type="button"
@@ -245,7 +256,7 @@ export function PaperlessConnectionCard({ className, onConnected }: PaperlessCon
             {connected ? 'Save changes' : 'Save & continue'}
           </Button>
         </div>
-        {connected && (
+        {showDisconnect && connected && (
           <Button
             type="button"
             variant="ghost"
@@ -258,8 +269,8 @@ export function PaperlessConnectionCard({ className, onConnected }: PaperlessCon
             Disconnect
           </Button>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
 
