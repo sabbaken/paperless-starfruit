@@ -501,6 +501,31 @@ describe('PipelineService.process — OCR (M5)', () => {
     expect(args.prompt).not.toContain('stale');
   });
 
+  it('marks the document for the Anthropic prompt cache only when OCR and extraction share provider + model', async () => {
+    const CACHE_MARKER = { anthropic: { cacheControl: { type: 'ephemeral' } } };
+
+    // OCR_ON uses the same provider id and model as the LLM defaults — the one
+    // pairing where extraction re-reads the entry the OCR call just wrote, so
+    // both document parts carry the marker.
+    const shared = makePipeline({ doc: { tags: [TRIGGER_TAG] }, settings: OCR_ON });
+    await shared.pipeline.process(JOB);
+    expect(shared.ocr.ocr.mock.calls[0][2]).toMatchObject({ cacheDocument: true });
+    const sharedPart = shared.llm.generateStructured.mock.calls[0][0].fileParts[0];
+    expect(sharedPart.providerOptions).toEqual(CACHE_MARKER);
+
+    // A different OCR model means the caches never meet (they are scoped per
+    // model) — a marker would only add the 25% write surcharge, so neither
+    // call carries it.
+    const split = makePipeline({
+      doc: { tags: [TRIGGER_TAG] },
+      settings: { ...OCR_ON, ocrModel: 'claude-3-5-haiku-latest' },
+    });
+    await split.pipeline.process(JOB);
+    expect(split.ocr.ocr.mock.calls[0][2]).toMatchObject({ cacheDocument: false });
+    const splitPart = split.llm.generateStructured.mock.calls[0][0].fileParts[0];
+    expect(splitPart.providerOptions).toBeUndefined();
+  });
+
   it('fails (not defers) when OCR returns no text — a blank/unreadable original', async () => {
     const { pipeline } = makePipeline({
       doc: { tags: [TRIGGER_TAG] },
