@@ -1,0 +1,13 @@
+# Build output & deps
+**/dist/**
+**/node_modules/**
+**/.turbo/**
+**/.astro/**
+
+# Generated / vendored
+**/drizzle/**
+pnpm-lock.yaml
+
+# Lockable data
+*.sqlite
+*.db
