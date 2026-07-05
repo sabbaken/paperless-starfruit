@@ -92,7 +92,11 @@ function bootstrapFallback(status: AuthStatusQuery): ReactNode | null {
           <p className="text-sm text-muted-foreground">
             {status.error instanceof Error ? status.error.message : 'unknown error'}
           </p>
-          <Button variant="outline" onClick={() => void status.refetch()} disabled={status.isFetching}>
+          <Button
+            variant="outline"
+            onClick={() => void status.refetch()}
+            disabled={status.isFetching}
+          >
             {status.isFetching && <Loader2 className="animate-spin" />}
             Retry
           </Button>
@@ -219,7 +223,9 @@ function AuthCard({ mode }: { mode: Mode }) {
           {mutation.error && (
             <Alert variant="destructive">
               <AlertCircle />
-              <AlertTitle>{mode === 'setup' ? "Couldn't create account" : "Couldn't sign in"}</AlertTitle>
+              <AlertTitle>
+                {mode === 'setup' ? "Couldn't create account" : "Couldn't sign in"}
+              </AlertTitle>
               <AlertDescription>
                 {mutation.error instanceof Error ? mutation.error.message : 'Please try again.'}
               </AlertDescription>

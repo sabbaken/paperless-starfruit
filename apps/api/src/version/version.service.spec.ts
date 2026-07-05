@@ -40,7 +40,10 @@ describe('VersionService', () => {
   });
 
   it('flags an update when the manifest is newer', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(jsonResponse({ version: '2.0.0' }))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse({ version: '2.0.0' }))),
+    );
 
     const info = await service(true).getInfo();
 
@@ -51,7 +54,10 @@ describe('VersionService', () => {
   });
 
   it('reports up-to-date when the manifest is not newer', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(jsonResponse({ version: '1.2.3' }))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse({ version: '1.2.3' }))),
+    );
 
     const info = await service(true).getInfo();
 
@@ -62,7 +68,9 @@ describe('VersionService', () => {
   it('prefers the manifest releaseUrl when present', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(jsonResponse({ version: '9.9.9', releaseUrl: 'https://example.com/r' }))),
+      vi.fn(() =>
+        Promise.resolve(jsonResponse({ version: '9.9.9', releaseUrl: 'https://example.com/r' })),
+      ),
     );
 
     const info = await service(true).getInfo();
@@ -71,7 +79,10 @@ describe('VersionService', () => {
   });
 
   it('degrades silently on a fetch error', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('network down'))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new Error('network down'))),
+    );
 
     const info = await service(true).getInfo();
 

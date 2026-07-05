@@ -13,7 +13,7 @@ whole prompts you control completely:
   ignores it.)
 
 Each is shown as a complete prompt, so what you edit is exactly what the model receives. The
-output *shape* stays enforced by a strict schema regardless of the prompt text — you control
+output _shape_ stays enforced by a strict schema regardless of the prompt text — you control
 the instructions, not the structure.
 
 ## Insertable variables
@@ -23,35 +23,35 @@ own values.
 
 **Extraction prompt**
 
-| Variable | Replaced with |
-|----------|---------------|
-| `{{content}}` | the recognized text (OCR output, or paperless's text) |
-| `{{language}}` | your configured output language, or `auto` |
-| `{{all_tags}}` | every existing tag, comma-separated — once any tag has an AI hint (Tags page), hinted tags render as a Markdown table of tag → hint with the rest listed below |
-| `{{all_correspondents}}` | every existing correspondent, comma-separated |
-| `{{tag_policy}}` | a sentence reflecting your *create new tags* setting |
-| `{{correspondent_policy}}` | a sentence reflecting your *create new correspondents* setting |
-| `{{title}}` | the document's current title |
-| `{{tags}}` | the document's current tags |
-| `{{correspondent}}` | the document's current correspondent, or `(none)` |
-| `{{created}}` | the document's current date, or `(none)` |
-| `{{filename}}` | the original filename, or `(none)` |
+| Variable                   | Replaced with                                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{{content}}`              | the recognized text (OCR output, or paperless's text)                                                                                                          |
+| `{{language}}`             | your configured output language, or `auto`                                                                                                                     |
+| `{{all_tags}}`             | every existing tag, comma-separated — once any tag has an AI hint (Tags page), hinted tags render as a Markdown table of tag → hint with the rest listed below |
+| `{{all_correspondents}}`   | every existing correspondent, comma-separated                                                                                                                  |
+| `{{tag_policy}}`           | a sentence reflecting your _create new tags_ setting                                                                                                           |
+| `{{correspondent_policy}}` | a sentence reflecting your _create new correspondents_ setting                                                                                                 |
+| `{{title}}`                | the document's current title                                                                                                                                   |
+| `{{tags}}`                 | the document's current tags                                                                                                                                    |
+| `{{correspondent}}`        | the document's current correspondent, or `(none)`                                                                                                              |
+| `{{created}}`              | the document's current date, or `(none)`                                                                                                                       |
+| `{{filename}}`             | the original filename, or `(none)`                                                                                                                             |
 
 **OCR prompt**
 
-| Variable | Replaced with |
-|----------|---------------|
+| Variable       | Replaced with                              |
+| -------------- | ------------------------------------------ |
 | `{{language}}` | your configured output language, or `auto` |
-| `{{filename}}` | the original filename, or `(none)` |
+| `{{filename}}` | the original filename, or `(none)`         |
 
 <Aside type="note">
-Unknown placeholders are left untouched, so a typo like `{{contnt}}` stays visible in the
-rendered prompt instead of silently disappearing.
+  Unknown placeholders are left untouched, so a typo like `{{ contnt }}` stays visible in the
+  rendered prompt instead of silently disappearing.
 </Aside>
 
 ## Test on a real document
 
-Pick a document from your paperless instance and hit **Run test**. It runs your *current*
+Pick a document from your paperless instance and hit **Run test**. It runs your _current_
 (even unsaved) prompt against that document and shows:
 
 - the structured result — title, tags, correspondent, date (or the transcribed text, for OCR),

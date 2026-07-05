@@ -12,7 +12,10 @@ function useEnter() {
     // Optimistically flip the gate's status so the route guard redirects to the
     // app immediately, with no "not authenticated" flash; the invalidate below
     // re-confirms it in the background.
-    queryClient.setQueryData<AuthStatus>(authKeys.status, { initialized: true, authenticated: true });
+    queryClient.setQueryData<AuthStatus>(authKeys.status, {
+      initialized: true,
+      authenticated: true,
+    });
     void queryClient.invalidateQueries();
   };
 }
@@ -36,6 +39,9 @@ export function useLogout() {
     queryClient.clear();
     // Seed an unauthenticated status so the guard redirects straight to /login
     // instead of flashing a spinner while it refetches.
-    queryClient.setQueryData<AuthStatus>(authKeys.status, { initialized: true, authenticated: false });
+    queryClient.setQueryData<AuthStatus>(authKeys.status, {
+      initialized: true,
+      authenticated: false,
+    });
   };
 }

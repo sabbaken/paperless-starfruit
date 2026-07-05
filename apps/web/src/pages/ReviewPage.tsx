@@ -15,7 +15,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -77,8 +83,8 @@ function ReviewList({
             <EmptyDescription>
               {extractionEnabled ? (
                 <>
-                  When a document tagged <code className="font-mono">psf-process</code> is processed,
-                  its AI suggestions land here for your approval.
+                  When a document tagged <code className="font-mono">psf-process</code> is
+                  processed, its AI suggestions land here for your approval.
                 </>
               ) : (
                 <>
@@ -137,10 +143,7 @@ function ReviewList({
 
       <ul className="space-y-2">
         {items.map((item) => (
-          <li
-            key={item.id}
-            className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3"
-          >
+          <li key={item.id} className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
             <Checkbox
               checked={selected.has(item.id)}
               onCheckedChange={() => toggle(item.id)}
@@ -310,7 +313,11 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
               />
             </Field>
 
-            <Field label="Date" current={s.current.date} changed={s.current.date !== (date || null)}>
+            <Field
+              label="Date"
+              current={s.current.date}
+              changed={s.current.date !== (date || null)}
+            >
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
           </CardContent>

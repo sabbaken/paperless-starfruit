@@ -11,7 +11,13 @@ import { cn } from '@/lib/utils';
 import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -141,12 +147,7 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
               </TableBody>
             </Table>
           </div>
-          <Pager
-            offset={offset}
-            total={total}
-            count={items.length}
-            onChange={setOffset}
-          />
+          <Pager offset={offset} total={total} count={items.length} onChange={setOffset} />
         </>
       )}
     </div>
@@ -187,7 +188,6 @@ function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: nu
   );
 }
 
-
 function Pager({
   offset,
   total,
@@ -222,7 +222,12 @@ function Pager({
         >
           Previous
         </Button>
-        <Button size="sm" variant="outline" disabled={!canNext} onClick={() => onChange(offset + PAGE_SIZE)}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!canNext}
+          onClick={() => onChange(offset + PAGE_SIZE)}
+        >
           Next
         </Button>
       </div>
@@ -293,7 +298,10 @@ function HistoryDetail({ entry, onClose }: { entry: AuditEntryDetail; onClose: (
           <CardTitle className="text-sm">Model response</CardTitle>
         </CardHeader>
         <CardContent>
-          <Block text={formatResponse(entry)} empty="No model response was recorded for this entry." />
+          <Block
+            text={formatResponse(entry)}
+            empty="No model response was recorded for this entry."
+          />
         </CardContent>
       </Card>
     </div>

@@ -45,12 +45,10 @@ describe('configFingerprint', () => {
   });
 
   it('pins the exact byte format — a silent format change would mass-reprocess every install', () => {
-    expect(configFingerprint({ llm, ocr: null })).toBe(
-      'v1|llm:anthropic/claude-haiku-4-5|ocr:off',
+    expect(configFingerprint({ llm, ocr: null })).toBe('v1|llm:anthropic/claude-haiku-4-5|ocr:off');
+    expect(configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } })).toBe(
+      'v1|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest',
     );
-    expect(
-      configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } }),
-    ).toBe('v1|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest');
     expect(
       configFingerprint({ llm: null, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } }),
     ).toBe('v1|llm:off|ocr:mistral/mistral-ocr-latest');
@@ -78,15 +76,37 @@ describe('configFingerprint', () => {
 describe('tagHintsDigest', () => {
   it('is null with no hints and insensitive to map insertion order', () => {
     expect(tagHintsDigest(new Map())).toBeNull();
-    const ab = tagHintsDigest(new Map([[1, 'a'], [2, 'b']]));
-    const ba = tagHintsDigest(new Map([[2, 'b'], [1, 'a']]));
+    const ab = tagHintsDigest(
+      new Map([
+        [1, 'a'],
+        [2, 'b'],
+      ]),
+    );
+    const ba = tagHintsDigest(
+      new Map([
+        [2, 'b'],
+        [1, 'a'],
+      ]),
+    );
     expect(ab).toBe(ba);
     expect(ab).toMatch(/^[0-9a-f]{16}$/);
   });
 
   it('distinguishes which tag carries which hint', () => {
-    expect(tagHintsDigest(new Map([[1, 'a'], [2, 'b']]))).not.toBe(
-      tagHintsDigest(new Map([[1, 'b'], [2, 'a']])),
+    expect(
+      tagHintsDigest(
+        new Map([
+          [1, 'a'],
+          [2, 'b'],
+        ]),
+      ),
+    ).not.toBe(
+      tagHintsDigest(
+        new Map([
+          [1, 'b'],
+          [2, 'a'],
+        ]),
+      ),
     );
   });
 });

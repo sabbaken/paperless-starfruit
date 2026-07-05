@@ -1,5 +1,9 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { settingsUpdateSchema, type Settings, type SettingsUpdate } from '@paperless-starfruit/shared';
+import {
+  settingsUpdateSchema,
+  type Settings,
+  type SettingsUpdate,
+} from '@paperless-starfruit/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { SettingsService } from './settings.service';
 

@@ -50,10 +50,6 @@ export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivEleme
 
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      data-slot="card-footer"
-      className={cn('flex items-center px-6', className)}
-      {...props}
-    />
+    <div data-slot="card-footer" className={cn('flex items-center px-6', className)} {...props} />
   );
 }

@@ -124,9 +124,11 @@ describe('ProviderService.test', () => {
     const { service, llm } = makeService();
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ data: [{ id: 'llama3.1' }] }), { status: 200 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ data: [{ id: 'llama3.1' }] }), { status: 200 }),
+        ),
     );
     const result = await service.test({
       name: 'Ollama',
@@ -139,7 +141,11 @@ describe('ProviderService.test', () => {
   });
 });
 
-const local = { name: 'Ollama', kind: PROVIDER_KIND.OPENAI_COMPATIBLE, baseUrl: 'http://localhost:11434/v1' };
+const local = {
+  name: 'Ollama',
+  kind: PROVIDER_KIND.OPENAI_COMPATIBLE,
+  baseUrl: 'http://localhost:11434/v1',
+};
 
 describe('ProviderService.listAvailableModels', () => {
   afterEach(() => vi.unstubAllGlobals());

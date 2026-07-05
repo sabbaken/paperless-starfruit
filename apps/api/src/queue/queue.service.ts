@@ -22,12 +22,7 @@ export class QueueService {
     const existing = this.db
       .select({ id: job.id })
       .from(job)
-      .where(
-        and(
-          eq(job.documentId, documentId),
-          inArray(job.status, ACTIVE_JOB_STATUSES),
-        ),
-      )
+      .where(and(eq(job.documentId, documentId), inArray(job.status, ACTIVE_JOB_STATUSES)))
       .limit(1)
       .all();
 

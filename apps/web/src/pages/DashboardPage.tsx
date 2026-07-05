@@ -70,7 +70,12 @@ export function DashboardPage() {
             hint={pendingReview === 0 ? 'nothing to review' : undefined}
             action={
               pendingReview > 0 ? (
-                <Button size="sm" variant="outline" className="h-7 px-2.5" onClick={() => navigate('/review')}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2.5"
+                  onClick={() => navigate('/review')}
+                >
                   Review
                 </Button>
               ) : undefined
@@ -153,7 +158,8 @@ export function DashboardPage() {
         )}
         {recentJobs.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No jobs yet. Tag a document in paperless with <code className="font-mono">psf-process</code> to get started.
+            No jobs yet. Tag a document in paperless with{' '}
+            <code className="font-mono">psf-process</code> to get started.
           </p>
         ) : (
           <div className="overflow-hidden rounded-lg border bg-card">
@@ -170,7 +176,9 @@ export function DashboardPage() {
               <TableBody>
                 {recentJobs.map((job) => (
                   <TableRow key={job.id} className="hover:bg-transparent">
-                    <TableCell className={cn('py-3 pl-4 font-medium capitalize', STATUS_TONE[job.status])}>
+                    <TableCell
+                      className={cn('py-3 pl-4 font-medium capitalize', STATUS_TONE[job.status])}
+                    >
                       {job.status}
                     </TableCell>
                     <TableCell className="py-3">

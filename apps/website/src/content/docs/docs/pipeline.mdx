@@ -14,12 +14,12 @@ Every tagged document follows the same path.
    duplicates. A document already waiting in review, or one that has terminally failed, is
    skipped.
 
-2. **Extraction page gate (outer).** If the document has more pages than your *extraction*
+2. **Extraction page gate (outer).** If the document has more pages than your _extraction_
    cap, it gets **neither OCR nor extraction**: paperless keeps whatever it already
    recognised, the trigger tag is dropped, and the run is recorded as `skipped`.
 
 3. **OCR (inner gate).** If OCR is on, a model is selected, and the document is under the
-   *OCR* cap, the original is re-read — by **Mistral OCR** (a dedicated page-billed endpoint)
+   _OCR_ cap, the original is re-read — by **Mistral OCR** (a dedicated page-billed endpoint)
    or a **vision LLM** — and the text is written back to paperless. Otherwise paperless's
    existing text is reused, for free.
 
@@ -35,7 +35,7 @@ Every tagged document follows the same path.
    instead: a single PATCH writes the OCR text back and drops the trigger tag, metadata is
    left untouched, and the run is recorded as `ocr-only`.
 
-6. **Reconcile.** Suggested tag and correspondent *names* are mapped to paperless IDs. New
+6. **Reconcile.** Suggested tag and correspondent _names_ are mapped to paperless IDs. New
    ones are created only when you've allowed it (and never for a blacklisted correspondent).
 
 7. **Apply — or queue.** With **auto-apply on**, a single PATCH writes the metadata and
@@ -47,7 +47,7 @@ Every tagged document follows the same path.
 
 ## Reprocessing
 
-Re-tagging a document is the explicit *“process me again”* signal.
+Re-tagging a document is the explicit _“process me again”_ signal.
 
 - If nothing relevant changed — same recognised text, same models — the **skip-if-identical**
   check (step 4) means a re-run costs no extraction call.
@@ -55,8 +55,8 @@ Re-tagging a document is the explicit *“process me again”* signal.
   (and usually the text) differ, so it genuinely reprocesses.
 
 <Aside type="caution" title="Why a date never drifts">
-Dates are written as a plain `YYYY-MM-DD` (no timezone), so a document's `created` date
-can't shift a day on UTC-behind servers.
+  Dates are written as a plain `YYYY-MM-DD` (no timezone), so a document's `created` date can't
+  shift a day on UTC-behind servers.
 </Aside>
 
 ## When a job fails
@@ -66,7 +66,7 @@ Errors use a plain retry counter — no exponential backoff. A job is retried un
 permanently-failed document is **not** re-polled (so it can't loop forever); use the
 **Retry** action on the dashboard to clear the failed rows and enqueue a fresh run.
 
-A transient *“paperless hasn't OCR'd this yet”* situation is treated as a **deferral**, not a
+A transient _“paperless hasn't OCR'd this yet”_ situation is treated as a **deferral**, not a
 failure — the job is dropped and simply re-created on the next poll, without consuming an
 attempt.
 

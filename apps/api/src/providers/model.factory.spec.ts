@@ -48,9 +48,9 @@ describe('buildLanguageModel', () => {
   });
 
   it('rejects an openai-compatible provider without a baseUrl', () => {
-    expect(() =>
-      buildLanguageModel({ ...base, kind: PROVIDER_KIND.OPENAI_COMPATIBLE }),
-    ).toThrow(/base URL/i);
+    expect(() => buildLanguageModel({ ...base, kind: PROVIDER_KIND.OPENAI_COMPATIBLE })).toThrow(
+      /base URL/i,
+    );
   });
 });
 

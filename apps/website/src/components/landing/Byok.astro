@@ -1,10 +1,18 @@
 ---
 // Bring your own keys — the supported providers, kept brief.
 const cloud = [
-  { name: 'Anthropic', icon: '/icons/providers/anthropic.png', models: 'Claude Opus 4.5 · Sonnet 4.6 · Haiku 4.5' },
+  {
+    name: 'Anthropic',
+    icon: '/icons/providers/anthropic.png',
+    models: 'Claude Opus 4.5 · Sonnet 4.6 · Haiku 4.5',
+  },
   { name: 'OpenAI', icon: '/icons/providers/openai.png', models: 'GPT-4.1 · GPT-4o · o4-mini' },
   { name: 'Google', icon: '/icons/providers/google.png', models: 'Gemini 2.5 Pro · 2.5 Flash' },
-  { name: 'Mistral', icon: '/icons/providers/mistral.png', models: 'Mistral Large · Pixtral · Mistral OCR' },
+  {
+    name: 'Mistral',
+    icon: '/icons/providers/mistral.png',
+    models: 'Mistral Large · Pixtral · Mistral OCR',
+  },
 ];
 ---
 
@@ -32,12 +40,16 @@ const cloud = [
         <span class="provider__glyph" aria-hidden="true">&gt;_</span>
         <div class="provider__text">
           <span class="provider__name">Anything OpenAI-compatible</span>
-          <span class="provider__models">Ollama · LM Studio · vLLM · OpenRouter — local or remote</span>
+          <span class="provider__models"
+            >Ollama · LM Studio · vLLM · OpenRouter — local or remote</span
+          >
         </div>
       </div>
     </div>
 
-    <p class="keys__note">Encrypted at rest, and sent straight to the provider — never through us.</p>
+    <p class="keys__note">
+      Encrypted at rest, and sent straight to the provider — never through us.
+    </p>
   </div>
 </section>
 

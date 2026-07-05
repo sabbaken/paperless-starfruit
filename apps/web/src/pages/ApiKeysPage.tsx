@@ -1,6 +1,17 @@
-import {useRef, useState} from 'react';
-import {useForm} from 'react-hook-form';
-import {CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Pencil, Plus, Server, Trash2, XCircle,} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  Pencil,
+  Plus,
+  Server,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import {
   CLOUD_PROVIDER_KINDS,
   PROVIDER_KIND,
@@ -9,13 +20,25 @@ import {
   type ProviderKind,
   type ProviderTestResult,
 } from '@paperless-starfruit/shared';
-import {useCreateProvider, useDeleteProvider, useProviders, useTestProvider, useUpdateProvider,} from '@/api/providers';
-import {cn} from '@/lib/utils';
-import {Badge} from '@/components/ui/badge';
-import {Button} from '@/components/ui/button';
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from '@/components/ui/dialog';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
+import {
+  useCreateProvider,
+  useDeleteProvider,
+  useProviders,
+  useTestProvider,
+  useUpdateProvider,
+} from '@/api/providers';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type FormState = { mode: 'create'; kind: ProviderKind } | { mode: 'edit'; cred: ProviderConfig };
 
@@ -29,11 +52,13 @@ export function ApiKeysPage() {
   const shown = form ?? lastForm.current;
 
   if (providers.isLoading) {
-    return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground"/>;
+    return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
   }
 
   const list = providers.data ?? [];
-  const cloudByKind = new Map(list.filter((p) => p.kind !== PROVIDER_KIND.OPENAI_COMPATIBLE).map((p) => [p.kind, p]));
+  const cloudByKind = new Map(
+    list.filter((p) => p.kind !== PROVIDER_KIND.OPENAI_COMPATIBLE).map((p) => [p.kind, p]),
+  );
   const localCreds = list.filter((p) => p.kind === PROVIDER_KIND.OPENAI_COMPATIBLE);
   const shownKind = shown ? (shown.mode === 'edit' ? shown.cred.kind : shown.kind) : null;
 
@@ -50,9 +75,9 @@ export function ApiKeysPage() {
           size="sm"
           variant="outline"
           className="shrink-0"
-          onClick={() => setForm({mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE})}
+          onClick={() => setForm({ mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE })}
         >
-          <Plus className="size-4"/>
+          <Plus className="size-4" />
           Add local endpoint
         </Button>
       </div>
@@ -63,13 +88,13 @@ export function ApiKeysPage() {
           const meta = PROVIDER_KIND_META[kind];
           return (
             <li key={kind} className="flex items-center gap-3 py-3">
-              <KeyRound className="size-4 shrink-0 text-muted-foreground"/>
+              <KeyRound className="size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{meta.label}</span>
                   {cred && (
                     <Badge variant="secondary" className="gap-1">
-                      <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-500"/>
+                      <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-500" />
                       Connected
                     </Badge>
                   )}
@@ -77,13 +102,14 @@ export function ApiKeysPage() {
                 <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
               </div>
               {cred ? (
-                <RowActions
-                  onEdit={() => setForm({mode: 'edit', cred})}
-                  providerId={cred.id}
-                />
+                <RowActions onEdit={() => setForm({ mode: 'edit', cred })} providerId={cred.id} />
               ) : (
-                <Button size="sm" variant="outline" onClick={() => setForm({mode: 'create', kind})}>
-                  <Plus className="size-4"/>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setForm({ mode: 'create', kind })}
+                >
+                  <Plus className="size-4" />
                   Add key
                 </Button>
               )}
@@ -92,12 +118,12 @@ export function ApiKeysPage() {
         })}
         {localCreds.map((cred) => (
           <li key={cred.id} className="flex items-center gap-3 py-3">
-            <Server className="size-4 shrink-0 text-muted-foreground"/>
+            <Server className="size-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
               <span className="font-medium">{cred.name}</span>
               <p className="truncate font-mono text-xs text-muted-foreground">{cred.baseUrl}</p>
             </div>
-            <RowActions onEdit={() => setForm({mode: 'edit', cred})} providerId={cred.id}/>
+            <RowActions onEdit={() => setForm({ mode: 'edit', cred })} providerId={cred.id} />
           </li>
         ))}
       </ul>
@@ -128,15 +154,20 @@ export function ApiKeysPage() {
   );
 }
 
-function RowActions({onEdit, providerId}: { onEdit: () => void; providerId: number }) {
+function RowActions({ onEdit, providerId }: { onEdit: () => void; providerId: number }) {
   const [confirming, setConfirming] = useState(false);
   const remove = useDeleteProvider();
 
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="destructive" onClick={() => remove.mutate(providerId)} disabled={remove.isPending}>
-          {remove.isPending && <Loader2 className="animate-spin"/>}
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => remove.mutate(providerId)}
+          disabled={remove.isPending}
+        >
+          {remove.isPending && <Loader2 className="animate-spin" />}
           Remove
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
@@ -148,7 +179,7 @@ function RowActions({onEdit, providerId}: { onEdit: () => void; providerId: numb
   return (
     <div className="flex items-center gap-1">
       <Button size="icon" variant="ghost" aria-label="Edit" onClick={onEdit}>
-        <Pencil className="size-4"/>
+        <Pencil className="size-4" />
       </Button>
       <Button
         size="icon"
@@ -157,7 +188,7 @@ function RowActions({onEdit, providerId}: { onEdit: () => void; providerId: numb
         className="text-muted-foreground hover:text-destructive"
         onClick={() => setConfirming(true)}
       >
-        <Trash2 className="size-4"/>
+        <Trash2 className="size-4" />
       </Button>
     </div>
   );
@@ -170,10 +201,10 @@ interface FormValues {
 }
 
 function CredentialForm({
-                          kind,
-                          cred,
-                          onDone,
-                        }: {
+  kind,
+  cred,
+  onDone,
+}: {
   kind: ProviderKind;
   cred?: ProviderConfig;
   onDone: () => void;
@@ -183,7 +214,7 @@ function CredentialForm({
   const [showKey, setShowKey] = useState(false);
   const [testResult, setTestResult] = useState<ProviderTestResult | null>(null);
 
-  const {register, handleSubmit, formState} = useForm<FormValues>({
+  const { register, handleSubmit, formState } = useForm<FormValues>({
     defaultValues: {
       name: cred?.name ?? '',
       baseUrl: cred?.baseUrl ?? '',
@@ -205,16 +236,16 @@ function CredentialForm({
 
   const onSave = handleSubmit((v) => {
     if (editing && cred) {
-      update.mutate({id: cred.id, input: toInput(v)}, {onSuccess: onDone});
+      update.mutate({ id: cred.id, input: toInput(v) }, { onSuccess: onDone });
     } else {
-      create.mutate(toInput(v), {onSuccess: onDone});
+      create.mutate(toInput(v), { onSuccess: onDone });
     }
   });
   const onTest = handleSubmit((v) => {
     setTestResult(null);
     test.mutate(
-      {...toInput(v), id: editing && cred ? cred.id : undefined},
-      {onSuccess: (r) => setTestResult(r)},
+      { ...toInput(v), id: editing && cred ? cred.id : undefined },
+      { onSuccess: (r) => setTestResult(r) },
     );
   });
   const busy = save.isPending || test.isPending;
@@ -229,7 +260,7 @@ function CredentialForm({
               id="name"
               placeholder="Ollama (laptop)"
               aria-invalid={!!formState.errors.name}
-              {...register('name', {required: meta.local ? 'Required' : false})}
+              {...register('name', { required: meta.local ? 'Required' : false })}
             />
           </div>
         )}
@@ -239,8 +270,8 @@ function CredentialForm({
             <Label htmlFor="baseUrl">
               Base URL{' '}
               <span className="font-normal text-muted-foreground">
-                  {meta.needsBaseUrl ? '(required)' : '(optional)'}
-                </span>
+                {meta.needsBaseUrl ? '(required)' : '(optional)'}
+              </span>
             </Label>
             <Input
               id="baseUrl"
@@ -258,7 +289,9 @@ function CredentialForm({
         <div className="space-y-2">
           <Label htmlFor="apiKey">
             API key{' '}
-            {!meta.keyRequired && <span className="font-normal text-muted-foreground">(optional)</span>}
+            {!meta.keyRequired && (
+              <span className="font-normal text-muted-foreground">(optional)</span>
+            )}
           </Label>
           <div className="relative">
             <Input
@@ -270,8 +303,7 @@ function CredentialForm({
               spellCheck={false}
               aria-invalid={!!formState.errors.apiKey}
               {...register('apiKey', {
-                validate: (v) =>
-                  !meta.keyRequired || editing || v.trim().length > 0 || 'Required',
+                validate: (v) => !meta.keyRequired || editing || v.trim().length > 0 || 'Required',
               })}
             />
             <button
@@ -281,12 +313,17 @@ function CredentialForm({
               aria-label={showKey ? 'Hide key' : 'Show key'}
               className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
             >
-              {showKey ? <Eye className="size-4"/> : <EyeOff className="size-4"/>}
+              {showKey ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
             </button>
           </div>
         </div>
 
-        <TestLine pending={test.isPending} result={testResult} error={test.error} saveError={save.error}/>
+        <TestLine
+          pending={test.isPending}
+          result={testResult}
+          error={test.error}
+          saveError={save.error}
+        />
       </form>
 
       <div className="mt-5 flex justify-end gap-2">
@@ -294,11 +331,11 @@ function CredentialForm({
           Cancel
         </Button>
         <Button type="button" variant="outline" onClick={onTest} disabled={busy}>
-          {test.isPending && <Loader2 className="animate-spin"/>}
+          {test.isPending && <Loader2 className="animate-spin" />}
           Test
         </Button>
         <Button type="submit" form="credential-form" disabled={busy}>
-          {save.isPending && <Loader2 className="animate-spin"/>}
+          {save.isPending && <Loader2 className="animate-spin" />}
           {editing ? 'Save' : 'Add key'}
         </Button>
       </div>
@@ -307,11 +344,11 @@ function CredentialForm({
 }
 
 function TestLine({
-                    pending,
-                    result,
-                    error,
-                    saveError,
-                  }: {
+  pending,
+  result,
+  error,
+  saveError,
+}: {
   pending: boolean;
   result: ProviderTestResult | null;
   error: Error | null;
@@ -345,11 +382,11 @@ function TestLine({
       )}
     >
       {tone === 'probing' ? (
-        <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground"/>
+        <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
       ) : tone === 'ok' ? (
-        <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-500"/>
+        <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-500" />
       ) : (
-        <XCircle className="size-4 shrink-0 text-destructive"/>
+        <XCircle className="size-4 shrink-0 text-destructive" />
       )}
       <span className="truncate">{text}</span>
     </div>

@@ -1,11 +1,5 @@
 import { sql } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  sqliteTable,
-  text,
-  uniqueIndex,
-} from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { JOB_STATUS } from '@paperless-starfruit/shared';
 
 const timestamp = (name: string) =>
@@ -54,15 +48,12 @@ export const provider = sqliteTable('provider', {
  * the absence of a row means "use the code default", so "Reset to default" is a
  * plain delete. One row per key (unique).
  */
-export const promptTemplate = sqliteTable(
-  'prompt_template',
-  {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    key: text('key').notNull().unique(),
-    body: text('body').notNull(),
-    updatedAt: timestamp('updated_at'),
-  },
-);
+export const promptTemplate = sqliteTable('prompt_template', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(),
+  body: text('body').notNull(),
+  updatedAt: timestamp('updated_at'),
+});
 
 /**
  * A user-written hint for one paperless tag, injected into the extraction
@@ -81,22 +72,16 @@ export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
   pollIntervalSec: integer('poll_interval_sec').notNull().default(60),
   autoApply: integer('auto_apply', { mode: 'boolean' }).notNull().default(true),
-  createNewTags: integer('create_new_tags', { mode: 'boolean' })
-    .notNull()
-    .default(false),
+  createNewTags: integer('create_new_tags', { mode: 'boolean' }).notNull().default(false),
   createNewCorrespondents: integer('create_new_correspondents', { mode: 'boolean' })
     .notNull()
     .default(true),
   /** Run LLM metadata extraction; off = OCR-only mode. */
-  extractionEnabled: integer('extraction_enabled', { mode: 'boolean' })
-    .notNull()
-    .default(true),
+  extractionEnabled: integer('extraction_enabled', { mode: 'boolean' }).notNull().default(true),
   /** Skip extraction (and OCR) for documents with more pages than this; null = no limit. */
   extractMaxPages: integer('extract_max_pages').default(100),
   language: text('language').notNull().default('auto'),
-  ocrEnabled: integer('ocr_enabled', { mode: 'boolean' })
-    .notNull()
-    .default(true),
+  ocrEnabled: integer('ocr_enabled', { mode: 'boolean' }).notNull().default(true),
   /** Skip OCR (reuse paperless's text) for documents with more pages than this; null = no limit. */
   ocrMaxPages: integer('ocr_max_pages').default(20),
   correspondentBlacklist: text('correspondent_blacklist', { mode: 'json' })
@@ -110,9 +95,7 @@ export const settings = sqliteTable('settings', {
   ocrProviderId: integer('ocr_provider_id'),
   ocrModel: text('ocr_model'),
   /** Opt-in (default on) check for a newer release; gates the sidebar update notice. */
-  checkForUpdates: integer('check_for_updates', { mode: 'boolean' })
-    .notNull()
-    .default(true),
+  checkForUpdates: integer('check_for_updates', { mode: 'boolean' }).notNull().default(true),
 });
 
 /**

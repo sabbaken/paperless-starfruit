@@ -51,7 +51,13 @@ const stats = {
     { id: 1041, documentId: 1041, status: 'running', cost: null, error: null },
     { id: 1040, documentId: 1040, status: 'queued', cost: null, error: null },
     { id: 1039, documentId: 1039, status: 'done', cost: 980, error: null },
-    { id: 1037, documentId: 1037, status: 'failed', cost: null, error: 'Provider timed out after 60s' },
+    {
+      id: 1037,
+      documentId: 1037,
+      status: 'failed',
+      cost: null,
+      error: 'Provider timed out after 60s',
+    },
   ],
 };
 
@@ -74,7 +80,13 @@ const reviewSuggestion = {
 };
 
 const reviewList = [
-  { id: 1, documentId: 1042, status: 'pending', createdAt: 1772150400, suggestions: reviewSuggestion },
+  {
+    id: 1,
+    documentId: 1042,
+    status: 'pending',
+    createdAt: 1772150400,
+    suggestions: reviewSuggestion,
+  },
   {
     id: 2,
     documentId: 1043,
@@ -137,16 +149,52 @@ Existing correspondents: {{all_correspondents}}
 --- DOCUMENT CONTENT ---
 {{content}}`,
     variables: [
-      { name: 'content', label: 'Document text', description: 'The recognised text (OCR output, or paperless’s existing text).' },
-      { name: 'language', label: 'Language', description: 'The configured output language, or “auto”.' },
-      { name: 'all_tags', label: 'Existing tags', description: 'Every tag already in paperless — encourages reuse over invention.' },
-      { name: 'all_correspondents', label: 'Existing correspondents', description: 'Every correspondent already in paperless.' },
-      { name: 'tag_policy', label: 'Tag policy', description: 'Whether the model may introduce new tags.' },
-      { name: 'correspondent_policy', label: 'Correspondent policy', description: 'Whether the model may introduce a new correspondent.' },
-      { name: 'title', label: 'Current title', description: 'The document’s current title in paperless.' },
+      {
+        name: 'content',
+        label: 'Document text',
+        description: 'The recognised text (OCR output, or paperless’s existing text).',
+      },
+      {
+        name: 'language',
+        label: 'Language',
+        description: 'The configured output language, or “auto”.',
+      },
+      {
+        name: 'all_tags',
+        label: 'Existing tags',
+        description: 'Every tag already in paperless — encourages reuse over invention.',
+      },
+      {
+        name: 'all_correspondents',
+        label: 'Existing correspondents',
+        description: 'Every correspondent already in paperless.',
+      },
+      {
+        name: 'tag_policy',
+        label: 'Tag policy',
+        description: 'Whether the model may introduce new tags.',
+      },
+      {
+        name: 'correspondent_policy',
+        label: 'Correspondent policy',
+        description: 'Whether the model may introduce a new correspondent.',
+      },
+      {
+        name: 'title',
+        label: 'Current title',
+        description: 'The document’s current title in paperless.',
+      },
       { name: 'tags', label: 'Current tags', description: 'The document’s current tag names.' },
-      { name: 'correspondent', label: 'Current correspondent', description: 'The document’s current correspondent, if any.' },
-      { name: 'created', label: 'Current date', description: 'The document’s current date (YYYY-MM-DD).' },
+      {
+        name: 'correspondent',
+        label: 'Current correspondent',
+        description: 'The document’s current correspondent, if any.',
+      },
+      {
+        name: 'created',
+        label: 'Current date',
+        description: 'The document’s current date (YYYY-MM-DD).',
+      },
       { name: 'filename', label: 'File name', description: 'The document’s original file name.' },
     ],
   },
@@ -162,7 +210,11 @@ Preserve the reading order, line breaks and structure. Render tables as simple M
 Do not translate, summarise, correct spelling, or invent content. Mark an unreadable run as [illegible].
 Document language hint: {{language}}.`,
     variables: [
-      { name: 'language', label: 'Language', description: 'The configured output language, or “auto”.' },
+      {
+        name: 'language',
+        label: 'Language',
+        description: 'The configured output language, or “auto”.',
+      },
       { name: 'filename', label: 'File name', description: 'The document’s original file name.' },
     ],
   },
@@ -179,18 +231,66 @@ const testDocuments = [
 const providers = [
   { id: 1, name: 'Anthropic', kind: 'anthropic', baseUrl: null },
   { id: 2, name: 'OpenAI', kind: 'openai', baseUrl: null },
-  { id: 3, name: 'Ollama (home server)', kind: 'openai-compatible', baseUrl: 'http://localhost:11434/v1' },
+  {
+    id: 3,
+    name: 'Ollama (home server)',
+    kind: 'openai-compatible',
+    baseUrl: 'http://localhost:11434/v1',
+  },
 ];
 
 // The Tags page: paperless tags merged with their local AI hints (TagView[]).
 const tags = [
-  { id: 21, name: 'housing', color: '#fdbf6f', documentCount: 23, comment: 'Rent, mortgage and everything about the apartment.', isTrigger: false },
-  { id: 12, name: 'insurance', color: '#b2df8a', documentCount: 17, comment: 'Anything from an insurance company: policies, claims, renewal letters. Not marketing.', isTrigger: false },
+  {
+    id: 21,
+    name: 'housing',
+    color: '#fdbf6f',
+    documentCount: 23,
+    comment: 'Rent, mortgage and everything about the apartment.',
+    isTrigger: false,
+  },
+  {
+    id: 12,
+    name: 'insurance',
+    color: '#b2df8a',
+    documentCount: 17,
+    comment:
+      'Anything from an insurance company: policies, claims, renewal letters. Not marketing.',
+    isTrigger: false,
+  },
   { id: 9, name: 'invoice', color: '#cab2d6', documentCount: 58, comment: null, isTrigger: false },
-  { id: 4, name: 'psf-process', color: '#EBC625', documentCount: 3, comment: null, isTrigger: true },
-  { id: 30, name: 'receipts', color: '#8dd3c7', documentCount: 96, comment: null, isTrigger: false },
-  { id: 14, name: 'tax', color: '#fb9a99', documentCount: 12, comment: 'Documents from or for the tax office.', isTrigger: false },
-  { id: 7, name: 'utilities', color: '#a6cee3', documentCount: 42, comment: 'Electricity, water, heating and internet bills.', isTrigger: false },
+  {
+    id: 4,
+    name: 'psf-process',
+    color: '#EBC625',
+    documentCount: 3,
+    comment: null,
+    isTrigger: true,
+  },
+  {
+    id: 30,
+    name: 'receipts',
+    color: '#8dd3c7',
+    documentCount: 96,
+    comment: null,
+    isTrigger: false,
+  },
+  {
+    id: 14,
+    name: 'tax',
+    color: '#fb9a99',
+    documentCount: 12,
+    comment: 'Documents from or for the tax office.',
+    isTrigger: false,
+  },
+  {
+    id: 7,
+    name: 'utilities',
+    color: '#a6cee3',
+    documentCount: 42,
+    comment: 'Electricity, water, heating and internet bills.',
+    isTrigger: false,
+  },
 ];
 
 const version = { current: '1.3.0', updateAvailable: false, latest: '1.3.0', releaseUrl: null };
@@ -252,8 +352,7 @@ const TARGETS = [
     name: 'tags',
     path: '/tags',
     // A hinted tag row proves the table (and the AI-hint column) rendered.
-    prep: async (page) =>
-      page.getByText('insurance', { exact: true }).waitFor({ timeout: 15000 }),
+    prep: async (page) => page.getByText('insurance', { exact: true }).waitFor({ timeout: 15000 }),
   },
   {
     name: 'prompts',
@@ -289,7 +388,9 @@ async function main() {
   try {
     ({ chromium } = await import('playwright'));
   } catch {
-    console.error('\nPlaywright is not installed. Run:\n  pnpm --filter @paperless-starfruit/website install\n');
+    console.error(
+      '\nPlaywright is not installed. Run:\n  pnpm --filter @paperless-starfruit/website install\n',
+    );
     process.exit(1);
   }
 
@@ -298,7 +399,15 @@ async function main() {
   console.log(`Starting web dev server on :${PORT} …`);
   const server = spawn(
     'pnpm',
-    ['--filter', '@paperless-starfruit/web', 'exec', 'vite', '--port', String(PORT), '--strictPort'],
+    [
+      '--filter',
+      '@paperless-starfruit/web',
+      'exec',
+      'vite',
+      '--port',
+      String(PORT),
+      '--strictPort',
+    ],
     { cwd: repoRoot, detached: true, stdio: ['ignore', 'ignore', 'inherit'] },
   );
 
@@ -347,7 +456,11 @@ async function main() {
           console.warn(`  · unhandled ${route.request().method()} /api${apiPath} → {}`);
           return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         }
-        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) });
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(data),
+        });
       },
     );
 
@@ -362,7 +475,9 @@ async function main() {
       console.log(`  → ${file}`);
     }
 
-    console.log(`\nDone. ${TARGETS.length} screenshots written to apps/website/public/screenshots/`);
+    console.log(
+      `\nDone. ${TARGETS.length} screenshots written to apps/website/public/screenshots/`,
+    );
   } finally {
     if (browser) await browser.close();
     killServer();

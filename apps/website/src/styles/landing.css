@@ -39,10 +39,11 @@
   --radius-sm: 9px;
   --radius-lg: 20px;
 
-  --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code',
-    Menlo, monospace;
+  --font-display:
+    'Space Grotesk Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
 
   --container: 1140px;
   --shadow-sm: 0 1px 2px rgba(22, 23, 15, 0.05), 0 1px 1px rgba(22, 23, 15, 0.04);

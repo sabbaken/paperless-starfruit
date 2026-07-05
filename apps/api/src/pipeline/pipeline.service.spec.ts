@@ -80,7 +80,9 @@ function makePipeline(o: Overrides = {}) {
     o.credential === undefined
       ? { name: 'c', kind: 'anthropic', apiKey: 'k', baseUrl: null }
       : o.credential;
-  const providers = { getCredential: vi.fn().mockReturnValue(credential) } as unknown as ProviderService;
+  const providers = {
+    getCredential: vi.fn().mockReturnValue(credential),
+  } as unknown as ProviderService;
 
   const settings = {
     get: () => ({ ...DEFAULT_SETTINGS, ...o.settings }),
@@ -109,7 +111,9 @@ function makePipeline(o: Overrides = {}) {
       ],
       correspondents: [{ id: 3, name: 'ACME' }],
     }),
-    resolveTags: vi.fn().mockResolvedValue(o.resolvedTags ?? [{ id: 7, name: 'invoice', isNew: false }]),
+    resolveTags: vi
+      .fn()
+      .mockResolvedValue(o.resolvedTags ?? [{ id: 7, name: 'invoice', isNew: false }]),
     resolveCorrespondent: vi
       .fn()
       .mockResolvedValue(
@@ -121,11 +125,15 @@ function makePipeline(o: Overrides = {}) {
     correspondentName: vi.fn().mockResolvedValue(null),
   } as unknown as TaxonomyService;
 
-  const review = { create: vi.fn() } as unknown as ReviewService & { create: ReturnType<typeof vi.fn> };
+  const review = { create: vi.fn() } as unknown as ReviewService & {
+    create: ReturnType<typeof vi.fn>;
+  };
   const queue = {
     hasCompletedWithHash: vi.fn().mockReturnValue(o.hasCompleted ?? false),
   } as unknown as QueueService;
-  const audit = { record: vi.fn() } as unknown as AuditService & { record: ReturnType<typeof vi.fn> };
+  const audit = { record: vi.fn() } as unknown as AuditService & {
+    record: ReturnType<typeof vi.fn>;
+  };
 
   // The real PromptsService renders a template; for the pipeline we only care that
   // the document vars (notably `content`) reach the prompt, so stringify them.
@@ -177,7 +185,9 @@ describe('PipelineService.process', () => {
       created: '2024-03-02', // date-only — no UTC-midnight day shift
     });
     expect(review.create).not.toHaveBeenCalled();
-    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'auto-applied' }));
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({ decision: 'auto-applied' }),
+    );
   });
 
   it('gates tag and correspondent creation independently in auto mode', async () => {
@@ -251,7 +261,9 @@ describe('PipelineService.process', () => {
       date: '2024-03-02',
       current: { title: 'scan_0001', tagNames: ['Existing'], date: '2024-01-01' },
     });
-    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'review-queued' }));
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({ decision: 'review-queued' }),
+    );
   });
 
   it('skips an identical rerun in auto mode: drops the trigger tag, no LLM call', async () => {

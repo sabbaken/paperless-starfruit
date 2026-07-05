@@ -7,9 +7,7 @@ import { z } from 'zod';
 export const TAG_COMMENT_MAX = 500;
 
 /** Hex background colour paperless accepts for a tag. */
-const tagColorSchema = z
-  .string()
-  .regex(/^#[0-9a-fA-F]{6}$/, 'must be a #rrggbb colour');
+const tagColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'must be a #rrggbb colour');
 
 /**
  * One paperless tag as shown on the Tags page: the paperless-owned fields plus

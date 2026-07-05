@@ -26,15 +26,15 @@ Open **Settings → Connection** and link your paperless-ngx instance.
 
 ## Use a least-privilege user
 
-Prefer a dedicated paperless user over the superuser: create an account that can *view and
-change documents* and *view and add tags and correspondents*, then mint *that* user's token.
+Prefer a dedicated paperless user over the superuser: create an account that can _view and
+change documents_ and _view and add tags and correspondents_, then mint _that_ user's token.
 Paperless Starfruit only reads documents you tag and writes back metadata — it needs nothing
 more.
 
 <Aside type="note" title="Why URLs aren't SSRF-restricted">
-This app must reach self-hosted and LAN addresses — paperless on a private IP, a local
-Ollama — so admin-entered URLs are intentionally not blocked from reaching internal hosts.
-The security model is *one trusted admin*.
+  This app must reach self-hosted and LAN addresses — paperless on a private IP, a local Ollama — so
+  admin-entered URLs are intentionally not blocked from reaching internal hosts. The security model
+  is *one trusted admin*.
 </Aside>
 
 ## The trigger tag

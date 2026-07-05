@@ -47,7 +47,11 @@ const requireKeyAndUrl = (
 ) => {
   const meta = PROVIDER_KIND_META[v.kind];
   if (meta.needsBaseUrl && !v.baseUrl) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['baseUrl'], message: 'Base URL is required' });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['baseUrl'],
+      message: 'Base URL is required',
+    });
   }
   if (keyRequired && meta.keyRequired && !v.apiKey) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['apiKey'], message: 'API key is required' });

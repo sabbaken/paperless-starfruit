@@ -67,12 +67,10 @@ function parseKey(raw: string | undefined): Buffer {
   if (!raw) {
     throw new Error(
       'ENCRYPTION_KEY is not set. Generate one with: ' +
-        'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"',
+        "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
     );
   }
-  const key = /^[0-9a-fA-F]{64}$/.test(raw)
-    ? Buffer.from(raw, 'hex')
-    : Buffer.from(raw, 'base64');
+  const key = /^[0-9a-fA-F]{64}$/.test(raw) ? Buffer.from(raw, 'hex') : Buffer.from(raw, 'base64');
   if (key.length !== KEY_BYTES) {
     throw new Error(
       `ENCRYPTION_KEY must decode to ${KEY_BYTES} bytes (got ${key.length}). ` +
