@@ -45,13 +45,23 @@ describe('configFingerprint', () => {
   });
 
   it('pins the exact byte format — a silent format change would mass-reprocess every install', () => {
-    expect(configFingerprint({ llm, ocr: null })).toBe('v1|llm:anthropic/claude-haiku-4-5|ocr:off');
+    expect(configFingerprint({ llm, ocr: null })).toBe('v2|llm:anthropic/claude-haiku-4-5|ocr:off');
     expect(configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } })).toBe(
-      'v1|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest',
+      'v2|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest',
     );
     expect(
       configFingerprint({ llm: null, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } }),
-    ).toBe('v1|llm:off|ocr:mistral/mistral-ocr-latest');
+    ).toBe('v2|llm:off|ocr:mistral/mistral-ocr-latest');
+    expect(configFingerprint({ llm, ocr: null, visual: 'full' })).toBe(
+      'v2|llm:anthropic/claude-haiku-4-5|ocr:off|visual:full',
+    );
+  });
+
+  it('differs when the visual mode changes (editing the attach threshold reprocesses)', () => {
+    const full = configFingerprint({ llm, visual: 'full' });
+    const trimmed = configFingerprint({ llm, visual: 'trimmed' });
+    const none = configFingerprint({ llm, visual: 'none' });
+    expect(new Set([full, trimmed, none]).size).toBe(3);
   });
 
   it('differs between extraction off and on (toggling extraction reprocesses)', () => {

@@ -23,6 +23,7 @@ import { mergeTagIds } from '../taxonomy/tags';
 import { ReviewService } from '../review/review.service';
 import { QueueService } from '../queue/queue.service';
 import { AuditService } from '../audit/audit.service';
+import { buildExtractionFilePart, visualMode } from './attachment';
 import { configFingerprint, contentHash, tagHintsDigest } from './fingerprint';
 import { DeferJobError } from './defer-job.error';
 import { PromptsService } from '../prompts/prompts.service';
@@ -155,6 +156,9 @@ export class PipelineService {
     let ocrProvider: ResolvedProvider | null = null;
     let ocrUsage: LlmUsage | undefined;
     let text: string;
+    // The original file, downloaded at most once per run: the OCR step pulls it
+    // first and the extraction attachment below reuses those bytes.
+    let original: { data: Buffer; contentType: string | null } | null = null;
 
     if (runOcr) {
       ocrProvider = this.resolveProvider(settings.ocrProviderId, settings.ocrModel, 'OCR');
@@ -166,14 +170,14 @@ export class PipelineService {
         text = cached.text;
         ocrUsage = cached.usage;
       } else {
-        const file = await client.downloadOriginal(job.documentId);
+        original = await client.downloadOriginal(job.documentId);
         const ocrPrompt = this.prompts.render(
           PROMPT_KEY.OCR,
           ocrVars({ language: settings.language, filename: doc.original_file_name ?? null }),
         );
         const result = await this.ocr.ocr(
           ocrProvider,
-          { data: file.data, contentType: file.contentType },
+          { data: original.data, contentType: original.contentType },
           { language: settings.language, prompt: ocrPrompt, signal },
         );
         text = result.text.trim();
@@ -208,10 +212,19 @@ export class PipelineService {
     // (only while extraction runs): editing a hint and re-tagging a document
     // must re-run it, not skip-as-identical.
     const tagHints = provider ? this.tagComments.map() : new Map<number, string>();
+    // How much of the original the extraction model gets to see (full/trimmed/
+    // none). The OCR page limit does double duty as the threshold — both gates
+    // exist to keep oversized files away from vision models. Part of the
+    // fingerprint: changing the limit changes the model's input, so it must
+    // reprocess rather than skip-as-identical.
+    const visual = provider
+      ? visualMode({ kind: provider.kind, pageCount, maxFullPages: settings.ocrMaxPages })
+      : null;
     const fingerprint = configFingerprint({
       llm: provider ? { kind: provider.kind, model: provider.model } : null,
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
       hintsDigest: tagHintsDigest(tagHints),
+      visual,
     });
     const hash = contentHash(text, fingerprint);
 
@@ -287,12 +300,34 @@ export class PipelineService {
       }),
     );
 
+    // Attach the original document as visual evidence (layout, letterhead,
+    // signatures) alongside the OCR text. Reuse the bytes the OCR step already
+    // downloaded; when OCR was skipped or served from the retry cache, download
+    // them now. Long documents attach only their first and last pages (built
+    // from `visual`); providers that can't take the file fall back to text-only.
+    let filePart: Record<string, unknown> | null = null;
+    if (visual && visual !== 'none') {
+      original ??= await client.downloadOriginal(job.documentId);
+      filePart = await buildExtractionFilePart({
+        data: original.data,
+        contentType: original.contentType,
+        kind: provider.kind,
+        mode: visual,
+      });
+      if (!filePart) {
+        this.logger.debug(
+          `job ${job.id} (doc ${job.documentId}): original not attachable for ${provider.kind} — extracting from text only`,
+        );
+      }
+    }
+
     const { object: extraction, usage } = await this.llm.generateStructured<Extraction>({
       model: buildLanguageModel(provider),
       schema: extractionSchema,
       schemaName: EXTRACTION_SCHEMA_NAME,
       schemaDescription: EXTRACTION_SCHEMA_DESCRIPTION,
       prompt,
+      fileParts: filePart ? [filePart] : undefined,
       abortSignal: signal,
     });
     // Total cost for the run = extraction tokens + any vision-LLM OCR tokens.

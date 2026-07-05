@@ -116,6 +116,8 @@ Write all output in {{language}} (use the document's own language when this is "
 Existing tags: {{all_tags}}
 Existing correspondents: {{all_correspondents}}
 
+When the original document is attached as a file or image, treat it as the primary evidence — letterheads, headers, stamps and signatures often carry the correspondent and date — and the transcribed text below as an aid. Long documents may attach only their first and last pages; the text below still covers all of them.
+
 --- DOCUMENT CONTENT ---
 {{content}}`,
   [PROMPT_KEY.OCR]: `You are a precise OCR engine. Transcribe the attached document exactly as written.

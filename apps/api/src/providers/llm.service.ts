@@ -22,13 +22,19 @@ type GenerateObjectFn = (opts: {
   schemaName?: string;
   schemaDescription?: string;
   system?: string;
-  prompt: string;
+  prompt?: string;
+  messages?: Array<{ role: 'user'; content: Array<Record<string, unknown>> }>;
   maxOutputTokens?: number;
   abortSignal?: AbortSignal;
   experimental_repairText?: (o: { text: string }) => Promise<string | null>;
 }) => Promise<{
   object: unknown;
-  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  usage: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    cachedInputTokens?: number;
+  };
 }>;
 
 const generateObjectFn = generateObject as unknown as GenerateObjectFn;
@@ -44,6 +50,14 @@ export interface GenerateStructuredArgs<T> {
   model: LanguageModel;
   schema: z.ZodType<T>;
   prompt: string;
+  /**
+   * Multimodal parts (the original document as a `file`/`image` part) placed
+   * BEFORE the prompt text in a single user message — the model reads the
+   * visual document as primary evidence and the prompt/OCR text as an aid.
+   * Leading position also keeps the document block a stable prefix, so an
+   * Anthropic extraction call re-reads the block the OCR call just cached.
+   */
+  fileParts?: Array<Record<string, unknown>>;
   system?: string;
   /** Surfaced to providers that name the output (tool/schema name). */
   schemaName?: string;
@@ -106,11 +120,28 @@ export class LlmService {
       schemaName: args.schemaName,
       schemaDescription: args.schemaDescription,
       system: args.system,
-      prompt: args.prompt,
+      // `generateObject` takes prompt XOR messages; with attachments the prompt
+      // text folds into a multimodal user message, file parts first (see
+      // `GenerateStructuredArgs.fileParts`).
+      ...(args.fileParts?.length
+        ? {
+            messages: [
+              {
+                role: 'user' as const,
+                content: [...args.fileParts, { type: 'text', text: args.prompt }],
+              },
+            ],
+          }
+        : { prompt: args.prompt }),
       maxOutputTokens: args.maxOutputTokens,
       abortSignal: args.abortSignal,
       experimental_repairText: repairJsonText,
     });
+    // Visibility into the OCR→extraction prompt-cache handoff (Anthropic only):
+    // a non-zero read here is the document block being served at ~10% price.
+    if (result.usage.cachedInputTokens) {
+      this.logger.debug(`prompt cache read: ${result.usage.cachedInputTokens} input tokens`);
+    }
     return { object: result.object as T, usage: normaliseUsage(result.usage) };
   }
 }

@@ -59,10 +59,15 @@ describe('OcrService — vision-LLM OCR', () => {
     expect(out.text).toBe('recognised text');
     expect(out.usage).toEqual({ inputTokens: 10, outputTokens: 5, totalTokens: 15 });
 
+    // Document part FIRST (stable prefix for the Anthropic prompt cache the
+    // extraction call re-reads), instruction text after it.
     const parts = generateTextMock.mock.calls[0][0].messages[0].content;
-    expect(parts[0]).toMatchObject({ type: 'text' });
-    expect(parts[1]).toMatchObject({ type: 'file', mediaType: 'application/pdf' });
-    expect(parts[1].data).toBeInstanceOf(Buffer);
+    expect(parts[0]).toMatchObject({ type: 'file', mediaType: 'application/pdf' });
+    expect(parts[0].data).toBeInstanceOf(Buffer);
+    expect(parts[0].providerOptions).toEqual({
+      anthropic: { cacheControl: { type: 'ephemeral' } },
+    });
+    expect(parts[1]).toMatchObject({ type: 'text' });
   });
 
   it('sends an image as an image part', async () => {
@@ -75,8 +80,8 @@ describe('OcrService — vision-LLM OCR', () => {
     );
 
     const parts = generateTextMock.mock.calls[0][0].messages[0].content;
-    expect(parts[1]).toMatchObject({ type: 'image', mediaType: 'image/png' });
-    expect(parts[1].image).toBeInstanceOf(Buffer);
+    expect(parts[0]).toMatchObject({ type: 'image', mediaType: 'image/png' });
+    expect(parts[0].image).toBeInstanceOf(Buffer);
   });
 
   it('defaults an unknown/opaque content type to PDF', async () => {
@@ -89,7 +94,7 @@ describe('OcrService — vision-LLM OCR', () => {
     );
 
     const parts = generateTextMock.mock.calls[0][0].messages[0].content;
-    expect(parts[1]).toMatchObject({ type: 'file', mediaType: 'application/pdf' });
+    expect(parts[0]).toMatchObject({ type: 'file', mediaType: 'application/pdf' });
   });
 
   it('rejects a PDF for a provider that cannot accept PDF file parts (clear error)', async () => {
