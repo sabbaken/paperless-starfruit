@@ -36,7 +36,9 @@ function makeReview(blacklist: string[] = []) {
     patchDocument: vi.fn().mockResolvedValue(doc),
   };
   const connection = { getClient: () => client } as unknown as ConnectionService;
-  const settings = { get: () => ({ correspondentBlacklist: blacklist }) } as unknown as SettingsService;
+  const settings = {
+    get: () => ({ correspondentBlacklist: blacklist }),
+  } as unknown as SettingsService;
   const taxonomy = {
     resolveTriggerTag: vi.fn().mockResolvedValue(TRIGGER_TAG),
     // Input-aware: map each requested name to a stable id.
@@ -51,7 +53,9 @@ function makeReview(blacklist: string[] = []) {
     ),
     resolveCorrespondent: vi.fn().mockResolvedValue({ id: 3, name: 'ACME', isNew: false }),
   } as unknown as TaxonomyService;
-  const audit = { record: vi.fn() } as unknown as AuditService & { record: ReturnType<typeof vi.fn> };
+  const audit = { record: vi.fn() } as unknown as AuditService & {
+    record: ReturnType<typeof vi.fn>;
+  };
 
   const service = new ReviewService(db, connection, settings, taxonomy, audit);
   // review_item.jobId is an FK → a real job row must exist first.

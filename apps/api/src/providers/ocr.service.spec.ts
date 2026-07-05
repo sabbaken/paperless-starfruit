@@ -101,7 +101,11 @@ describe('OcrService — vision-LLM OCR', () => {
       model: 'pixtral-large-latest',
     };
     await expect(
-      new OcrService().ocr(pixtral, { data: Buffer.from('%PDF'), contentType: 'application/pdf' }, OPTS),
+      new OcrService().ocr(
+        pixtral,
+        { data: Buffer.from('%PDF'), contentType: 'application/pdf' },
+        OPTS,
+      ),
     ).rejects.toThrow(/can't OCR PDFs/i);
     expect(generateTextMock).not.toHaveBeenCalled();
   });

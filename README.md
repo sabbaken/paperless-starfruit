@@ -111,16 +111,16 @@ username/password, registration closes and only login works (there is no default
 
 ### Configuration (environment variables)
 
-These four are the *only* runtime env vars. Everything else is configured in the UI.
+These four are the _only_ runtime env vars. Everything else is configured in the UI.
 
-| Variable         | Required | Default          | Purpose |
-|------------------|----------|------------------|---------|
-| `ENCRYPTION_KEY` | **yes**  | —                | 32-byte key (base64 or hex). Encrypts stored credentials **and** signs admin sessions. |
-| `DATABASE_PATH`  | no       | `/data/app.db`   | SQLite file path (its directory is created if missing). |
-| `PORT`           | no       | `3000`           | Port the app listens on *inside* the container (the compose files publish it as `7827`). |
-| `CORS_ORIGIN`    | no       | reflect origin   | Comma-separated allowed origins. Leave unset unless you want to lock it down. |
+| Variable         | Required | Default        | Purpose                                                                                  |
+| ---------------- | -------- | -------------- | ---------------------------------------------------------------------------------------- |
+| `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials **and** signs admin sessions.   |
+| `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path (its directory is created if missing).                                  |
+| `PORT`           | no       | `3000`         | Port the app listens on _inside_ the container (the compose files publish it as `7827`). |
+| `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down.            |
 
-> **Keep `ENCRYPTION_KEY` stable.** Rotating it logs the admin out *and* makes every stored
+> **Keep `ENCRYPTION_KEY` stable.** Rotating it logs the admin out _and_ makes every stored
 > paperless/provider credential undecryptable — you'd have to re-enter them. Store it like any
 > other production secret.
 
@@ -134,7 +134,7 @@ In the UI's Connection screen, enter your paperless base URL and an API token, a
 **Test connection**. Leave **API version** blank — it's auto-detected.
 
 Prefer a **dedicated paperless user** over the superuser: create a paperless account that can
-*view and change documents* and *view and add tags and correspondents*, then mint that user's
+_view and change documents_ and _view and add tags and correspondents_, then mint that user's
 token (paperless: **Settings → My Profile → API Auth Token**). The token is stored encrypted at
 rest. Because this app must reach self-hosted/LAN URLs (paperless on a private IP, a local
 Ollama, etc.), the admin-entered URLs are intentionally **not** SSRF-restricted — the security

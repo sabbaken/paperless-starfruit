@@ -21,11 +21,7 @@ import type { Db } from '../db/client';
 import { provider, settings, type Provider } from '../db/schema';
 import { CryptoService } from '../crypto/crypto.service';
 import { LlmService } from './llm.service';
-import {
-  buildLanguageModel,
-  defaultCaps,
-  type ResolvedCredential,
-} from './model.factory';
+import { buildLanguageModel, defaultCaps, type ResolvedCredential } from './model.factory';
 
 /** Vendors (by `owned_by`) the app has a provider kind for. */
 const SUPPORTED_VENDORS = new Set<string>(CLOUD_PROVIDER_KINDS);
@@ -234,12 +230,14 @@ export class ProviderService {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Models endpoint responded ${res.status}.`);
     const json = (await res.json()) as { data?: { id?: string }[] };
-    return (json.data ?? [])
-      .map((d) => d.id)
-      .filter((id): id is string => !!id)
-      // Local model vision support is unknown; assume capable (user's own model).
-      // Intelligence and pricing aren't knowable for arbitrary local models.
-      .map((id) => ({ id, label: id, vision: true, intelligence: null, pricing: null }));
+    return (
+      (json.data ?? [])
+        .map((d) => d.id)
+        .filter((id): id is string => !!id)
+        // Local model vision support is unknown; assume capable (user's own model).
+        // Intelligence and pricing aren't knowable for arbitrary local models.
+        .map((id) => ({ id, label: id, vision: true, intelligence: null, pricing: null }))
+    );
   }
 
   private resolveFromInput(input: ProviderTestInput): ResolvedCredential {

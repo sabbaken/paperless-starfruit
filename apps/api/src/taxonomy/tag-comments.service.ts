@@ -21,11 +21,7 @@ export class TagCommentsService {
 
   /** One tag's hint, or null when it has none. */
   get(tagId: number): string | null {
-    const row = this.db
-      .select()
-      .from(tagComment)
-      .where(eq(tagComment.tagId, tagId))
-      .get();
+    const row = this.db.select().from(tagComment).where(eq(tagComment.tagId, tagId)).get();
     return row?.comment ?? null;
   }
 

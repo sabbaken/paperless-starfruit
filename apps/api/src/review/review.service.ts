@@ -58,10 +58,7 @@ export class ReviewService {
         .select({ id: reviewItem.id })
         .from(reviewItem)
         .where(
-          and(
-            eq(reviewItem.documentId, documentId),
-            eq(reviewItem.status, REVIEW_STATUS.PENDING),
-          ),
+          and(eq(reviewItem.documentId, documentId), eq(reviewItem.status, REVIEW_STATUS.PENDING)),
         )
         .limit(1)
         .all().length > 0
@@ -148,7 +145,9 @@ export class ReviewService {
 
     // The user explicitly confirmed these, so create-if-missing regardless of
     // the autonomous create-new-tags setting.
-    const resolvedTags = await this.taxonomy.resolveTags(client, payload.tagNames, { create: true });
+    const resolvedTags = await this.taxonomy.resolveTags(client, payload.tagNames, {
+      create: true,
+    });
     const correspondent = payload.correspondentName
       ? await this.taxonomy.resolveCorrespondent(client, payload.correspondentName, {
           create: true,

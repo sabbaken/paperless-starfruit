@@ -34,7 +34,13 @@ export type ProviderModels = z.infer<typeof providerModelsSchema>;
  */
 export const OCR_MODELS: Partial<Record<ProviderKind, ModelInfo[]>> = {
   [PROVIDER_KIND.MISTRAL]: [
-    { id: 'mistral-ocr-latest', label: 'Mistral OCR', vision: true, intelligence: null, pricing: null },
+    {
+      id: 'mistral-ocr-latest',
+      label: 'Mistral OCR',
+      vision: true,
+      intelligence: null,
+      pricing: null,
+    },
   ],
 };
 

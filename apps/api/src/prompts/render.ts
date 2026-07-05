@@ -54,7 +54,9 @@ export function extractionVars(i: ExtractionVarInput): Record<string, string> {
     all_tags: tagList(i.allTags),
     all_correspondents: list(i.allCorrespondents),
     tag_policy: i.allowNewTags ? TAG_POLICY.on : TAG_POLICY.off,
-    correspondent_policy: i.allowNewCorrespondents ? CORRESPONDENT_POLICY.on : CORRESPONDENT_POLICY.off,
+    correspondent_policy: i.allowNewCorrespondents
+      ? CORRESPONDENT_POLICY.on
+      : CORRESPONDENT_POLICY.off,
     title: i.currentTitle,
     tags: list(i.currentTags),
     correspondent: orNone(i.currentCorrespondent),
@@ -107,7 +109,10 @@ function tagList(tags: TagContext[]): string {
 
 /** Keep a hint from breaking out of its Markdown table cell. */
 function hintCell(value: string): string {
-  return value.trim().replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|');
+  return value
+    .trim()
+    .replace(/\s*\n\s*/g, ' ')
+    .replace(/\|/g, '\\|');
 }
 
 function orNone(value: string | null): string {

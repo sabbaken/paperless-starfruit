@@ -44,7 +44,17 @@ const features = [
         features.map((f) => (
           <li class="feat">
             <span class="feat__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={f.icon} />
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                set:html={f.icon}
+              />
             </span>
             <h3 class="feat__t">{f.t}</h3>
             <p class="feat__d">{f.d}</p>

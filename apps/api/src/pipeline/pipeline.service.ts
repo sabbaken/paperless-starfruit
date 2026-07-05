@@ -106,7 +106,11 @@ export class PipelineService {
       // `<version>|llm:…|ocr:…`). Raising the limit and re-tagging must reprocess —
       // it must not look "already done". The page gate itself suppresses redundant
       // reruns while the document is still oversized.
-      return { contentHash: contentHash(String(pageCount), 'skipped:oversized'), cost: null, decision: 'skipped' };
+      return {
+        contentHash: contentHash(String(pageCount), 'skipped:oversized'),
+        cost: null,
+        decision: 'skipped',
+      };
     }
 
     // --- Step 3: OCR. Run it only when enabled, an OCR model is selected, AND the
@@ -136,7 +140,11 @@ export class PipelineService {
         this.logger.log(
           `job ${job.id} (doc ${job.documentId}) skipped: ${pageCount} pages over the OCR limit (${settings.ocrMaxPages}) and extraction is off`,
         );
-        return { contentHash: contentHash(String(pageCount), 'skipped:oversized'), cost: null, decision: 'skipped' };
+        return {
+          contentHash: contentHash(String(pageCount), 'skipped:oversized'),
+          cost: null,
+          decision: 'skipped',
+        };
       }
       const fix = !settings.ocrEnabled ? 'enable OCR' : 'select an OCR model';
       throw new Error(
@@ -174,7 +182,8 @@ export class PipelineService {
         // page is blank/unreadable — a real failure, not a "not ready yet" defer.
         // Failing consumes attempts and eventually goes terminal, instead of
         // re-OCR'ing (and re-billing) the same blank page every poll.
-        if (!text) throw new Error('OCR produced no text — the document may be blank or unreadable.');
+        if (!text)
+          throw new Error('OCR produced no text — the document may be blank or unreadable.');
         this.ocrCache.set(job.documentId, { key: ocrKey, text, usage: ocrUsage });
       }
     } else {
@@ -188,7 +197,9 @@ export class PipelineService {
           : !ocrModelSelected
             ? 'select an OCR model'
             : 'raise the OCR page limit';
-        throw new DeferJobError(`Document has no text yet — ${fix} or wait for paperless to OCR it.`);
+        throw new DeferJobError(
+          `Document has no text yet — ${fix} or wait for paperless to OCR it.`,
+        );
       }
     }
 
@@ -237,7 +248,12 @@ export class PipelineService {
       if (tags.length !== doc.tags.length) patch.tags = tags;
       if (Object.keys(patch).length > 0) await client.patchDocument(doc.id, patch);
       const cost = ocrUsage?.totalTokens ?? null;
-      this.audit.record({ jobId: job.id, documentId: job.documentId, tokensCost: cost, decision: 'ocr-only' });
+      this.audit.record({
+        jobId: job.id,
+        documentId: job.documentId,
+        tokensCost: cost,
+        decision: 'ocr-only',
+      });
       this.ocrCache.delete(job.documentId);
       return { contentHash: hash, cost, decision: 'ocr-only' };
     }
@@ -338,7 +354,10 @@ export class PipelineService {
       date: extraction.date,
       current: {
         title: doc.title,
-        tagNames: await this.taxonomy.tagNames(client, doc.tags.filter((id) => !isTrigger(id))),
+        tagNames: await this.taxonomy.tagNames(
+          client,
+          doc.tags.filter((id) => !isTrigger(id)),
+        ),
         correspondentName: await this.taxonomy.correspondentName(client, doc.correspondent),
         date: doc.created ? doc.created.slice(0, 10) : null,
       },
@@ -371,7 +390,11 @@ export class PipelineService {
   private async applyAuto(
     client: PaperlessClient,
     doc: PaperlessDocument,
-    s: { extraction: Extraction; resolvedTags: ResolvedTag[]; resolvedCorrespondent: ResolvedTag | null },
+    s: {
+      extraction: Extraction;
+      resolvedTags: ResolvedTag[];
+      resolvedCorrespondent: ResolvedTag | null;
+    },
     triggerTagId: number,
     /** New OCR text to write back in the same PATCH, when it changed. */
     content?: string,

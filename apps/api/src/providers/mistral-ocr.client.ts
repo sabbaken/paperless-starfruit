@@ -16,9 +16,7 @@ export const MISTRAL_OCR_MODEL_PREFIX = 'mistral-ocr';
 /** Tolerant view of the `/v1/ocr` response — we only need the per-page text + page count. */
 const ocrResponseSchema = z.object({
   pages: z.array(z.object({ markdown: z.string() })),
-  usage_info: z
-    .object({ pages_processed: z.number().int().optional() })
-    .nullish(),
+  usage_info: z.object({ pages_processed: z.number().int().optional() }).nullish(),
 });
 
 /**

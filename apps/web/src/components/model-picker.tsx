@@ -1,5 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Check, ChevronDown, ChevronsUpDown, ChevronUp, Eye, Loader2, Lock, Search } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
+  Eye,
+  Loader2,
+  Lock,
+  Search,
+} from 'lucide-react';
 import {
   OCR_MODELS,
   PROVIDER_KIND_META,
@@ -20,12 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ProviderLogo } from '@/components/provider-logo.tsx';
 import { Switch } from '@/components/ui/switch';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * Default shortlist, built in two stages:
@@ -232,13 +236,13 @@ function latestPerFamily(rows: ModelRow[]): ModelRow[] {
 }
 
 export function ModelPicker({
-                              title,
-                              visionOnly,
-                              selected,
-                              onSelect,
-                              onClose,
-                              onAddKey,
-                            }: ModelPickerProps) {
+  title,
+  visionOnly,
+  selected,
+  onSelect,
+  onClose,
+  onAddKey,
+}: ModelPickerProps) {
   const models = useAvailableModels();
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -294,7 +298,10 @@ export function ModelPicker({
   }, [models.data]);
 
   const q = search.trim().toLowerCase();
-  const matched = buildRows(displayGroups.filter((g) => !g.manual), ocr)
+  const matched = buildRows(
+    displayGroups.filter((g) => !g.manual),
+    ocr,
+  )
     .filter((r) => !visionOnly || PROVIDER_KIND_META[r.kind].local || r.model.vision)
     .filter(
       (r) =>
@@ -313,7 +320,9 @@ export function ModelPicker({
   ).sort((a, b) => compareRows(a, b, sort));
 
   const onSort = (key: SortKey) =>
-    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' },
+    );
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -367,125 +376,139 @@ export function ModelPicker({
               {rows.length > 0 ? (
                 <table className="w-full text-sm">
                   <thead>
-                  <tr>
-                    <Th sortKey="model" sort={sort} onSort={onSort}>
-                      Model
-                    </Th>
-                    <Th sortKey="provider" sort={sort} onSort={onSort} className="w-52">
-                      Provider
-                    </Th>
-                    <Th className="w-20">Vision</Th>
-                    {showAll && (
-                      <>
-                        <Th sortKey="input" sort={sort} onSort={onSort} className="w-28">
-                          Input <span className="font-normal text-muted-foreground/70">$/1M</span>
-                        </Th>
-                        <Th sortKey="output" sort={sort} onSort={onSort} className="w-28">
-                          Output <span className="font-normal text-muted-foreground/70">$/1M</span>
-                        </Th>
-                      </>
-                    )}
-                    <Th sortKey="perPage" sort={sort} onSort={onSort} className="w-28" title={perPageTooltip}>
-                      Est. <span className="font-normal text-muted-foreground/70">/page</span>
-                    </Th>
-                    <Th className="w-12" />
-                  </tr>
+                    <tr>
+                      <Th sortKey="model" sort={sort} onSort={onSort}>
+                        Model
+                      </Th>
+                      <Th sortKey="provider" sort={sort} onSort={onSort} className="w-52">
+                        Provider
+                      </Th>
+                      <Th className="w-20">Vision</Th>
+                      {showAll && (
+                        <>
+                          <Th sortKey="input" sort={sort} onSort={onSort} className="w-28">
+                            Input <span className="font-normal text-muted-foreground/70">$/1M</span>
+                          </Th>
+                          <Th sortKey="output" sort={sort} onSort={onSort} className="w-28">
+                            Output{' '}
+                            <span className="font-normal text-muted-foreground/70">$/1M</span>
+                          </Th>
+                        </>
+                      )}
+                      <Th
+                        sortKey="perPage"
+                        sort={sort}
+                        onSort={onSort}
+                        className="w-28"
+                        title={perPageTooltip}
+                      >
+                        Est. <span className="font-normal text-muted-foreground/70">/page</span>
+                      </Th>
+                      <Th className="w-12" />
+                    </tr>
                   </thead>
                   <tbody>
-                  <TooltipProvider delayDuration={300}>
-                  {rows.map((r) => {
-                    const active =
-                      !r.locked &&
-                      selected.providerId === r.providerId &&
-                      selected.model === r.model.id;
-                    const row = (
-                      <tr
-                        key={r.key}
-                        onClick={r.locked ? undefined : () => onSelect(r.providerId!, r.model.id)}
-                        aria-disabled={r.locked}
-                        className={cn(
-                          'border-b transition-colors last:border-0',
-                          r.locked
-                            ? 'cursor-not-allowed text-muted-foreground'
-                            : active
-                              ? 'cursor-pointer bg-primary/5'
-                              : 'cursor-pointer hover:bg-accent/60',
-                        )}
-                      >
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-3">
-                            <ProviderLogo
-                              kind={r.kind}
-                              className={cn('size-5 shrink-0', r.locked && 'opacity-70 grayscale-50')}
-                            />
-                            <div className="min-w-0">
-                              <div className="truncate font-medium">{r.model.label}</div>
-                              <div className="truncate font-mono text-xs text-muted-foreground">
-                                {r.model.id}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-1.5">
-                            {r.locked && <Lock className="size-3 shrink-0 text-muted-foreground" />}
-                            <div className="min-w-0">
-                              <div className="truncate">{r.company}</div>
-                              {r.account && (
-                                <div className="truncate text-xs text-muted-foreground">
-                                  {r.account}
+                    <TooltipProvider delayDuration={300}>
+                      {rows.map((r) => {
+                        const active =
+                          !r.locked &&
+                          selected.providerId === r.providerId &&
+                          selected.model === r.model.id;
+                        const row = (
+                          <tr
+                            key={r.key}
+                            onClick={
+                              r.locked ? undefined : () => onSelect(r.providerId!, r.model.id)
+                            }
+                            aria-disabled={r.locked}
+                            className={cn(
+                              'border-b transition-colors last:border-0',
+                              r.locked
+                                ? 'cursor-not-allowed text-muted-foreground'
+                                : active
+                                  ? 'cursor-pointer bg-primary/5'
+                                  : 'cursor-pointer hover:bg-accent/60',
+                            )}
+                          >
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-3">
+                                <ProviderLogo
+                                  kind={r.kind}
+                                  className={cn(
+                                    'size-5 shrink-0',
+                                    r.locked && 'opacity-70 grayscale-50',
+                                  )}
+                                />
+                                <div className="min-w-0">
+                                  <div className="truncate font-medium">{r.model.label}</div>
+                                  <div className="truncate font-mono text-xs text-muted-foreground">
+                                    {r.model.id}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          {r.model.vision ? (
-                            <Eye className="size-4 text-muted-foreground" aria-label="vision" />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        {showAll && (
-                          <>
-                            <td className="px-3 py-2.5 tabular-nums">
-                              {r.model.pricing ? (
-                                formatPrice(r.model.pricing.input)
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                {r.locked && (
+                                  <Lock className="size-3 shrink-0 text-muted-foreground" />
+                                )}
+                                <div className="min-w-0">
+                                  <div className="truncate">{r.company}</div>
+                                  {r.account && (
+                                    <div className="truncate text-xs text-muted-foreground">
+                                      {r.account}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              {r.model.vision ? (
+                                <Eye className="size-4 text-muted-foreground" aria-label="vision" />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </td>
+                            {showAll && (
+                              <>
+                                <td className="px-3 py-2.5 tabular-nums">
+                                  {r.model.pricing ? (
+                                    formatPrice(r.model.pricing.input)
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums">
+                                  {r.model.pricing ? (
+                                    formatPrice(r.model.pricing.output)
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                              </>
+                            )}
                             <td className="px-3 py-2.5 tabular-nums">
-                              {r.model.pricing ? (
-                                formatPrice(r.model.pricing.output)
+                              {r.perPage != null ? (
+                                formatPerPage(r.perPage)
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </td>
-                          </>
-                        )}
-                        <td className="px-3 py-2.5 tabular-nums">
-                          {r.perPage != null ? (
-                            formatPerPage(r.perPage)
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5 text-right">
-                          {active && <Check className="ml-auto size-4 text-primary" />}
-                        </td>
-                      </tr>
-                    );
-                    return r.locked ? (
-                      <Tooltip key={r.key}>
-                        <TooltipTrigger asChild>{row}</TooltipTrigger>
-                        <TooltipContent>Add an API key to unlock.</TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      row
-                    );
-                  })}
-                  </TooltipProvider>
+                            <td className="px-3 py-2.5 text-right">
+                              {active && <Check className="ml-auto size-4 text-primary" />}
+                            </td>
+                          </tr>
+                        );
+                        return r.locked ? (
+                          <Tooltip key={r.key}>
+                            <TooltipTrigger asChild>{row}</TooltipTrigger>
+                            <TooltipContent>Add an API key to unlock.</TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          row
+                        );
+                      })}
+                    </TooltipProvider>
                   </tbody>
                 </table>
               ) : (
@@ -520,13 +543,13 @@ export function ModelPicker({
 
 /** A table header cell — sortable when `sortKey` is given. */
 function Th({
-              children,
-              className,
-              sortKey,
-              sort,
-              onSort,
-              title,
-            }: {
+  children,
+  className,
+  sortKey,
+  sort,
+  onSort,
+  title,
+}: {
   children?: ReactNode;
   className?: string;
   sortKey?: SortKey;
@@ -551,7 +574,9 @@ function Th({
           className="flex cursor-pointer items-center gap-1 hover:text-foreground"
         >
           {children}
-          <Icon className={cn('size-3.5', active ? 'text-foreground' : 'text-muted-foreground/40')} />
+          <Icon
+            className={cn('size-3.5', active ? 'text-foreground' : 'text-muted-foreground/40')}
+          />
         </button>
       ) : (
         children
@@ -562,10 +587,10 @@ function Th({
 
 /** Local endpoint we couldn't list — let the user type a model id. */
 function ManualModel({
-                       providerId,
-                       selected,
-                       onSelect,
-                     }: {
+  providerId,
+  selected,
+  onSelect,
+}: {
   providerId: number;
   selected: { providerId: number | null; model: string | null };
   onSelect: (providerId: number, model: string) => void;
@@ -585,7 +610,11 @@ function ManualModel({
           value={value}
           onChange={(e) => setValue(e.target.value)}
         />
-        <Button type="button" disabled={!value.trim()} onClick={() => onSelect(providerId, value.trim())}>
+        <Button
+          type="button"
+          disabled={!value.trim()}
+          onClick={() => onSelect(providerId, value.trim())}
+        >
           Use
         </Button>
       </div>

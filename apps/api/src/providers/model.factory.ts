@@ -70,16 +70,46 @@ function toAnthropicModelId(model: string): string {
 export function defaultCaps(kind: ProviderKind): ProviderCaps {
   switch (kind) {
     case PROVIDER_KIND.ANTHROPIC:
-      return { supportsVision: true, supportsStrictSchema: true, maxContext: 200_000, billingUnit: 'tokens' };
+      return {
+        supportsVision: true,
+        supportsStrictSchema: true,
+        maxContext: 200_000,
+        billingUnit: 'tokens',
+      };
     case PROVIDER_KIND.OPENAI:
-      return { supportsVision: true, supportsStrictSchema: true, maxContext: 128_000, billingUnit: 'tokens' };
+      return {
+        supportsVision: true,
+        supportsStrictSchema: true,
+        maxContext: 128_000,
+        billingUnit: 'tokens',
+      };
     case PROVIDER_KIND.GOOGLE:
-      return { supportsVision: true, supportsStrictSchema: true, maxContext: 1_000_000, billingUnit: 'tokens' };
+      return {
+        supportsVision: true,
+        supportsStrictSchema: true,
+        maxContext: 1_000_000,
+        billingUnit: 'tokens',
+      };
     case PROVIDER_KIND.MISTRAL:
-      return { supportsVision: true, supportsStrictSchema: true, maxContext: 128_000, billingUnit: 'tokens' };
+      return {
+        supportsVision: true,
+        supportsStrictSchema: true,
+        maxContext: 128_000,
+        billingUnit: 'tokens',
+      };
     case PROVIDER_KIND.OPENAI_COMPATIBLE:
-      return { supportsVision: false, supportsStrictSchema: false, maxContext: 32_000, billingUnit: 'tokens' };
+      return {
+        supportsVision: false,
+        supportsStrictSchema: false,
+        maxContext: 32_000,
+        billingUnit: 'tokens',
+      };
     default:
-      return { supportsVision: false, supportsStrictSchema: false, maxContext: 32_000, billingUnit: 'tokens' };
+      return {
+        supportsVision: false,
+        supportsStrictSchema: false,
+        maxContext: 32_000,
+        billingUnit: 'tokens',
+      };
   }
 }

@@ -65,7 +65,10 @@ export class AuthService {
   }
 
   private issue(row: User): AuthResult {
-    return { token: signToken(row.username, this.signingKey(), TOKEN_TTL_SEC), username: row.username };
+    return {
+      token: signToken(row.username, this.signingKey(), TOKEN_TTL_SEC),
+      username: row.username,
+    };
   }
 
   private signingKey(): Buffer {

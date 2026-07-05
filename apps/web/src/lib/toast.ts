@@ -1,4 +1,4 @@
-import toast from "react-hot-toast";
+import toast from 'react-hot-toast';
 
 /**
  * Wrap a save request in a single loading → success/error toast. Reuses one toast
@@ -8,10 +8,10 @@ export function toastSave<T>(promise: Promise<T>): Promise<T> {
   return toast.promise(
     promise,
     {
-      loading: "Saving…",
-      success: "Saved",
-      error: (e) => (e instanceof Error ? e.message : "Save failed"),
+      loading: 'Saving…',
+      success: 'Saved',
+      error: (e) => (e instanceof Error ? e.message : 'Save failed'),
     },
-    { id: "settings-save" },
+    { id: 'settings-save' },
   );
 }

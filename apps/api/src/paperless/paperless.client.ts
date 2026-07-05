@@ -90,10 +90,7 @@ export class PaperlessClient {
     return data;
   }
 
-  async updateTag(
-    id: number,
-    patch: { name?: string; color?: string },
-  ): Promise<PaperlessTag> {
+  async updateTag(id: number, patch: { name?: string; color?: string }): Promise<PaperlessTag> {
     const { data } = await this.request(`/api/tags/${id}/`, paperlessTagSchema, {
       method: 'PATCH',
       body: patch,
@@ -106,11 +103,10 @@ export class PaperlessClient {
   }
 
   async createCorrespondent(name: string): Promise<PaperlessCorrespondent> {
-    const { data } = await this.request(
-      '/api/correspondents/',
-      paperlessCorrespondentSchema,
-      { method: 'POST', body: { name } },
-    );
+    const { data } = await this.request('/api/correspondents/', paperlessCorrespondentSchema, {
+      method: 'POST',
+      body: { name },
+    });
     return data;
   }
 
@@ -161,13 +157,8 @@ export class PaperlessClient {
   }
 
   /** Download the original file (for vision OCR). Returns raw bytes, no JSON. */
-  async downloadOriginal(
-    id: number,
-  ): Promise<{ data: Buffer; contentType: string | null }> {
-    const response = await this.fetch(
-      `/api/documents/${id}/download/?original=true`,
-      {},
-    );
+  async downloadOriginal(id: number): Promise<{ data: Buffer; contentType: string | null }> {
+    const response = await this.fetch(`/api/documents/${id}/download/?original=true`, {});
     if (!response.ok) {
       throw new PaperlessError(
         `paperless responded ${response.status} downloading document ${id}`,
@@ -240,9 +231,7 @@ export class PaperlessClient {
       Authorization: `Token ${this.token}`,
       // No pin -> paperless serves its current API version (avoids a 406 from
       // pinning a version the server doesn't support).
-      Accept: this.apiVersion
-        ? `application/json; version=${this.apiVersion}`
-        : 'application/json',
+      Accept: this.apiVersion ? `application/json; version=${this.apiVersion}` : 'application/json',
     };
     if (init.body !== undefined) headers['Content-Type'] = 'application/json';
     try {

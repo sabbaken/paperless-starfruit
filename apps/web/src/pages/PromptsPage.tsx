@@ -258,7 +258,9 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
                 onChange={(e) => setDocId(e.target.value ? Number(e.target.value) : '')}
               >
                 {docs.isLoading && <option value="">Loading…</option>}
-                {!docs.isLoading && !docs.data?.length && <option value="">No documents found</option>}
+                {!docs.isLoading && !docs.data?.length && (
+                  <option value="">No documents found</option>
+                )}
                 {docs.data?.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.title || `Document #${d.id}`}
@@ -267,7 +269,11 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
               </Select>
             </div>
             <Button onClick={onRun} disabled={docId === '' || test.isPending}>
-              {test.isPending ? <Loader2 className="size-4 animate-spin" /> : <FlaskConical className="size-4" />}
+              {test.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <FlaskConical className="size-4" />
+              )}
               Run test
             </Button>
           </div>

@@ -7,8 +7,20 @@ describe('AuditService', () => {
   it('lists newest-first, flags detail rows, and paginates', () => {
     const svc = new AuditService(createTestDb());
     svc.record({ documentId: 1, decision: 'skipped' });
-    svc.record({ documentId: 2, decision: 'auto-applied', prompt: 'P2', rawOutput: '{"title":"a"}', tokensCost: 10 });
-    svc.record({ documentId: 3, decision: 'review-queued', prompt: 'P3', rawOutput: '{"title":"b"}', tokensCost: 20 });
+    svc.record({
+      documentId: 2,
+      decision: 'auto-applied',
+      prompt: 'P2',
+      rawOutput: '{"title":"a"}',
+      tokensCost: 10,
+    });
+    svc.record({
+      documentId: 3,
+      decision: 'review-queued',
+      prompt: 'P3',
+      rawOutput: '{"title":"b"}',
+      tokensCost: 20,
+    });
 
     const page = svc.list({ limit: 2, offset: 0 });
     expect(page.total).toBe(3);
@@ -29,13 +41,25 @@ describe('AuditService', () => {
 
     expect(svc.list({ documentId: 1, limit: 50, offset: 0 }).total).toBe(2);
     expect(svc.list({ decision: 'auto-applied', limit: 50, offset: 0 }).total).toBe(2);
-    expect(svc.list({ documentId: 1, decision: 'auto-applied', limit: 50, offset: 0 }).total).toBe(1);
+    expect(svc.list({ documentId: 1, decision: 'auto-applied', limit: 50, offset: 0 }).total).toBe(
+      1,
+    );
   });
 
   it('text-searches the prompt and the raw output, case-insensitively', () => {
     const svc = new AuditService(createTestDb());
-    svc.record({ documentId: 1, decision: 'auto-applied', prompt: 'Invoice from ACME', rawOutput: '{}' });
-    svc.record({ documentId: 2, decision: 'auto-applied', prompt: 'Receipt', rawOutput: '{"correspondent":"acme"}' });
+    svc.record({
+      documentId: 1,
+      decision: 'auto-applied',
+      prompt: 'Invoice from ACME',
+      rawOutput: '{}',
+    });
+    svc.record({
+      documentId: 2,
+      decision: 'auto-applied',
+      prompt: 'Receipt',
+      rawOutput: '{"correspondent":"acme"}',
+    });
     svc.record({ documentId: 3, decision: 'auto-applied', prompt: 'unrelated', rawOutput: '{}' });
 
     // matches doc 1 via its prompt and doc 2 via its output
@@ -45,8 +69,18 @@ describe('AuditService', () => {
 
   it('treats LIKE wildcards in the query as literal characters', () => {
     const svc = new AuditService(createTestDb());
-    svc.record({ documentId: 1, decision: 'auto-applied', prompt: 'discount 50% applied', rawOutput: '{}' });
-    svc.record({ documentId: 2, decision: 'auto-applied', prompt: 'discount 5000 applied', rawOutput: '{}' });
+    svc.record({
+      documentId: 1,
+      decision: 'auto-applied',
+      prompt: 'discount 50% applied',
+      rawOutput: '{}',
+    });
+    svc.record({
+      documentId: 2,
+      decision: 'auto-applied',
+      prompt: 'discount 5000 applied',
+      rawOutput: '{}',
+    });
 
     // '50%' must match the literal "50%", not "50<anything>" (which would also hit "5000")
     const res = svc.list({ q: '50%', limit: 50, offset: 0 });
