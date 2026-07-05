@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev --force",
     "start": "astro dev --force",
-    "build": "node scripts/write-version.mjs && astro build",
+    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "typecheck": "astro check",

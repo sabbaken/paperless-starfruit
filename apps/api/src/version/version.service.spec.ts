@@ -39,10 +39,10 @@ describe('VersionService', () => {
     });
   });
 
-  it('flags an update when the manifest is newer', async () => {
+  it('flags an update when the latest release is newer, stripping the tag `v` prefix', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(jsonResponse({ version: '2.0.0' }))),
+      vi.fn(() => Promise.resolve(jsonResponse({ tag_name: 'v2.0.0' }))),
     );
 
     const info = await service(true).getInfo();
@@ -53,10 +53,10 @@ describe('VersionService', () => {
     expect(info.releaseUrl).toContain('/releases');
   });
 
-  it('reports up-to-date when the manifest is not newer', async () => {
+  it('reports up-to-date when the latest release is not newer', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(jsonResponse({ version: '1.2.3' }))),
+      vi.fn(() => Promise.resolve(jsonResponse({ tag_name: 'v1.2.3' }))),
     );
 
     const info = await service(true).getInfo();
@@ -65,17 +65,19 @@ describe('VersionService', () => {
     expect(info.updateAvailable).toBe(false);
   });
 
-  it('prefers the manifest releaseUrl when present', async () => {
+  it('links to the release page when the response carries one', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() =>
-        Promise.resolve(jsonResponse({ version: '9.9.9', releaseUrl: 'https://example.com/r' })),
+        Promise.resolve(
+          jsonResponse({ tag_name: 'v9.9.9', html_url: 'https://example.com/releases/tag/v9.9.9' }),
+        ),
       ),
     );
 
     const info = await service(true).getInfo();
 
-    expect(info.releaseUrl).toBe('https://example.com/r');
+    expect(info.releaseUrl).toBe('https://example.com/releases/tag/v9.9.9');
   });
 
   it('degrades silently on a fetch error', async () => {

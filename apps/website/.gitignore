@@ -1,7 +1,5 @@
 # build output
 dist/
-# generated release manifest (written by scripts/write-version.mjs at build)
-public/version.json
 # generated types
 .astro/
 # dependencies

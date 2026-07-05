@@ -1,21 +1,21 @@
 import { z } from 'zod';
 
 /**
- * The public release manifest, served as a static file from the website
- * (`/version.json`). The backend fetches and validates it to learn the latest
- * published version. Everything but `version` is optional so the manifest can
- * grow without breaking older instances.
+ * The subset of a GitHub "latest release" response the update check reads
+ * (`GET /repos/{owner}/{repo}/releases/latest`). The backend fetches and
+ * validates it to learn the latest published version; `tag_name` is the
+ * release tag (e.g. `v1.2.0`), `html_url` the release page to link to.
  */
-export const versionManifestSchema = z.object({
-  version: z.string().min(1),
-  releaseUrl: z.string().url().optional(),
+export const latestReleaseSchema = z.object({
+  tag_name: z.string().min(1),
+  html_url: z.string().url().optional(),
 });
-export type VersionManifest = z.infer<typeof versionManifestSchema>;
+export type LatestRelease = z.infer<typeof latestReleaseSchema>;
 
 /**
  * Resolved update status returned by `GET /api/version`. The backend compares
- * its own running build (`current`) against the manifest's `latest`. `latest`
- * is `null` when update checks are disabled or the manifest couldn't be fetched.
+ * its own running build (`current`) against the release's `latest`. `latest`
+ * is `null` when update checks are disabled or the release couldn't be fetched.
  */
 export const versionInfoSchema = z.object({
   current: z.string(),

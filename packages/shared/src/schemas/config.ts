@@ -155,7 +155,7 @@ export const settingsSchema = z.object({
   /** The credential + model used for OCR (wired up in M5); chosen ahead of time. */
   ocrProviderId: z.number().int().nullable().default(null),
   ocrModel: z.string().nullable().default(null),
-  /** Periodically check the public site for a newer release and surface a notice. */
+  /** Periodically check GitHub for a newer release and surface a notice. */
   checkForUpdates: z.boolean().default(true),
 });
 export type Settings = z.infer<typeof settingsSchema>;
