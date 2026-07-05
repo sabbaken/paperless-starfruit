@@ -10,6 +10,10 @@ import {
   Search,
 } from 'lucide-react';
 import {
+  isShortlistExcluded,
+  MODEL_SHORTLIST,
+  modelFamilyKey,
+  modelVersionOf,
   OCR_MODELS,
   PROVIDER_KIND_META,
   type ModelInfo,
@@ -31,37 +35,10 @@ import { ProviderLogo } from '@/components/provider-logo.tsx';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-/**
- * Default shortlist, built in two stages:
- *
- *   1. SHORTLIST — a hand-picked allowlist of model *families* per vendor. This
- *      decides which families show up at all. Versions are omitted (latestPerFamily
- *      collapses each family to its newest member) and so are "preview"/"latest"
- *      aliases (stripped by FAMILY_NOISE), so `gemini-pro` covers 2.5 Pro, 3 Pro
- *      Preview, etc. — all one family.
- *   2. SHORTLIST_EXCLUDE — substrings that drop individual variants *within* those
- *      families. Matched against `id` + `label`, so e.g. "preview" removes Gemini's
- *      preview builds, leaving the newest *stable* release as the family's latest.
- *
- * A model is in the shortlist when its family is allowlisted AND it isn't excluded.
- * "Show all models" bypasses both. Keys here are family keys as produced by
- * `familyKey()`; exclude patterns are plain case-insensitive substrings.
- */
-const SHORTLIST: Partial<Record<ProviderKind, string[]>> = {
-  anthropic: ['claude-opus', 'claude-sonnet', 'claude-haiku'],
-  google: ['gemini-pro', 'gemini-flash', 'gemini-flash-lite'],
-  openai: ['gpt-pro', 'gpt', 'gpt-mini', 'gpt-nano'],
-  // `mistral-ocr` only ever appears in the OCR picker (injected below), so listing
-  // it here surfaces it by default without affecting the language-model picker.
-  mistral: ['mistral-large', 'pixtral-large', 'mistral-medium', 'mistral-small', 'mistral-ocr'],
-};
-
-const SHORTLIST_EXCLUDE: Partial<Record<ProviderKind, string[]>> = {
-  google: ['preview'],
-  // openai: ['codex'],
-  // anthropic: [],
-  // mistral: [],
-};
+// The two-stage family shortlist (MODEL_SHORTLIST + MODEL_SHORTLIST_EXCLUDE) and
+// its familyKey/version helpers live in shared: the onboarding default-model
+// resolution uses the exact same rules, so the table and the defaults always
+// agree on what "the latest Sonnet" is. "Show all models" bypasses the shortlist.
 
 interface ModelPickerProps {
   title: string;
@@ -184,55 +161,22 @@ function compareRows(a: ModelRow, b: ModelRow, sort: Sort): number {
   return sort.dir === 'asc' ? r : -r;
 }
 
-/** Words that don't define a family — dropped so a model and its "preview"/"latest"
- *  alias collapse together (e.g. `gemini-pro` covers "Gemini 3.1 Pro Preview"). This
- *  is what lets SHORTLIST_EXCLUDE then surgically drop the preview variant. */
-const FAMILY_NOISE = new Set(['preview', 'latest']);
-
-/** A model "line", ignoring version numbers — e.g. "Claude 3 Haiku" and
- *  "Claude Haiku 4.5" both reduce to `claude-haiku`. Derived from the label so the
- *  decimal versions ("4.5", "3.1") stay intact for `versionOf`. */
-function familyKey(label: string): string {
-  return label
-    .toLowerCase()
-    .replace(/\d+(\.\d+)?/g, ' ') // drop version numbers wherever they sit
-    .replace(/[^a-z]+/g, ' ')
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w && !FAMILY_NOISE.has(w))
-    .join('-');
-}
-
-/** Highest version number in a label (ignoring date/size-like values). */
-function versionOf(label: string): number {
-  const nums = (label.match(/\d+(\.\d+)?/g) ?? []).map(Number).filter((n) => n < 100);
-  return nums.length ? Math.max(...nums) : 0;
-}
-
 /** Stage 1: a model's family is on the hand-picked allowlist. Local providers are
  *  user-configured (few, hand-picked) so they always pass. */
 function inShortlist(r: ModelRow): boolean {
   if (PROVIDER_KIND_META[r.kind].local) return true;
-  return SHORTLIST[r.kind]?.includes(familyKey(r.model.label)) ?? false;
-}
-
-/** Stage 2: a model is buried by a SHORTLIST_EXCLUDE substring (id or label). */
-function excludedFromShortlist(r: ModelRow): boolean {
-  const patterns = SHORTLIST_EXCLUDE[r.kind];
-  if (!patterns?.length) return false;
-  const hay = `${r.model.id} ${r.model.label}`.toLowerCase();
-  return patterns.some((p) => hay.includes(p.toLowerCase()));
+  return MODEL_SHORTLIST[r.kind]?.includes(modelFamilyKey(r.model.label)) ?? false;
 }
 
 /** Keep only the newest model in each line (per provider), preserving order. */
 function latestPerFamily(rows: ModelRow[]): ModelRow[] {
   const best = new Map<string, ModelRow>();
   for (const r of rows) {
-    const fam = `${r.kind}:${familyKey(r.model.label)}`;
+    const fam = `${r.kind}:${modelFamilyKey(r.model.label)}`;
     const cur = best.get(fam);
-    if (!cur || versionOf(r.model.label) > versionOf(cur.model.label)) best.set(fam, r);
+    if (!cur || modelVersionOf(r.model) > modelVersionOf(cur.model)) best.set(fam, r);
   }
-  return rows.filter((r) => best.get(`${r.kind}:${familyKey(r.model.label)}`) === r);
+  return rows.filter((r) => best.get(`${r.kind}:${modelFamilyKey(r.model.label)}`) === r);
 }
 
 export function ModelPicker({
@@ -316,7 +260,9 @@ export function ModelPicker({
   const rows = (
     showAll
       ? matched
-      : latestPerFamily(matched.filter((r) => inShortlist(r) && !excludedFromShortlist(r)))
+      : latestPerFamily(
+          matched.filter((r) => inShortlist(r) && !isShortlistExcluded(r.kind, r.model)),
+        )
   ).sort((a, b) => compareRows(a, b, sort));
 
   const onSort = (key: SortKey) =>
