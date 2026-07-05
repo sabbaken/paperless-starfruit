@@ -1,14 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { Injectable, Logger } from '@nestjs/common';
-import { versionManifestSchema, type VersionInfo } from '@paperless-starfruit/shared';
+import { latestReleaseSchema, type VersionInfo } from '@paperless-starfruit/shared';
 import { SettingsService } from '../settings/settings.service';
 
-/** Where the public release manifest lives. Override per-deployment if you fork. */
-const DEFAULT_WEBSITE_URL = 'https://paperless-starfruit.vercel.app';
-/** Fallback "where to upgrade" link when the manifest doesn't carry one. */
+/** Where the latest published release lives. Override per-deployment if you fork. */
+const DEFAULT_RELEASE_API_URL =
+  'https://api.github.com/repos/sabbaken/paperless-starfruit/releases/latest';
+/** Fallback "where to upgrade" link when the release response carries no page URL. */
 const DEFAULT_RELEASE_URL = 'https://github.com/sabbaken/paperless-starfruit/releases';
-/** Cache a good manifest this long — update checks are cheap and rare. */
+/** Cache a good response this long — update checks are cheap and rare. */
 const OK_TTL_MS = 6 * 60 * 60 * 1000;
 /** Cache a failed fetch only briefly so a transient outage self-heals. */
 const ERROR_TTL_MS = 10 * 60 * 1000;
@@ -23,16 +24,14 @@ interface Cached {
 
 /**
  * Resolves update status for `GET /api/version`: the running build's version vs
- * the latest published one. The opt-out is honoured at the network layer — when
- * `checkForUpdates` is off we never reach out to the website at all.
+ * the latest GitHub release. The opt-out is honoured at the network layer — when
+ * `checkForUpdates` is off we never reach out to GitHub at all.
  */
 @Injectable()
 export class VersionService {
   private readonly logger = new Logger(VersionService.name);
   private readonly current = process.env.APP_VERSION || readProductVersion();
-  private readonly manifestUrl = `${stripTrailingSlash(
-    process.env.UPDATE_MANIFEST_URL ?? DEFAULT_WEBSITE_URL,
-  )}/version.json`;
+  private readonly releaseApiUrl = process.env.UPDATE_CHECK_URL || DEFAULT_RELEASE_API_URL;
   private cache: Cached | null = null;
 
   constructor(private readonly settings: SettingsService) {}
@@ -46,33 +45,33 @@ export class VersionService {
     };
     if (!this.settings.get().checkForUpdates) return offline;
 
-    const manifest = await this.manifest(now);
-    if (!manifest.version) return offline;
+    const release = await this.latestRelease(now);
+    if (!release.version) return offline;
 
     return {
       current: this.current,
-      latest: manifest.version,
-      updateAvailable: isNewer(manifest.version, this.current),
-      releaseUrl: manifest.releaseUrl ?? DEFAULT_RELEASE_URL,
+      latest: release.version,
+      updateAvailable: isNewer(release.version, this.current),
+      releaseUrl: release.releaseUrl ?? DEFAULT_RELEASE_URL,
     };
   }
 
-  private async manifest(now: number): Promise<Cached> {
+  private async latestRelease(now: number): Promise<Cached> {
     const ttl = this.cache?.ok ? OK_TTL_MS : ERROR_TTL_MS;
     if (this.cache && now - this.cache.fetchedAt < ttl) return this.cache;
 
     try {
-      const res = await fetch(this.manifestUrl, {
+      const res = await fetch(this.releaseApiUrl, {
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { accept: 'application/json' },
+        headers: { accept: 'application/vnd.github+json' },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const parsed = versionManifestSchema.parse(await res.json());
+      const parsed = latestReleaseSchema.parse(await res.json());
       this.cache = {
         fetchedAt: now,
         ok: true,
-        version: parsed.version,
-        releaseUrl: parsed.releaseUrl ?? null,
+        version: parsed.tag_name.replace(/^v/, ''),
+        releaseUrl: parsed.html_url ?? null,
       };
     } catch (err) {
       // A failed update check must never surface as an error in the UI.
@@ -83,14 +82,11 @@ export class VersionService {
   }
 }
 
-function stripTrailingSlash(url: string): string {
-  return url.replace(/\/+$/, '');
-}
-
 /**
- * The product version is the monorepo root `package.json` version (a release
- * bumps that one file). Walk up from this compiled module until we find it by
- * name, so the lookup is independent of the build's directory nesting and cwd.
+ * Dev fallback for the product version: the monorepo root `package.json`.
+ * Published images stamp the release tag via APP_VERSION instead. Walk up from
+ * this compiled module until we find the root package by name, so the lookup is
+ * independent of the build's directory nesting and cwd.
  */
 function readProductVersion(): string {
   let dir = __dirname;

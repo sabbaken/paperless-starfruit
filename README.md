@@ -47,8 +47,8 @@ environment variables for the process itself (below).
 ## Deploy (self-hosting)
 
 A single container, no Postgres/Redis. SQLite lives on a mounted volume. Pre-built images
-are published to GitHub Container Registry on every release (a root version bump), so there is nothing to
-clone or build:
+are published to GitHub Container Registry on every GitHub release (the release tag names the
+image version), so there is nothing to clone or build:
 
 ```
 ghcr.io/sabbaken/paperless-starfruit/api:latest    # or a release version, e.g. :1.1.0, to pin

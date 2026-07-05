@@ -31,6 +31,10 @@ RUN rm -rf apps/website
 FROM base AS runtime
 ENV NODE_ENV=production
 ENV DATABASE_PATH=/data/app.db
+# The release version stamped by CI from the release tag — what the app reports
+# as "current". Empty for local builds, which fall back to the root package.json.
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
 COPY --from=build /app /app
 EXPOSE 3000
 VOLUME ["/data"]
