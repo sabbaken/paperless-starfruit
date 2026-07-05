@@ -1,7 +1,11 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Brain, Loader2, ScanText } from 'lucide-react';
-import { DEFAULT_TRIGGER_TAG, TRIGGER_TAG_COLOR } from '@paperless-starfruit/shared';
+import {
+  DEFAULT_TRIGGER_TAG,
+  defaultModelSelection,
+  TRIGGER_TAG_COLOR,
+} from '@paperless-starfruit/shared';
 import { useProviders } from '@/api/providers';
 import { useSettings, useUpdateSettings } from '@/api/settings';
 import { ModelPicker } from '@/components/model-picker';
@@ -97,7 +101,14 @@ export function OnboardingPage() {
 
         <div className="mt-6">
           {step === 0 && <PaperlessConnectionForm onConnected={() => setStep(1)} />}
-          {step === 1 && <ApiKeysPage />}
+          {step === 1 && (
+            <>
+              <ApiKeysPage />
+              <div className="mt-6 flex justify-end">
+                <ResetModelSelectionButton />
+              </div>
+            </>
+          )}
           {step === 2 && <ProcessingStep onGoToProviders={() => setStep(1)} />}
         </div>
       </main>
@@ -122,6 +133,30 @@ export function OnboardingPage() {
   );
 }
 
+/** TEMPORARY, for testing the model-defaults flow: clears both model slots so
+ *  revisiting the Processing step re-picks the defaults. Remove once verified. */
+function ResetModelSelectionButton() {
+  const save = useUpdateSettings();
+  return (
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={() =>
+        void toastSave(
+          save.mutateAsync({
+            ocrProviderId: null,
+            ocrModel: null,
+            llmProviderId: null,
+            llmModel: null,
+          }),
+        )
+      }
+    >
+      Reset model selection
+    </Button>
+  );
+}
+
 /** Model choice only — the two pickers, nothing else. Every other processing
  *  knob keeps its default and lives in Settings → Processing. "Add a key" in
  *  the picker points back at the API-keys step instead of the settings route. */
@@ -130,6 +165,20 @@ function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
   const providers = useProviders();
   const save = useUpdateSettings();
   const [picker, setPicker] = useState<'ocr' | 'llm' | null>(null);
+
+  // Fill unset model slots with the recommended defaults for the best configured
+  // provider, so "Next" works without opening a picker. Only untouched (null)
+  // slots are written — a user's earlier choice is never overwritten. Silent on
+  // purpose: the values appearing in the rows is the feedback. The ref guards
+  // the window where the PATCH is in flight but settings haven't refetched yet.
+  const defaultsApplied = useRef(false);
+  useEffect(() => {
+    if (defaultsApplied.current || !settings.data || !providers.data) return;
+    const patch = defaultModelSelection(providers.data, settings.data);
+    if (!patch) return;
+    defaultsApplied.current = true;
+    save.mutate(patch);
+  }, [settings.data, providers.data, save]);
 
   if (settings.isLoading || providers.isLoading || !settings.data) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
