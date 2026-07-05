@@ -13,10 +13,14 @@ export const PDF_FILE_PART_KINDS = new Set<string>([
 /**
  * Marks a content part as an Anthropic prompt-cache breakpoint (5-minute TTL).
  * The OCR call writes the document block into the cache and the extraction call
- * that follows re-reads it at ~10% of the input price — provided both requests
- * share the same model and an identical prefix up to this part, which is why the
- * document part always goes FIRST in the user message. `providerOptions` are
- * namespaced per provider, so every other provider ignores this key.
+ * that follows re-reads it at ~10% of the input price. Anthropic's cache is
+ * scoped to one API key and one model, and a cache WRITE costs 1.25× the normal
+ * input price — so the pipeline sets this marker only when OCR and extraction
+ * run on the same credential and model (see `cacheDocument` below); any other
+ * pairing would pay the write surcharge with zero reads. The document part
+ * always goes FIRST in the user message so both requests share an identical
+ * prefix up to this part. `providerOptions` are namespaced per provider, so
+ * every other provider ignores this key.
  */
 export const ANTHROPIC_CACHE_CONTROL = {
   anthropic: { cacheControl: { type: 'ephemeral' } },
@@ -38,6 +42,13 @@ export interface OcrOptions {
    * built-in instruction when omitted (e.g. in unit tests).
    */
   prompt?: string;
+  /**
+   * Set the Anthropic cache marker on the document block (see
+   * `ANTHROPIC_CACHE_CONTROL`). The pipeline enables this only when the
+   * extraction call that follows runs on the same credential + model and can
+   * re-read the entry. Default off: an unread write costs 25% extra.
+   */
+  cacheDocument?: boolean;
   signal?: AbortSignal;
 }
 

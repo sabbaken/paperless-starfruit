@@ -33,9 +33,12 @@ export function visualMode(opts: {
 /**
  * Build the multimodal part that carries the original document into the
  * extraction call. Mirrors the OCR call's part shape byte-for-byte (same media
- * type normalisation, same `document.pdf` filename, same cache marker) so that
- * on Anthropic the extraction request re-reads the document block the OCR
- * request just cached instead of paying full price for a second read.
+ * type normalisation, same `document.pdf` filename, and — with `cacheDocument`
+ * — the same cache marker) so that on Anthropic the extraction request
+ * re-reads the document block the OCR request just cached instead of paying
+ * full price for a second read. The pipeline sets `cacheDocument` only when
+ * both calls share a credential + model — the one pairing where the cache
+ * entry is actually re-read (see `ANTHROPIC_CACHE_CONTROL`).
  *
  * Returns null when this provider/file combination can't take the attachment
  * (non-image file on a kind without PDF file-part support, exotic media type,
@@ -47,11 +50,13 @@ export async function buildExtractionFilePart(opts: {
   contentType: string | null;
   kind: ProviderKind;
   mode: Exclude<VisualMode, 'none'>;
+  cacheDocument?: boolean;
 }): Promise<Record<string, unknown> | null> {
   const mediaType = normaliseMediaType(opts.contentType);
+  const cachePart = opts.cacheDocument ? { providerOptions: ANTHROPIC_CACHE_CONTROL } : {};
   if (isImageMediaType(mediaType)) {
     // Single image original — there is nothing to trim.
-    return { type: 'image', image: opts.data, mediaType, providerOptions: ANTHROPIC_CACHE_CONTROL };
+    return { type: 'image', image: opts.data, mediaType, ...cachePart };
   }
   if (mediaType !== 'application/pdf' || !PDF_FILE_PART_KINDS.has(opts.kind)) return null;
   const data = opts.mode === 'trimmed' ? await firstAndLastPages(opts.data) : opts.data;
@@ -61,7 +66,7 @@ export async function buildExtractionFilePart(opts: {
     data,
     mediaType,
     filename: 'document.pdf',
-    providerOptions: ANTHROPIC_CACHE_CONTROL,
+    ...cachePart,
   };
 }
 
