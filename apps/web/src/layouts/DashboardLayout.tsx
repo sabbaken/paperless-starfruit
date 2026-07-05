@@ -182,20 +182,22 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </SidebarContent>
 
         <SidebarFooter>
-          {baseUrl && (
-            <a
-              href={baseUrl}
-              target="_blank"
-              rel="noreferrer"
-              title="Open paperless in a new tab"
-              className="flex items-center gap-2 rounded-md px-1 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
-              <span className="truncate group-data-[collapsible=icon]:hidden">{baseUrl}</span>
-            </a>
-          )}
           <UpdateNotice />
           <SidebarMenu>
+            {baseUrl && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Open paperless in a new tab">
+                  <a href={baseUrl} target="_blank" rel="noreferrer">
+                    {/* The status dot keeps its size but sits in an icon-sized box,
+                        so the label lines up with the other footer items. */}
+                    <span className="flex size-4 shrink-0 items-center justify-center">
+                      <span className="size-2 rounded-full bg-emerald-500" />
+                    </span>
+                    <span>{baseUrl}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="GitHub">
                 <a
