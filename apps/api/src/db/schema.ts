@@ -67,6 +67,18 @@ export const tagComment = sqliteTable('tag_comment', {
   updatedAt: timestamp('updated_at'),
 });
 
+/**
+ * A paperless tag hidden from the AI: excluded from the extraction prompt
+ * (both the offered taxonomy and the document's current tags) and stripped
+ * from suggestions if the model guesses the name anyway. Keyed by paperless's
+ * tag id (no FK — the tag lives in paperless); a missing row means "visible".
+ */
+export const hiddenTag = sqliteTable('hidden_tag', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  tagId: integer('tag_id').notNull().unique(),
+  createdAt: timestamp('created_at'),
+});
+
 /** Single-row application settings (id = 1). */
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),

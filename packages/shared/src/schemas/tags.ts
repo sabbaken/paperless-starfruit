@@ -25,6 +25,8 @@ export const tagViewSchema = z.object({
   documentCount: z.number().int().nullable(),
   comment: z.string().nullable(),
   isTrigger: z.boolean(),
+  /** Hidden from the AI: never offered in prompts, never applied from suggestions. */
+  hidden: z.boolean(),
 });
 export type TagView = z.infer<typeof tagViewSchema>;
 
@@ -44,5 +46,6 @@ export const tagUpdateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(128).optional(),
   color: tagColorSchema.optional(),
   comment: z.string().trim().max(TAG_COMMENT_MAX).nullable().optional(),
+  hidden: z.boolean().optional(),
 });
 export type TagUpdate = z.infer<typeof tagUpdateSchema>;
