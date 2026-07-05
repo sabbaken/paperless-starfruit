@@ -70,15 +70,17 @@ export class OcrService {
     }
     // An image goes in an `image` part; everything else (PDFs) as a `file` part.
     // The cache marker turns the document block into an Anthropic prompt-cache
-    // entry that the extraction call re-reads at ~10% cost (see ocr.types).
+    // entry that the extraction call re-reads at ~10% cost — set only when the
+    // caller knows that call shares this one's credential + model (see ocr.types).
+    const cachePart = opts.cacheDocument ? { providerOptions: ANTHROPIC_CACHE_CONTROL } : {};
     const docPart = isImage
-      ? { type: 'image', image: input.data, mediaType, providerOptions: ANTHROPIC_CACHE_CONTROL }
+      ? { type: 'image', image: input.data, mediaType, ...cachePart }
       : {
           type: 'file',
           data: input.data,
           mediaType,
           filename: filenameFor(mediaType),
-          providerOptions: ANTHROPIC_CACHE_CONTROL,
+          ...cachePart,
         };
 
     // The user-editable OCR prompt (M6) carries all the transcription instructions

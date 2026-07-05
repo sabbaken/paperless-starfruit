@@ -29,13 +29,14 @@ describe('visualMode', () => {
 });
 
 describe('buildExtractionFilePart', () => {
-  it('attaches an image original as an image part with the cache marker', async () => {
+  it('attaches an image original as an image part with the cache marker when opted in', async () => {
     const data = Buffer.from('PNGDATA');
     const part = await buildExtractionFilePart({
       data,
       contentType: 'image/png',
       kind: 'mistral',
       mode: 'full',
+      cacheDocument: true,
     });
     expect(part).toMatchObject({ type: 'image', mediaType: 'image/png' });
     expect(part?.image).toBe(data);
@@ -49,6 +50,7 @@ describe('buildExtractionFilePart', () => {
       contentType: 'application/pdf',
       kind: 'anthropic',
       mode: 'full',
+      cacheDocument: true,
     });
     expect(part).toMatchObject({
       type: 'file',
@@ -57,6 +59,24 @@ describe('buildExtractionFilePart', () => {
     });
     expect(part?.data).toBe(data);
     expect(part?.providerOptions).toEqual(CACHE_MARKER);
+  });
+
+  it('omits the cache marker by default (no shared entry for extraction to re-read)', async () => {
+    const image = await buildExtractionFilePart({
+      data: Buffer.from('PNGDATA'),
+      contentType: 'image/png',
+      kind: 'anthropic',
+      mode: 'full',
+    });
+    expect(image?.providerOptions).toBeUndefined();
+
+    const pdf = await buildExtractionFilePart({
+      data: await pdfWithPages(1),
+      contentType: 'application/pdf',
+      kind: 'anthropic',
+      mode: 'full',
+    });
+    expect(pdf?.providerOptions).toBeUndefined();
   });
 
   it('trims a long PDF to its first and last pages', async () => {

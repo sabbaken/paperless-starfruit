@@ -3,6 +3,7 @@ import {
   EXTRACTION_SCHEMA_DESCRIPTION,
   EXTRACTION_SCHEMA_NAME,
   PROMPT_KEY,
+  PROVIDER_KIND,
   extractionSchema,
   type Extraction,
   type ResolvedTag,
@@ -129,6 +130,19 @@ export class PipelineService {
     }
     const runOcr = settings.ocrEnabled && ocrModelSelected && !overLimit(settings.ocrMaxPages);
 
+    // Anthropic's prompt cache is scoped to one API key and one model, and a
+    // cache write costs 1.25× the normal input price. Mark the document block
+    // as cacheable only when this run's OCR and extraction calls share both —
+    // the one pairing where extraction actually re-reads (at ~10%) what OCR
+    // just wrote. Any other combination would pay the write surcharge on every
+    // call with zero reads.
+    const cacheDocument =
+      provider != null &&
+      provider.kind === PROVIDER_KIND.ANTHROPIC &&
+      runOcr &&
+      settings.ocrProviderId === settings.llmProviderId &&
+      settings.ocrModel === settings.llmModel;
+
     // OCR-only mode with no runnable OCR step: nothing this pipeline can do.
     // Over the page limit that mirrors the extraction gate above (skip + drop
     // the trigger tag; raising the limit and re-tagging reprocesses). Anything
@@ -180,7 +194,7 @@ export class PipelineService {
         const result = await this.ocr.ocr(
           ocrProvider,
           { data: original.data, contentType: original.contentType },
-          { language: settings.language, prompt: ocrPrompt, signal },
+          { language: settings.language, prompt: ocrPrompt, cacheDocument, signal },
         );
         text = result.text.trim();
         ocrUsage = result.usage;
@@ -322,6 +336,7 @@ export class PipelineService {
         contentType: original.contentType,
         kind: provider.kind,
         mode: visual,
+        cacheDocument,
       });
       if (!filePart) {
         this.logger.debug(

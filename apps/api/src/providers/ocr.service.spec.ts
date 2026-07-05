@@ -53,7 +53,7 @@ describe('OcrService — vision-LLM OCR', () => {
     const out = await new OcrService().ocr(
       VISION,
       { data: Buffer.from('%PDF-1.4'), contentType: 'application/pdf' },
-      OPTS,
+      { ...OPTS, cacheDocument: true },
     );
 
     expect(out.text).toBe('recognised text');
@@ -68,6 +68,19 @@ describe('OcrService — vision-LLM OCR', () => {
       anthropic: { cacheControl: { type: 'ephemeral' } },
     });
     expect(parts[1]).toMatchObject({ type: 'text' });
+  });
+
+  it('omits the cache marker unless the caller opts in (extraction on another model)', async () => {
+    generateTextMock.mockResolvedValue({ text: 'x', usage: {} });
+
+    await new OcrService().ocr(
+      VISION,
+      { data: Buffer.from('%PDF-1.4'), contentType: 'application/pdf' },
+      OPTS,
+    );
+
+    const parts = generateTextMock.mock.calls[0][0].messages[0].content;
+    expect(parts[0].providerOptions).toBeUndefined();
   });
 
   it('sends an image as an image part', async () => {
