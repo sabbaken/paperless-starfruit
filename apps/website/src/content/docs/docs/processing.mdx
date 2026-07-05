@@ -25,9 +25,15 @@ If you haven't connected a provider yet, the picker links you to the API Keys sc
   the result is written back to paperless's `content`. When off, paperless's own (free)
   Tesseract text is reused. _Disabled until you pick an OCR model._
 - **Skip OCR above … pages** — larger files reuse paperless's text instead of paying for
-  OCR. Blank means no limit.
+  OCR, **and** extraction sees only their first and last pages instead of the whole
+  original. Blank means no limit.
 
 ### Extraction
+
+Extraction reads more than text: when the language model is vision-capable, the **original
+document is attached** to the call as visual evidence — layout, letterheads, stamps and
+signatures — with the recognised text as an aid. Files over the _OCR_ page cap attach only
+their first and last pages; models that can't take files run on text alone.
 
 - **Run extraction** — when off, the pipeline stops after OCR (OCR-only mode): the
   recognised text is written back, the trigger tag is dropped, and the document's metadata
@@ -39,10 +45,12 @@ If you haven't connected a provider yet, the picker links you to the API Keys sc
   extraction. Blank means no limit.
 
 <Aside type="tip" title="Two caps, two jobs">
-  The **extraction** cap is the outer gate (over it → skip everything) and the **OCR** cap is the
-  inner gate (over it → reuse paperless text, but still extract). So with OCR ≤ 20pp and extraction
-  ≤ 100pp, a 50-page file extracts on paperless's text, and a 1000-page book is skipped. See [How
-  processing works](/docs/pipeline/).
+  The **extraction** cap is the outer gate (over it → skip everything). The **OCR** cap is the inner
+  gate (over it → reuse paperless text, but still extract) and doubles as the attachment limit: over
+  it the extraction model sees only the document's first and last pages instead of the whole file.
+  So with OCR ≤ 20pp and extraction ≤ 100pp, a 50-page file extracts on paperless's text plus its
+  first and last pages, and a 1000-page book is skipped. See [How processing
+  works](/docs/pipeline/).
 </Aside>
 
 ### Apply

@@ -24,16 +24,22 @@ Every tagged document follows the same path.
    existing text is reused, for free.
 
 4. **Skip-if-identical check.** A `content_hash` is computed from the extraction-input text
-   **plus a fingerprint of the active config** (the OCR and language provider/model, and
-   whether extraction is enabled). If a previously completed job for this document has the
-   same hash, the result would be byte-for-byte identical — so steps 5–7 are skipped, the
-   tag is dropped, and the run finishes having spent nothing on extraction.
+   **plus a fingerprint of the active config** (the OCR and language provider/model, whether
+   extraction is enabled, and how much of the original the extraction model gets to see).
+   If a previously completed job for this document has the same hash, the result would be
+   byte-for-byte identical — so steps 5–7 are skipped, the tag is dropped, and the run
+   finishes having spent nothing on extraction.
 
 5. **Extract.** One language-model call returns `{ title, tags, correspondent, date }`,
    validated against a strict schema. Invalid output triggers a single repair retry before
-   it's trusted. With **extraction turned off** (OCR-only mode) the run completes here
-   instead: a single PATCH writes the OCR text back and drops the trigger tag, metadata is
-   left untouched, and the run is recorded as `ocr-only`.
+   it's trusted. The call carries more than text: when the language model is vision-capable,
+   the **original document is attached as visual evidence** — letterheads, stamps and
+   signatures often carry the correspondent and date the text layer garbles. Files over the
+   _OCR_ page cap attach only their **first and last pages** (the full text still covers the
+   middle); models that can't take files fall back to text-only. With **extraction turned
+   off** (OCR-only mode) the run completes here instead: a single PATCH writes the OCR text
+   back and drops the trigger tag, metadata is left untouched, and the run is recorded as
+   `ocr-only`.
 
 6. **Reconcile.** Suggested tag and correspondent _names_ are mapped to paperless IDs. New
    ones are created only when you've allowed it (and never for a blacklisted correspondent).

@@ -54,8 +54,8 @@ services:
       - ./consume:/usr/src/paperless/consume
 
   paperless-starfruit:
-    # Published by CI on every master push. Tags: `latest`, or `sha-<commit>`
-    # to pin an exact build.
+    # Published by CI on every release (root package.json version bump). Tags:
+    # `latest`, or the release version (e.g. `1.1.0`) to pin.
     image: ghcr.io/sabbaken/paperless-starfruit/api:latest
     restart: unless-stopped
     depends_on:
