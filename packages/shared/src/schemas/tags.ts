@@ -22,6 +22,8 @@ export const tagViewSchema = z.object({
   id: z.number().int(),
   name: z.string(),
   color: z.string().nullable(),
+  /** Parent tag id for nested tags (paperless-ngx ≥ 2.19); null for root tags. */
+  parent: z.number().int().nullable(),
   documentCount: z.number().int().nullable(),
   comment: z.string().nullable(),
   isTrigger: z.boolean(),

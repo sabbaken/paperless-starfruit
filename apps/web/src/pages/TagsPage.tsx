@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, Pencil, Plus, Search, Tags } from 'lucide-react';
+import { CornerDownRight, Loader2, Pencil, Plus, Search, Tags } from 'lucide-react';
 import { TAG_COMMENT_MAX, type TagUpdate, type TagView } from '@paperless-starfruit/shared';
 import { useCreateTag, useTags, useUpdateTag } from '@/api/tags';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,46 @@ import { Textarea } from '@/components/ui/textarea';
 const DEFAULT_COLOR = '#a6cee3';
 
 type FormState = { mode: 'create' } | { mode: 'edit'; tag: TagView };
+
+/** A tag paired with its depth in the parent chain, in rendered (tree) order. */
+type TagRow = { tag: TagView; depth: number };
+
+/**
+ * Flatten tags into display order: root tags A→Z, each followed by its
+ * subtree. A tag whose parent is missing from the list, or whose parent chain
+ * loops (paperless forbids both, but stay safe), renders as a root.
+ */
+function toTreeRows(tags: TagView[]): TagRow[] {
+  const ids = new Set(tags.map((t) => t.id));
+  const children = new Map<number, TagView[]>();
+  const roots: TagView[] = [];
+  for (const t of tags) {
+    if (t.parent !== null && t.parent !== t.id && ids.has(t.parent)) {
+      const bucket = children.get(t.parent);
+      if (bucket) bucket.push(t);
+      else children.set(t.parent, [t]);
+    } else {
+      roots.push(t);
+    }
+  }
+
+  const rows: TagRow[] = [];
+  const seen = new Set<number>();
+  const visit = (group: TagView[], depth: number) => {
+    for (const tag of [...group].sort((a, b) => a.name.localeCompare(b.name))) {
+      if (seen.has(tag.id)) continue;
+      seen.add(tag.id);
+      rows.push({ tag, depth });
+      visit(children.get(tag.id) ?? [], depth + 1);
+    }
+  };
+  visit(roots, 0);
+  // A parent cycle strands its whole subtree off the root walk — show those flat.
+  for (const tag of tags) {
+    if (!seen.has(tag.id)) rows.push({ tag, depth: 0 });
+  }
+  return rows;
+}
 
 export function TagsPage() {
   const tags = useTags();
@@ -58,11 +98,24 @@ export function TagsPage() {
 
   const list = tags.data ?? [];
   const q = query.trim().toLowerCase();
-  const visible = q
-    ? list.filter(
-        (t) => t.name.toLowerCase().includes(q) || t.comment?.toLowerCase().includes(q),
-      )
-    : list;
+  let visible = toTreeRows(list);
+  if (q) {
+    // Keep matches plus their ancestor chain, so a matched child stays
+    // attached to its place in the tree instead of floating rootless.
+    const byId = new Map(list.map((t) => [t.id, t]));
+    const keep = new Set<number>();
+    for (const t of list) {
+      if (!t.name.toLowerCase().includes(q) && !t.comment?.toLowerCase().includes(q)) {
+        continue;
+      }
+      let cur: TagView | undefined = t;
+      while (cur && !keep.has(cur.id)) {
+        keep.add(cur.id);
+        cur = cur.parent !== null ? byId.get(cur.parent) : undefined;
+      }
+    }
+    visible = visible.filter((r) => keep.has(r.tag.id));
+  }
 
   return (
     <div className="space-y-4">
@@ -107,10 +160,19 @@ export function TagsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visible.map((tag) => (
+              {visible.map(({ tag, depth }) => (
                 <TableRow key={tag.id}>
                   <TableCell className="py-3 pl-4">
-                    <div className="flex items-center gap-2">
+                    <div
+                      className="flex items-center gap-2"
+                      style={depth > 1 ? { paddingLeft: `${(depth - 1) * 1.25}rem` } : undefined}
+                    >
+                      {depth > 0 && (
+                        <CornerDownRight
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-muted-foreground/70"
+                        />
+                      )}
                       <span
                         aria-hidden
                         className="size-3 shrink-0 rounded-full border"
