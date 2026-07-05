@@ -10,6 +10,7 @@ import type { ProviderService } from '../providers/provider.service';
 import type { SettingsService } from '../settings/settings.service';
 import type { LlmService } from '../providers/llm.service';
 import type { OcrService } from '../providers/ocr.service';
+import type { HiddenTagsService } from '../taxonomy/hidden-tags.service';
 import type { TagCommentsService } from '../taxonomy/tag-comments.service';
 import type { TaxonomyService } from '../taxonomy/taxonomy.service';
 import type { ReviewService } from '../review/review.service';
@@ -71,6 +72,8 @@ interface Overrides {
   credential?: unknown;
   /** OCR output text (when `settings.ocrEnabled`); '' / whitespace simulates a blank scan. */
   ocrText?: string;
+  /** Paperless tag ids hidden from the AI. */
+  hidden?: number[];
 }
 
 function makePipeline(o: Overrides = {}) {
@@ -150,6 +153,9 @@ function makePipeline(o: Overrides = {}) {
   } as unknown as PromptsService & { render: ReturnType<typeof vi.fn> };
 
   const tagComments = { map: vi.fn().mockReturnValue(new Map()) } as unknown as TagCommentsService;
+  const hiddenTags = {
+    ids: vi.fn().mockReturnValue(new Set(o.hidden ?? [])),
+  } as unknown as HiddenTagsService;
 
   const pipeline = new PipelineService(
     connection,
@@ -159,6 +165,7 @@ function makePipeline(o: Overrides = {}) {
     ocr,
     taxonomy,
     tagComments,
+    hiddenTags,
     review,
     queue,
     audit,
@@ -215,6 +222,34 @@ describe('PipelineService.process', () => {
       expect.anything(),
       'ACME',
       expect.objectContaining({ create: false }),
+    );
+  });
+
+  it('keeps hidden tags out of the prompt and drops them from suggestions', async () => {
+    const { pipeline, llm, prompts, taxonomy } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG] },
+      settings: { autoApply: true },
+      hidden: [9], // tag 9 = "Existing" in the snapshot
+    });
+    llm.generateStructured.mockResolvedValue({
+      object: { ...EXTRACTION, tags: ['invoice', 'existing'] },
+      usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+    });
+
+    await pipeline.process(JOB);
+
+    // The prompt vars must not mention the hidden tag — neither in the offered
+    // taxonomy nor as one of the document's current tags.
+    const [, vars] = prompts.render.mock.calls[0] as [string, Record<string, string>];
+    expect(vars.all_tags).not.toContain('Existing');
+    expect(vars.tags).not.toContain('Existing');
+
+    // A suggestion that guesses the hidden name anyway is dropped before
+    // reconciliation (case-insensitively), so it can never be applied.
+    expect(vi.mocked(taxonomy.resolveTags)).toHaveBeenCalledWith(
+      expect.anything(),
+      ['invoice'],
+      expect.anything(),
     );
   });
 

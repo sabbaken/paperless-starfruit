@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConnectionModule } from '../connection/connection.module';
+import { HiddenTagsService } from './hidden-tags.service';
 import { TagCommentsService } from './tag-comments.service';
 import { TagsController } from './tags.controller';
 import { TaxonomyService } from './taxonomy.service';
@@ -11,7 +12,7 @@ import { TaxonomyService } from './taxonomy.service';
 @Module({
   imports: [ConnectionModule],
   controllers: [TagsController],
-  providers: [TaxonomyService, TagCommentsService],
-  exports: [TaxonomyService, TagCommentsService],
+  providers: [TaxonomyService, TagCommentsService, HiddenTagsService],
+  exports: [TaxonomyService, TagCommentsService, HiddenTagsService],
 })
 export class TaxonomyModule {}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configFingerprint, contentHash, tagHintsDigest } from './fingerprint';
+import { configFingerprint, contentHash, hiddenTagsDigest, tagHintsDigest } from './fingerprint';
 
 describe('contentHash', () => {
   const fp = configFingerprint({ llm: { kind: 'anthropic', model: 'claude-haiku-4-5' } });
@@ -81,6 +81,19 @@ describe('configFingerprint', () => {
     expect(a).not.toBe(none);
     expect(a).not.toBe(b);
   });
+
+  it('stays on the historical format while no tags are hidden', () => {
+    expect(configFingerprint({ llm, hiddenDigest: null })).toBe(configFingerprint({ llm }));
+    expect(configFingerprint({ llm })).not.toContain('hidden:');
+  });
+
+  it('changes when the hidden-tag set changes (hiding a tag reprocesses on re-tag)', () => {
+    const none = configFingerprint({ llm });
+    const a = configFingerprint({ llm, hiddenDigest: hiddenTagsDigest(new Set([1])) });
+    const b = configFingerprint({ llm, hiddenDigest: hiddenTagsDigest(new Set([1, 2])) });
+    expect(a).not.toBe(none);
+    expect(a).not.toBe(b);
+  });
 });
 
 describe('tagHintsDigest', () => {
@@ -118,5 +131,18 @@ describe('tagHintsDigest', () => {
         ]),
       ),
     );
+  });
+});
+
+describe('hiddenTagsDigest', () => {
+  it('is null with no hidden tags and insensitive to insertion order', () => {
+    expect(hiddenTagsDigest(new Set())).toBeNull();
+    expect(hiddenTagsDigest(new Set([1, 2]))).toBe(hiddenTagsDigest(new Set([2, 1])));
+    expect(hiddenTagsDigest(new Set([1]))).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it('distinguishes different hidden sets', () => {
+    expect(hiddenTagsDigest(new Set([1]))).not.toBe(hiddenTagsDigest(new Set([2])));
+    expect(hiddenTagsDigest(new Set([1]))).not.toBe(hiddenTagsDigest(new Set([1, 2])));
   });
 });

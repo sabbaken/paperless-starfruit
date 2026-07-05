@@ -23,6 +23,7 @@ import { ConnectionService } from '../connection/connection.service';
 import type { PaperlessClient } from '../paperless/paperless.client';
 import { PaperlessError } from '../paperless/paperless.error';
 import type { PaperlessTag } from '../paperless/paperless.schemas';
+import { HiddenTagsService } from './hidden-tags.service';
 import { TagCommentsService } from './tag-comments.service';
 import { TaxonomyService } from './taxonomy.service';
 
@@ -43,6 +44,7 @@ export class TagsController {
     private readonly connection: ConnectionService,
     private readonly taxonomy: TaxonomyService,
     private readonly comments: TagCommentsService,
+    private readonly hiddenTags: HiddenTagsService,
   ) {}
 
   @Get()
@@ -52,8 +54,9 @@ export class TagsController {
     const client = this.requireClient();
     const { tags } = await this.rethrow(() => this.taxonomy.getSnapshot(client, true));
     const comments = this.comments.map();
+    const hidden = this.hiddenTags.ids();
     return tags
-      .map((t) => this.toView(t, comments.get(t.id) ?? null))
+      .map((t) => this.toView(t, comments.get(t.id) ?? null, hidden.has(t.id)))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
@@ -68,7 +71,7 @@ export class TagsController {
     const created = await this.rethrow(() => client.createTag(input.name, input.color));
     if (input.comment?.trim()) this.comments.set(created.id, input.comment);
     this.taxonomy.invalidateSnapshot();
-    return this.toView(created, input.comment?.trim() || null);
+    return this.toView(created, input.comment?.trim() || null, false);
   }
 
   @Patch(':id')
@@ -101,13 +104,15 @@ export class TagsController {
       : existing;
     if (touchesPaperless) this.taxonomy.invalidateSnapshot();
     if (input.comment !== undefined) this.comments.set(id, input.comment);
+    if (input.hidden !== undefined) this.hiddenTags.set(id, input.hidden);
 
     const comment =
       input.comment !== undefined ? input.comment?.trim() || null : this.comments.get(id);
-    return this.toView(updated, comment);
+    const hidden = input.hidden ?? this.hiddenTags.ids().has(id);
+    return this.toView(updated, comment, hidden);
   }
 
-  private toView(tag: PaperlessTag, comment: string | null): TagView {
+  private toView(tag: PaperlessTag, comment: string | null, hidden: boolean): TagView {
     return {
       id: tag.id,
       name: tag.name,
@@ -116,6 +121,7 @@ export class TagsController {
       documentCount: tag.document_count ?? null,
       comment,
       isTrigger: isTrigger(tag.name),
+      hidden,
     };
   }
 
