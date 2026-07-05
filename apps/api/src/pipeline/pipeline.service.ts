@@ -17,6 +17,7 @@ import { LlmService, type LlmUsage } from '../providers/llm.service';
 import { OcrService } from '../providers/ocr.service';
 import { buildLanguageModel, type ResolvedProvider } from '../providers/model.factory';
 import { SettingsService } from '../settings/settings.service';
+import { HiddenTagsService } from '../taxonomy/hidden-tags.service';
 import { TagCommentsService } from '../taxonomy/tag-comments.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { mergeTagIds } from '../taxonomy/tags';
@@ -24,7 +25,7 @@ import { ReviewService } from '../review/review.service';
 import { QueueService } from '../queue/queue.service';
 import { AuditService } from '../audit/audit.service';
 import { buildExtractionFilePart, visualMode } from './attachment';
-import { configFingerprint, contentHash, tagHintsDigest } from './fingerprint';
+import { configFingerprint, contentHash, hiddenTagsDigest, tagHintsDigest } from './fingerprint';
 import { DeferJobError } from './defer-job.error';
 import { PromptsService } from '../prompts/prompts.service';
 import { extractionVars, ocrVars } from '../prompts/render';
@@ -64,6 +65,7 @@ export class PipelineService {
     private readonly ocr: OcrService,
     private readonly taxonomy: TaxonomyService,
     private readonly tagComments: TagCommentsService,
+    private readonly hiddenTags: HiddenTagsService,
     private readonly review: ReviewService,
     private readonly queue: QueueService,
     private readonly audit: AuditService,
@@ -212,6 +214,11 @@ export class PipelineService {
     // (only while extraction runs): editing a hint and re-tagging a document
     // must re-run it, not skip-as-identical.
     const tagHints = provider ? this.tagComments.map() : new Map<number, string>();
+    // Tags the AI must never know about: kept out of the offered taxonomy AND
+    // the document's current tags below, and stripped from suggestions after
+    // extraction. Loaded once so the prompt and the reconciliation agree even
+    // if the set is edited mid-run.
+    const hiddenTagIds = provider ? this.hiddenTags.ids() : new Set<number>();
     // How much of the original the extraction model gets to see (full/trimmed/
     // none). The OCR page limit does double duty as the threshold — both gates
     // exist to keep oversized files away from vision models. Part of the
@@ -224,6 +231,7 @@ export class PipelineService {
       llm: provider ? { kind: provider.kind, model: provider.model } : null,
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
       hintsDigest: tagHintsDigest(tagHints),
+      hiddenDigest: hiddenTagsDigest(hiddenTagIds),
       visual,
     });
     const hash = contentHash(text, fingerprint);
@@ -273,6 +281,7 @@ export class PipelineService {
 
     const snap = await this.taxonomy.getSnapshot(client);
     const isTrigger = (id: number) => id === triggerTagId;
+    const isHidden = (id: number) => hiddenTagIds.has(id);
     const tagName = (id: number) => snap.tags.find((t) => t.id === id)?.name;
     const prompt = this.prompts.render(
       PROMPT_KEY.EXTRACTION,
@@ -280,7 +289,7 @@ export class PipelineService {
         content: text,
         language: settings.language,
         allTags: snap.tags
-          .filter((t) => !isTrigger(t.id))
+          .filter((t) => !isTrigger(t.id) && !isHidden(t.id))
           .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         // The prompt reflects the user's intent (the raw setting), not the
@@ -290,7 +299,7 @@ export class PipelineService {
         allowNewCorrespondents: settings.createNewCorrespondents,
         currentTitle: doc.title,
         currentTags: doc.tags
-          .filter((id) => !isTrigger(id))
+          .filter((id) => !isTrigger(id) && !isHidden(id))
           .map(tagName)
           .filter((n): n is string => !!n),
         currentCorrespondent:
@@ -342,10 +351,18 @@ export class PipelineService {
     const createTags = isAuto && settings.createNewTags;
     const createCorrespondents = isAuto && settings.createNewCorrespondents;
 
+    // The model never saw hidden tags, but it can still guess one's name from
+    // the document itself (e.g. "Inbox") — and reconciliation would match it to
+    // the real tag. Drop such suggestions outright, mirroring the
+    // correspondent blacklist.
+    const norm = (s: string) => s.trim().toLowerCase();
+    const hiddenNames = new Set(snap.tags.filter((t) => isHidden(t.id)).map((t) => norm(t.name)));
+    const suggestedTags = extraction.tags.filter((name) => !hiddenNames.has(norm(name)));
+
     // Resolve against the same snapshot the prompt was rendered from: a Tags-page
     // edit during the (long) LLM call must not shift the ground under this job —
     // e.g. a rename would otherwise re-create the old name as a duplicate tag.
-    const resolvedTags = await this.taxonomy.resolveTags(client, extraction.tags, {
+    const resolvedTags = await this.taxonomy.resolveTags(client, suggestedTags, {
       create: createTags,
       snapshot: snap,
     });

@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { CornerDownRight, Loader2, Pencil, Plus, Search, Tags } from 'lucide-react';
+import { CornerDownRight, Eye, EyeOff, Loader2, Pencil, Plus, Search, Tags } from 'lucide-react';
 import { TAG_COMMENT_MAX, type TagUpdate, type TagView } from '@paperless-starfruit/shared';
 import { useCreateTag, useTags, useUpdateTag } from '@/api/tags';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -72,6 +73,7 @@ function toTreeRows(tags: TagView[]): TagRow[] {
 
 export function TagsPage() {
   const tags = useTags();
+  const toggleHidden = useUpdateTag();
   const [query, setQuery] = useState('');
   const [form, setForm] = useState<FormState | null>(null);
   // Keep the last form around so the dialog body stays rendered through the
@@ -179,13 +181,23 @@ export function TagsPage() {
                         className="size-3 shrink-0 rounded-full border"
                         style={{ backgroundColor: tag.color ?? undefined }}
                       />
-                      <span className="font-medium">{tag.name}</span>
+                      <span className={cn('font-medium', tag.hidden && 'text-muted-foreground')}>
+                        {tag.name}
+                      </span>
                       {tag.isTrigger && (
                         <Badge
                           variant="secondary"
                           title="Starfruit picks up documents carrying this tag; it can't be edited here."
                         >
                           Trigger
+                        </Badge>
+                      )}
+                      {tag.hidden && (
+                        <Badge
+                          variant="outline"
+                          title="The AI never sees this tag: it isn't offered in prompts and extraction can never apply it."
+                        >
+                          Hidden from AI
                         </Badge>
                       )}
                     </div>
@@ -200,14 +212,36 @@ export function TagsPage() {
                   </TableCell>
                   <TableCell className="py-0 pr-2 text-right">
                     {!tag.isTrigger && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={`Edit ${tag.name}`}
-                        onClick={() => setForm({ mode: 'edit', tag })}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
+                      <div className="flex items-center justify-end">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={
+                            tag.hidden
+                              ? `Show ${tag.name} to the AI`
+                              : `Hide ${tag.name} from the AI`
+                          }
+                          title={
+                            tag.hidden
+                              ? 'Hidden from the AI — click to show it again'
+                              : 'Visible to the AI — click to hide it'
+                          }
+                          disabled={toggleHidden.isPending && toggleHidden.variables?.id === tag.id}
+                          onClick={() =>
+                            toggleHidden.mutate({ id: tag.id, input: { hidden: !tag.hidden } })
+                          }
+                        >
+                          {tag.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Edit ${tag.name}`}
+                          onClick={() => setForm({ mode: 'edit', tag })}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

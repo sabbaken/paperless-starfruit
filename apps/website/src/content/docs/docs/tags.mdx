@@ -44,3 +44,22 @@ A few practical notes:
   re-runs it with the new guidance (it won't be skipped as an identical run).
 - The **trigger tag** is shown with a badge and can't be edited here — Starfruit finds
   documents by its name.
+
+## Hiding a tag from the AI
+
+Some tags aren't for the AI at all — a workflow tag like _"Inbox"_ that you apply
+automatically to mark documents you haven't reviewed yet, for example. If the model sees it
+in the taxonomy, it will happily suggest it.
+
+The eye button on a tag's row toggles **Hidden from AI**. A hidden tag:
+
+- is never offered to the model — it disappears from `{{all_tags}}` and from the document's
+  current-tags context, so the AI doesn't know it exists;
+- can never be applied by extraction — even if the model guesses the name on its own, the
+  suggestion is dropped before it reaches the document;
+- stays untouched where it already is: processing merges tags, so a hidden tag already on a
+  document survives every run.
+
+Hiding is local to Starfruit (paperless is unaffected), and like hints it's part of the
+processing fingerprint — hide or show a tag and re-tag a document, and it re-runs with the
+new taxonomy instead of being skipped as identical.

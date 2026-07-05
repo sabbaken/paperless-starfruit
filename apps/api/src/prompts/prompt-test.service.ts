@@ -18,6 +18,7 @@ import { LlmService } from '../providers/llm.service';
 import { OcrService } from '../providers/ocr.service';
 import { buildLanguageModel, type ResolvedProvider } from '../providers/model.factory';
 import { SettingsService } from '../settings/settings.service';
+import { HiddenTagsService } from '../taxonomy/hidden-tags.service';
 import { TagCommentsService } from '../taxonomy/tag-comments.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { PromptsService } from './prompts.service';
@@ -39,6 +40,7 @@ export class PromptTestService {
     private readonly ocr: OcrService,
     private readonly taxonomy: TaxonomyService,
     private readonly tagComments: TagCommentsService,
+    private readonly hiddenTags: HiddenTagsService,
     private readonly prompts: PromptsService,
   ) {}
 
@@ -70,6 +72,10 @@ export class PromptTestService {
     const triggerIds = new Set(snap.tags.filter((t) => triggerNames.has(t.name)).map((t) => t.id));
     const tagName = (id: number) => snap.tags.find((t) => t.id === id)?.name;
     const tagHints = this.tagComments.map();
+    // Mirror the pipeline: hidden tags never reach the rendered prompt, so the
+    // preview shows exactly what a real run would send.
+    const hiddenIds = this.hiddenTags.ids();
+    const excluded = (id: number) => triggerIds.has(id) || hiddenIds.has(id);
 
     const rendered = renderTemplate(
       body,
@@ -77,14 +83,14 @@ export class PromptTestService {
         content: (doc.content ?? '').trim(),
         language: settings.language,
         allTags: snap.tags
-          .filter((t) => !triggerIds.has(t.id))
+          .filter((t) => !excluded(t.id))
           .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         allowNewTags: settings.createNewTags,
         allowNewCorrespondents: settings.createNewCorrespondents,
         currentTitle: doc.title,
         currentTags: doc.tags
-          .filter((id) => !triggerIds.has(id))
+          .filter((id) => !excluded(id))
           .map(tagName)
           .filter((n): n is string => !!n),
         currentCorrespondent:
