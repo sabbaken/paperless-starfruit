@@ -124,7 +124,7 @@ function PipelineStepper({
             <div className="py-3">
               <MaxPagesField
                 label="Skip OCR above"
-                hint="Larger files reuse paperless's own text"
+                hint="Larger files reuse paperless's own text; extraction sees only their first and last pages"
                 value={form.ocrMaxPages}
                 onChange={(v) => {
                   setForm((f) => ({ ...f, ocrMaxPages: v }));

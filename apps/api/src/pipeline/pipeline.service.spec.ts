@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { PDFDocument } from 'pdf-lib';
 import type { Settings } from '@paperless-starfruit/shared';
 import type { Job } from '../db/schema';
 import { DeferJobError } from './defer-job.error';
@@ -19,6 +20,13 @@ import { PipelineService } from './pipeline.service';
 
 const TRIGGER_TAG = 100;
 const JOB: Job = { id: 1, documentId: 5 } as Job;
+
+/** A real parseable PDF, for tests that exercise the attachment trimming. */
+async function realPdf(pages: number): Promise<Buffer> {
+  const doc = await PDFDocument.create();
+  for (let i = 0; i < pages; i++) doc.addPage([100, 100]);
+  return Buffer.from(await doc.save());
+}
 
 const DEFAULT_SETTINGS: Settings = {
   pollIntervalSec: 60,
@@ -342,15 +350,25 @@ describe('PipelineService.process — page limits', () => {
       doc: { tags: [9, TRIGGER_TAG], content: 'paperless tesseract text', page_count: 20 },
       settings: { ...OCR_ON, autoApply: true, ocrMaxPages: 10 },
     });
+    client.downloadOriginal.mockResolvedValue({
+      data: await realPdf(4),
+      contentType: 'application/pdf',
+    });
 
     const result = await pipeline.process(JOB);
 
     expect(result.decision).toBe('auto-applied');
-    // OCR is skipped — paperless's own text is reused for extraction.
+    // OCR is skipped — paperless's own text is reused for extraction. The
+    // original is still downloaded once, as the extraction call's attachment.
     expect(ocr.ocr).not.toHaveBeenCalled();
-    expect(client.downloadOriginal).not.toHaveBeenCalled();
+    expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
     const [args] = llm.generateStructured.mock.calls[0];
     expect(args.prompt).toContain('paperless tesseract text');
+    // The OCR limit doubles as the attach threshold: over it, the model sees
+    // only the original's first and last pages (plus the full text above).
+    expect(args.fileParts).toHaveLength(1);
+    const attached = await PDFDocument.load(args.fileParts[0].data as Buffer);
+    expect(attached.getPageCount()).toBe(2);
     // No OCR ran, so the metadata PATCH carries no content write-back.
     const [, patch] = client.patchDocument.mock.calls[0];
     expect(patch).not.toHaveProperty('content');
@@ -466,8 +484,9 @@ describe('PipelineService.process — OCR (M5)', () => {
     const result = await pipeline.process(JOB);
 
     // No model ⇒ don't fail; fall back to paperless's text and still extract.
+    // (The one download is the extraction attachment, not OCR.)
     expect(ocr.ocr).not.toHaveBeenCalled();
-    expect(client.downloadOriginal).not.toHaveBeenCalled();
+    expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
     expect(result.decision).toBe('review-queued');
     const [args] = llm.generateStructured.mock.calls[0];
     expect(args.prompt).toContain('paperless tesseract text');
@@ -494,10 +513,11 @@ describe('PipelineService.process — OCR (M5)', () => {
     expect(ocr.ocr).toHaveBeenCalledTimes(1);
     expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
 
-    // Retry (same job): the OCR result is reused from cache — no re-download, no re-bill.
+    // Retry (same job): the OCR result is reused from cache — no re-OCR, no
+    // re-bill. The original is re-fetched only for the extraction attachment.
     await pipeline.process(JOB);
     expect(ocr.ocr).toHaveBeenCalledTimes(1);
-    expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
+    expect(client.downloadOriginal).toHaveBeenCalledTimes(2);
 
     // After the job settles the cache is evicted, so an explicit reprocess OCRs afresh.
     await pipeline.process(JOB);

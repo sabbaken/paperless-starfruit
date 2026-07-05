@@ -28,6 +28,7 @@
     "ai": "^6.0.208",
     "better-sqlite3": "^11.7.0",
     "drizzle-orm": "^0.38.3",
+    "pdf-lib": "^1.17.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^3.25.76"

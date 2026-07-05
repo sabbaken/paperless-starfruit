@@ -4,6 +4,8 @@ import { PROVIDER_KIND, PROVIDER_KIND_META } from '@paperless-starfruit/shared';
 import { buildLanguageModel, type ResolvedProvider } from './model.factory';
 import { normaliseUsage } from './llm.service';
 import {
+  ANTHROPIC_CACHE_CONTROL,
+  PDF_FILE_PART_KINDS,
   isImageMediaType,
   normaliseMediaType,
   type OcrInput,
@@ -14,15 +16,6 @@ import { mistralOcr, MISTRAL_OCR_MODEL_PREFIX } from './mistral-ocr.client';
 
 /** A dense multi-page scan can transcribe to a lot of text. */
 const OCR_MAX_OUTPUT_TOKENS = 8_000;
-
-/** Provider kinds whose vision models accept a PDF `file` part directly (per the
- *  AI SDK). Mistral chat (e.g. Pixtral) and generic OpenAI-compatible endpoints
- *  only take images — a PDF must go to one of these, or to Mistral's OCR endpoint. */
-const PDF_FILE_PART_KINDS = new Set<string>([
-  PROVIDER_KIND.ANTHROPIC,
-  PROVIDER_KIND.OPENAI,
-  PROVIDER_KIND.GOOGLE,
-]);
 
 /**
  * Concrete view of `generateText` for the OCR call — we only pass a multimodal
@@ -76,18 +69,29 @@ export class OcrService {
       );
     }
     // An image goes in an `image` part; everything else (PDFs) as a `file` part.
+    // The cache marker turns the document block into an Anthropic prompt-cache
+    // entry that the extraction call re-reads at ~10% cost (see ocr.types).
     const docPart = isImage
-      ? { type: 'image', image: input.data, mediaType }
-      : { type: 'file', data: input.data, mediaType, filename: filenameFor(mediaType) };
+      ? { type: 'image', image: input.data, mediaType, providerOptions: ANTHROPIC_CACHE_CONTROL }
+      : {
+          type: 'file',
+          data: input.data,
+          mediaType,
+          filename: filenameFor(mediaType),
+          providerOptions: ANTHROPIC_CACHE_CONTROL,
+        };
 
     // The user-editable OCR prompt (M6) carries all the transcription instructions
     // and goes in the user message alongside the file — so what the user edits is
     // exactly what the model receives. Fall back to a built-in instruction when no
     // prompt is supplied (the pipeline always renders one; this guards tests).
+    // Document BEFORE instruction: the document block must be a stable prefix
+    // shared with the extraction request for the cache to hit (and it matches
+    // Anthropic's recommended document-first layout).
     const instruction = opts.prompt ?? fallbackOcrPrompt(opts.language);
     const result = await generateTextFn({
       model: buildLanguageModel(provider),
-      messages: [{ role: 'user', content: [{ type: 'text', text: instruction }, docPart] }],
+      messages: [{ role: 'user', content: [docPart, { type: 'text', text: instruction }] }],
       maxOutputTokens: OCR_MAX_OUTPUT_TOKENS,
       abortSignal: opts.signal,
     });
