@@ -1,26 +1,24 @@
 name: API · Publish image
 
 # Builds and pushes the @paperless-starfruit/api Docker image to GitHub Container
-# Registry (ghcr.io) on every push to master — but ONLY when files that affect
-# the image change. docker/Dockerfile builds the whole workspace from the repo
-# root and the API serves apps/web/dist (ServeStaticModule), so the paths filter
-# must include the web app and packages/shared too; a change to either alone
-# would otherwise produce a stale image.
+# Registry (ghcr.io) — but ONLY on a release, i.e. when the root package.json
+# version is bumped (the release process per the repo conventions). The image is
+# tagged with that version (plus `latest`), so a tag always names the exact
+# release baked into it. The guard is registry-side: if ghcr.io already has this
+# version tag the build is skipped, so dependency edits to package.json (or
+# re-runs) never publish a duplicate. Use the manual trigger's `force` input to
+# rebuild an existing version on purpose (e.g. after a base-image security fix).
 on:
   push:
     branches: [master]
     paths:
-      - 'apps/api/**'
-      - 'apps/web/**'
-      - 'packages/shared/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'package.json'
-      - 'turbo.json'
-      - 'tsconfig.base.json'
-      - 'docker/Dockerfile'
-      - '.github/workflows/api-publish.yml'
-  workflow_dispatch: # allow manual builds from the Actions tab
+      - 'package.json' # root only — a version bump lives here
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild and push even if this version tag already exists
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -31,7 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: docker/setup-buildx-action@v3
+      - name: Read the release version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -40,16 +40,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Skip when this version is already published
+        id: check
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # ghcr.io requires a lowercase repository path
+          image="ghcr.io/${GITHUB_REPOSITORY,,}/api"
+          if docker manifest inspect "$image:$VERSION" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$image:$VERSION already exists — not publishing (bump the root package.json version to release)."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.check.outputs.exists != 'true' || inputs.force
+
       - name: Derive image tags and labels
         id: meta
+        if: steps.check.outputs.exists != 'true' || inputs.force
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}/api
           tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=latest
-            type=sha,format=long
 
       - name: Build and push
+        if: steps.check.outputs.exists != 'true' || inputs.force
         uses: docker/build-push-action@v6
         with:
           context: . # repo root — Dockerfile needs the workspace + packages/shared
