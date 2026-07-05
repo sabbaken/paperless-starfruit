@@ -32,7 +32,8 @@ asks the AI models _you_ connect for metadata, and writes the result back.
 - **OCR is optional.** Re-read the original with a vision model, or reuse the free text
   paperless already extracted. Extraction runs on that text either way.
 - **Extraction is one call.** A single language-model request returns a title, tags,
-  correspondent and date, validated against a strict schema.
+  correspondent and date, validated against a strict schema. Vision-capable models also see
+  the original document — letterheads and signatures beat a garbled text layer.
 - **You decide how it applies.** _Auto-apply_ writes changes straight back to paperless;
   turn it off and every suggestion waits in the **review queue** for your approval.
 - **Single container, single admin.** A Node process and a SQLite file — no Postgres,
