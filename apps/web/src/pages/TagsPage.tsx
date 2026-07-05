@@ -164,7 +164,9 @@ export function TagsPage() {
             </TableHeader>
             <TableBody>
               {visible.map(({ tag, depth }) => (
-                <TableRow key={tag.id}>
+                // A hidden tag reads as "switched off": a faint wash over the whole
+                // row instead of a badge, so the tag column keeps its layout.
+                <TableRow key={tag.id} className={cn(tag.hidden && 'bg-muted/30')}>
                   <TableCell className="py-3 pl-4">
                     <div
                       className="flex items-center gap-2"
@@ -181,7 +183,14 @@ export function TagsPage() {
                         className="size-3 shrink-0 rounded-full border"
                         style={{ backgroundColor: tag.color ?? undefined }}
                       />
-                      <span className={cn('font-medium', tag.hidden && 'text-muted-foreground')}>
+                      <span
+                        className={cn(
+                          'font-medium',
+                          // Struck-through, not just dimmed — an accidentally hidden
+                          // tag should be impossible to overlook.
+                          tag.hidden && 'text-muted-foreground line-through',
+                        )}
+                      >
                         {tag.name}
                       </span>
                       {tag.isTrigger && (
@@ -190,14 +199,6 @@ export function TagsPage() {
                           title="Starfruit picks up documents carrying this tag; it can't be edited here."
                         >
                           Trigger
-                        </Badge>
-                      )}
-                      {tag.hidden && (
-                        <Badge
-                          variant="outline"
-                          title="The AI never sees this tag: it isn't offered in prompts and extraction can never apply it."
-                        >
-                          Hidden from AI
                         </Badge>
                       )}
                     </div>
