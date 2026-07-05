@@ -1,4 +1,4 @@
-import { PROVIDER_KIND, type ProviderKind } from './const';
+import { CLOUD_PROVIDER_KINDS, PROVIDER_KIND, type ProviderKind } from './const';
 
 /** A model offered to the user in the picker. */
 export interface CatalogModel {
@@ -48,4 +48,66 @@ export const MODEL_CATALOG: Record<ProviderKind, CatalogModel[]> = {
 /** First catalog model for a kind — used as the probe model for a key test. */
 export function defaultModelFor(kind: ProviderKind): string | null {
   return MODEL_CATALOG[kind][0]?.id ?? null;
+}
+
+/**
+ * Recommended out-of-the-box models per cloud provider: a cheap & fast tier for
+ * OCR, a mid tier for metadata extraction. Pinned to the latest version of each
+ * tier at the time of writing — bump as providers ship new generations. Ids match
+ * the live gateway catalog so the picker highlights them as selected (Anthropic's
+ * dot form is normalised to the native dash form at call time by the API).
+ * Local (openai-compatible) endpoints have no entry: their models are unknowable.
+ */
+export const DEFAULT_PIPELINE_MODELS: Partial<
+  Record<ProviderKind, { ocr: string; extraction: string }>
+> = {
+  [PROVIDER_KIND.ANTHROPIC]: { ocr: 'claude-haiku-4.5', extraction: 'claude-sonnet-5' },
+  [PROVIDER_KIND.OPENAI]: { ocr: 'gpt-5.4-mini', extraction: 'gpt-5.4' },
+  [PROVIDER_KIND.GOOGLE]: { ocr: 'gemini-3.1-flash-lite', extraction: 'gemini-3.5-flash' },
+  // Mistral OCR is a dedicated page-billed OCR product — the obvious OCR pick.
+  [PROVIDER_KIND.MISTRAL]: { ocr: 'mistral-ocr-latest', extraction: 'mistral-medium-3.5' },
+};
+
+/**
+ * Settings patch that fills the *unset* pipeline model slots with defaults from
+ * the highest-priority configured cloud provider (priority = CLOUD_PROVIDER_KINDS
+ * order, the same order the API-keys table lists them in). Slots the user has
+ * already configured are never touched; returns null when there is nothing to
+ * fill or no cloud provider is connected.
+ */
+export function defaultModelSelection(
+  providers: readonly { id: number; kind: ProviderKind }[],
+  current: {
+    ocrProviderId: number | null;
+    ocrModel: string | null;
+    llmProviderId: number | null;
+    llmModel: string | null;
+  },
+): {
+  ocrProviderId?: number;
+  ocrModel?: string;
+  llmProviderId?: number;
+  llmModel?: string;
+} | null {
+  const provider = CLOUD_PROVIDER_KINDS.flatMap((kind) =>
+    providers.filter((p) => p.kind === kind),
+  )[0];
+  const defaults = provider && DEFAULT_PIPELINE_MODELS[provider.kind];
+  if (!provider || !defaults) return null;
+
+  const patch: {
+    ocrProviderId?: number;
+    ocrModel?: string;
+    llmProviderId?: number;
+    llmModel?: string;
+  } = {};
+  if (current.ocrProviderId == null && current.ocrModel == null) {
+    patch.ocrProviderId = provider.id;
+    patch.ocrModel = defaults.ocr;
+  }
+  if (current.llmProviderId == null && current.llmModel == null) {
+    patch.llmProviderId = provider.id;
+    patch.llmModel = defaults.extraction;
+  }
+  return Object.keys(patch).length > 0 ? patch : null;
 }
