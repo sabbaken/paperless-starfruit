@@ -112,6 +112,7 @@ export class TagsController {
       id: tag.id,
       name: tag.name,
       color: tag.color ?? null,
+      parent: tag.parent ?? null,
       documentCount: tag.document_count ?? null,
       comment,
       isTrigger: isTrigger(tag.name),
