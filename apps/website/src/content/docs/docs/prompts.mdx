@@ -16,6 +16,10 @@ Each is shown as a complete prompt, so what you edit is exactly what the model r
 output _shape_ stays enforced by a strict schema regardless of the prompt text — you control
 the instructions, not the structure.
 
+Both calls also carry the **original document** alongside the prompt when the model is
+vision-capable: OCR transcribes it, and extraction uses it as visual evidence next to the
+recognised text (files over the OCR page cap attach only their first and last pages).
+
 ## Insertable variables
 
 Click a variable to drop it at your cursor. At run time each is replaced with the document's
