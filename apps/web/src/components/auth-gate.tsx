@@ -11,8 +11,6 @@ import {
 } from '@paperless-starfruit/shared';
 import { useAuthStatus, useLogin, useRegister } from '@/api/auth';
 import { getToken, subscribeToken } from '@/lib/auth-token';
-import { RootLayout } from '@/layouts/RootLayout';
-import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +32,7 @@ type AuthStatusQuery = ReturnType<typeof useAuthStatus>;
  * auth route rather than rendering forms inline:
  *   - no admin yet  → /register (first-run setup)
  *   - no/expired token → /login
- *   - authenticated → the app (`<Outlet/>` inside Root + Dashboard layouts)
+ *   - authenticated → the child route (the app chrome, or the bare onboarding flow)
  * Reacts instantly to a 401 clearing the token mid-session.
  */
 export function ProtectedLayout() {
@@ -48,13 +46,7 @@ export function ProtectedLayout() {
   if (!initialized) return <Navigate to="/register" replace />;
   if (!token || !authenticated) return <Navigate to="/login" replace />;
 
-  return (
-    <RootLayout>
-      <DashboardLayout>
-        <Outlet />
-      </DashboardLayout>
-    </RootLayout>
-  );
+  return <Outlet />;
 }
 
 type Mode = 'setup' | 'login';
@@ -69,7 +61,11 @@ export function AuthRoute({ mode }: { mode: Mode }) {
   if (fallback) return fallback;
 
   const { initialized, authenticated } = status.data!;
-  if (token && authenticated) return <Navigate to="/dashboard" replace />;
+  // A fresh registration lands in the guided setup; a returning login goes
+  // straight to the app.
+  if (token && authenticated) {
+    return <Navigate to={mode === 'setup' ? '/onboarding' : '/dashboard'} replace />;
+  }
   // Instance not claimed yet → setup is the only valid route.
   if (!initialized && mode === 'login') return <Navigate to="/register" replace />;
   // Already claimed → registration is closed.
