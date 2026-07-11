@@ -3,7 +3,11 @@ title: Installation
 description: Pull the official image and deploy with Docker Compose — next to an existing paperless-ngx, or as a full stack that includes one.
 ---
 
-import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside, Tabs, TabItem, Code } from '@astrojs/starlight/components';
+// Imported verbatim from the repo's compose files so these blocks can never
+// drift from what ships. Edit docker/*.yml and the docs update themselves.
+import composeStandalone from '@compose/docker-compose.yml?raw';
+import composeFull from '@compose/docker-compose.full.yml?raw';
 
 Paperless Starfruit ships as **one container** — a Node process plus a volume for its SQLite
 database. No Postgres, no Redis. Pre-built images are published to GitHub Container Registry,
@@ -21,36 +25,10 @@ Two compose files, depending on where you start:
 
 <Tabs>
   <TabItem label="Next to an existing paperless-ngx">
-    Save as `docker-compose.yml`:
+    Save as `docker-compose.yml` (this is [`docker/docker-compose.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.yml)
+    from the repo, shown verbatim):
 
-    ```yaml
-    services:
-      paperless-starfruit:
-        image: ghcr.io/sabbaken/paperless-starfruit/api:latest
-        restart: unless-stopped
-        labels:
-          - 'com.centurylinklabs.watchtower.enable=true' # auto-update (see watchtower below)
-        ports:
-          - '7827:3000'
-        volumes:
-          - paperless_starfruit_data:/data
-        environment:
-          DATABASE_PATH: /data/app.db
-          ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
-
-      # Auto-updates: pulls a newer image when one is published and recreates
-      # the labelled container. Only touches containers with the label above,
-      # so your existing paperless stack is left alone. Drop it to opt out.
-      watchtower:
-        image: nickfedor/watchtower:latest # maintained fork of containrrr/watchtower
-        restart: unless-stopped
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-        command: --label-enable --cleanup --interval 300 # check every 5 min
-
-    volumes:
-      paperless_starfruit_data:
-    ```
+    <Code code={composeStandalone} lang="yaml" title="docker-compose.yml" />
 
     Put the one required secret in a `.env` next to it and start:
 
@@ -81,66 +59,11 @@ Two compose files, depending on where you start:
 
   </TabItem>
   <TabItem label="From scratch (paperless-ngx included)">
-    A full stack — Redis + paperless-ngx + Paperless Starfruit. Save as `docker-compose.yml`:
+    A full stack — Redis + paperless-ngx + Paperless Starfruit. Save as `docker-compose.full.yml`
+    (this is [`docker/docker-compose.full.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.full.yml)
+    from the repo, shown verbatim):
 
-    ```yaml
-    services:
-      broker:
-        image: docker.io/library/redis:8
-        restart: unless-stopped
-        volumes:
-          - redisdata:/data
-
-      paperless:
-        image: ghcr.io/paperless-ngx/paperless-ngx:latest
-        restart: unless-stopped
-        depends_on:
-          - broker
-        ports:
-          - '8000:8000'
-        environment:
-          PAPERLESS_REDIS: redis://broker:6379
-          PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?set PAPERLESS_SECRET_KEY in .env}
-          # The URL paperless is reached at in the browser (needed for CSRF).
-          PAPERLESS_URL: ${PAPERLESS_URL:-http://localhost:8000}
-          PAPERLESS_TIME_ZONE: ${TZ:-UTC}
-        volumes:
-          - paperless_data:/usr/src/paperless/data
-          - paperless_media:/usr/src/paperless/media
-          - ./export:/usr/src/paperless/export
-          - ./consume:/usr/src/paperless/consume   # drop files here to ingest
-
-      paperless-starfruit:
-        image: ghcr.io/sabbaken/paperless-starfruit/api:latest
-        restart: unless-stopped
-        labels:
-          - 'com.centurylinklabs.watchtower.enable=true' # auto-update (see watchtower below)
-        depends_on:
-          - paperless
-        ports:
-          - '7827:3000'
-        volumes:
-          - starfruit_data:/data
-        environment:
-          DATABASE_PATH: /data/app.db
-          ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
-
-      # Auto-updates: pulls a newer image when one is published and recreates
-      # the labelled container. `--label-enable` means only Starfruit updates,
-      # not paperless or Redis. Drop this service to opt out.
-      watchtower:
-        image: nickfedor/watchtower:latest # maintained fork of containrrr/watchtower
-        restart: unless-stopped
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-        command: --label-enable --cleanup --interval 300 # check every 5 min
-
-    volumes:
-      redisdata:
-      paperless_data:
-      paperless_media:
-      starfruit_data:
-    ```
+    <Code code={composeFull} lang="yaml" title="docker-compose.full.yml" />
 
     Generate the two secrets, start the stack, and create the paperless superuser:
 
@@ -150,8 +73,8 @@ Two compose files, depending on where you start:
     PAPERLESS_SECRET_KEY=$(openssl rand -base64 32)
     EOF
 
-    docker compose up -d
-    docker compose run --rm paperless createsuperuser
+    docker compose -f docker-compose.full.yml up -d
+    docker compose -f docker-compose.full.yml run --rm paperless createsuperuser
     ```
 
     paperless-ngx comes up on `http://localhost:8000` — log in with the superuser you just
@@ -160,11 +83,6 @@ Two compose files, depending on where you start:
 
   </TabItem>
 </Tabs>
-
-Both files also live in the repo as
-[`docker/docker-compose.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.yml)
-and
-[`docker/docker-compose.full.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.full.yml).
 
 Then open **`http://localhost:7827`** — the container serves the API and the web UI on the
 same port. On first run the UI shows a _“create admin”_ card; once you set the admin username

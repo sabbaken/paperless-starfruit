@@ -1,7 +1,13 @@
 // @ts-check
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import sitemap from '@astrojs/sitemap';
+
+// Repo-root `docker/` dir, so the installation docs can import the real compose
+// files verbatim (`@compose/...?raw`) instead of keeping a hand-copied duplicate
+// in sync. Single source of truth: edit the compose file, the docs follow.
+const dockerDir = fileURLToPath(new URL('../../docker', import.meta.url));
 
 // The public origin. Override at build time on Vercel with `SITE_URL` so canonical
 // URLs and the sitemap point at the real deployment. Falls back to the project's
@@ -73,4 +79,15 @@ export default defineConfig({
     }),
     sitemap(),
   ],
+  vite: {
+    resolve: {
+      alias: { '@compose': dockerDir },
+    },
+    // The compose files live outside this package's dir; allow the dev server
+    // to read them (the repo root is normally auto-allowed via pnpm-workspace,
+    // this makes it explicit and build-cwd-independent).
+    server: {
+      fs: { allow: [fileURLToPath(new URL('../../', import.meta.url))] },
+    },
+  },
 });
