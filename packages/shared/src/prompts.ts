@@ -109,7 +109,7 @@ Return concise, human-meaningful values:
 - title: a short descriptive title — no file extensions, no reference numbers as the whole title.
 - tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits. {{tag_policy}}
 - correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches. {{correspondent_policy}}
-- date: the document's own date (when it was issued or written) as YYYY-MM-DD, or null if not evident. The original file name below often encodes this date (e.g. "2023-05-invoice.pdf") — prefer it as evidence, and fall back to it when the body doesn't state a date. Never use today's date as a fallback.
+- date: the document's own date (when it was issued or written). Give YYYY-MM-DD when the day is clear. When only a period is evident — a monthly invoice/statement, or a value like "May 2026" — give YYYY-MM (or YYYY when only the year is known); the first day of that period is filled in automatically, so don't invent a day. The original file name below often encodes this date (e.g. "2023-05-invoice.pdf") — prefer it as evidence, and fall back to it when the body doesn't state a date. Use null only when no date or period is evident at all. Never use today's date as a fallback.
 
 Write all output in {{language}} (use the document's own language when this is "auto").
 

@@ -5,6 +5,7 @@ import {
   PROMPT_KEY,
   PROVIDER_KIND,
   extractionSchema,
+  normalizeDocumentDate,
   type Extraction,
   type ResolvedTag,
   type ReviewSuggestions,
@@ -354,6 +355,12 @@ export class PipelineService {
       fileParts: filePart ? [filePart] : undefined,
       abortSignal: signal,
     });
+    // A document that shows only a month/year (monthly invoices, statements)
+    // yields a partial date; pad it to the first of that period so paperless's
+    // day-granular `created` is set instead of defaulting to today. This flows
+    // into the auto-apply PATCH, the review suggestion and the audit alike.
+    extraction.date = normalizeDocumentDate(extraction.date);
+
     // Total cost for the run = extraction tokens + any vision-LLM OCR tokens.
     // Page-billed OCR (Mistral) carries no token usage, so it adds nothing here.
     const cost = usage.totalTokens + (ocrUsage?.totalTokens ?? 0);

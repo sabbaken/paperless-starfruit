@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
-import type { Settings } from '@paperless-starfruit/shared';
+import { normalizeDocumentDate, type Settings } from '@paperless-starfruit/shared';
 import type { Job } from '../db/schema';
 import { DeferJobError } from './defer-job.error';
 import { configFingerprint, contentHash } from './fingerprint';
@@ -308,6 +308,43 @@ describe('PipelineService.process', () => {
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ decision: 'review-queued' }),
     );
+  });
+
+  it('pads a month-only document date to the first of that month before applying', async () => {
+    const { pipeline, client, llm } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG] },
+      settings: { autoApply: true },
+    });
+    // A monthly statement exposes only a period — the model returns YYYY-MM.
+    vi.mocked(llm.generateStructured).mockResolvedValueOnce({
+      object: { ...EXTRACTION, date: '2024-03' },
+      usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+    });
+
+    await pipeline.process(JOB);
+
+    const [, patch] = client.patchDocument.mock.calls[0];
+    expect(patch.created).toBe('2024-03-01');
+  });
+
+  it('leaves `created` untouched when the model gives no usable date', async () => {
+    const { pipeline, client, llm } = makePipeline({
+      doc: { tags: [9, TRIGGER_TAG] },
+      settings: { autoApply: true },
+    });
+    // null (no date evident) and an impossible date both mean "don't set created".
+    for (const date of [null, '2024-13']) {
+      client.patchDocument.mockClear();
+      vi.mocked(llm.generateStructured).mockResolvedValueOnce({
+        object: { ...EXTRACTION, date },
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+      });
+
+      await pipeline.process(JOB);
+
+      const [, patch] = client.patchDocument.mock.calls[0];
+      expect(patch).not.toHaveProperty('created');
+    }
   });
 
   it('skips an identical rerun in auto mode: drops the trigger tag, no LLM call', async () => {
@@ -818,5 +855,35 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
       /Extraction is disabled and OCR cannot run — select an OCR model/i,
     );
     await expect(promise).rejects.not.toBeInstanceOf(DeferJobError);
+  });
+});
+
+describe('normalizeDocumentDate', () => {
+  it('passes a full ISO date through unchanged', () => {
+    expect(normalizeDocumentDate('2024-03-02')).toBe('2024-03-02');
+  });
+
+  it('pads a year-month to the first of the month', () => {
+    expect(normalizeDocumentDate('2024-03')).toBe('2024-03-01');
+  });
+
+  it('pads a bare year to January 1st', () => {
+    expect(normalizeDocumentDate('2024')).toBe('2024-01-01');
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(normalizeDocumentDate('  2024-03  ')).toBe('2024-03-01');
+  });
+
+  it('returns null for a null/blank value', () => {
+    expect(normalizeDocumentDate(null)).toBeNull();
+    expect(normalizeDocumentDate(undefined)).toBeNull();
+    expect(normalizeDocumentDate('')).toBeNull();
+  });
+
+  it('returns null for an impossible or unparseable date', () => {
+    expect(normalizeDocumentDate('2024-13')).toBeNull(); // month out of range
+    expect(normalizeDocumentDate('2024-02-31')).toBeNull(); // day out of range
+    expect(normalizeDocumentDate('March 2024')).toBeNull(); // not ISO
   });
 });

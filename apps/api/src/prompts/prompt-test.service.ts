@@ -5,6 +5,7 @@ import {
   EXTRACTION_SCHEMA_NAME,
   PROMPT_KEY,
   extractionSchema,
+  normalizeDocumentDate,
   type Extraction,
   type PromptKey,
   type PromptTestInput,
@@ -108,6 +109,9 @@ export class PromptTestService {
       prompt: rendered,
     });
 
+    // Mirror the pipeline: a partial period date is padded to the first of the
+    // period, so the preview shows exactly what a real run would apply.
+    object.date = normalizeDocumentDate(object.date);
     return { rendered, tokens: usage.totalTokens, extraction: object };
   }
 
