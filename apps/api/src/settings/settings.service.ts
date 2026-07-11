@@ -66,6 +66,7 @@ export class SettingsService {
 
 function toSettings(row: SettingsRow): Settings {
   return {
+    paused: row.paused,
     pollIntervalSec: row.pollIntervalSec,
     autoApply: row.autoApply,
     createNewTags: row.createNewTags,

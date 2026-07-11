@@ -109,10 +109,11 @@ Return concise, human-meaningful values:
 - title: a short descriptive title — no file extensions, no reference numbers as the whole title.
 - tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits. {{tag_policy}}
 - correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches. {{correspondent_policy}}
-- date: the document's own date (when it was issued or written) as YYYY-MM-DD, or null if not evident. Never use today's date as a fallback.
+- date: the document's own date (when it was issued or written) as YYYY-MM-DD, or null if not evident. The original file name below often encodes this date (e.g. "2023-05-invoice.pdf") — prefer it as evidence, and fall back to it when the body doesn't state a date. Never use today's date as a fallback.
 
 Write all output in {{language}} (use the document's own language when this is "auto").
 
+Original file name: {{filename}}
 Existing tags: {{all_tags}}
 Existing correspondents: {{all_correspondents}}
 

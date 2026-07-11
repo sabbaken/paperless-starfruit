@@ -82,6 +82,8 @@ export const hiddenTag = sqliteTable('hidden_tag', {
 /** Single-row application settings (id = 1). */
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
+  /** Master switch: pauses the poller + worker so document processing halts. */
+  paused: integer('paused', { mode: 'boolean' }).notNull().default(false),
   pollIntervalSec: integer('poll_interval_sec').notNull().default(60),
   autoApply: integer('auto_apply', { mode: 'boolean' }).notNull().default(true),
   createNewTags: integer('create_new_tags', { mode: 'boolean' }).notNull().default(false),

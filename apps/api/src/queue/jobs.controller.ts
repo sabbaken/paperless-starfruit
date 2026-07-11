@@ -1,9 +1,20 @@
-import { Controller, HttpCode, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Controller, Delete, HttpCode, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { QueueService } from './queue.service';
 
 @Controller('jobs')
 export class JobsController {
   constructor(private readonly queue: QueueService) {}
+
+  /**
+   * Clear the queue — delete every not-yet-started (`queued`) job. A `running`
+   * job is left to finish and `done`/`failed` history is kept. Pair with the
+   * pause toggle: while processing is active the poller re-enqueues tagged docs.
+   */
+  @Delete('queued')
+  @HttpCode(204)
+  clearQueue(): void {
+    this.queue.clearQueued();
+  }
 
   /**
    * Retry a terminally-failed document. `:documentId` is the document id every

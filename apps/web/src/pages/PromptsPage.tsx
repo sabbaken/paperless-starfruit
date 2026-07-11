@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   FlaskConical,
   Loader2,
@@ -102,6 +102,8 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
   const update = useUpdatePrompt();
   const reset = useResetPrompt();
 
+  const validVars = useMemo(() => new Set(prompt.variables.map((v) => v.name)), [prompt.variables]);
+
   const canReset = prompt.customized || body !== prompt.default;
 
   // Edits save themselves (like the settings pages) — a Save button here is easy
@@ -194,13 +196,12 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
 
         <div className="space-y-2">
           <Label htmlFor="prompt-body">Prompt</Label>
-          <Textarea
+          <HighlightedTextarea
             id="prompt-body"
             ref={textareaRef}
             value={body}
-            spellCheck={false}
+            validVars={validVars}
             onChange={(e) => onEdit(e.target.value)}
-            className="min-h-72 font-mono text-xs leading-relaxed"
           />
           <p className="text-xs text-muted-foreground">Changes are saved automatically.</p>
         </div>
@@ -220,6 +221,110 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
     </div>
   );
 }
+
+// Splits a body into `{{var}}` tokens and everything between them. The capture
+// group keeps the delimiters in the result so they can be rendered as spans.
+const VAR_SPLIT = /(\{\{\s*[a-zA-Z_]+\s*\}\})/g;
+// Same token shape the server-side renderer recognises (see render.ts) — used to
+// pull the name back out so it can be checked against the known variables.
+const VAR_NAME = /^\{\{\s*([a-zA-Z_]+)\s*\}\}$/;
+
+// Typography that MUST be byte-identical between the textarea and the backdrop, or
+// the highlight boxes drift out of alignment with the caret. Only color/background
+// may differ between the two layers — anything affecting glyph metrics (font,
+// size, leading, padding, border width) has to match.
+const EDITOR_TYPOGRAPHY = 'min-h-72 rounded-md border px-3 py-2 font-mono text-xs leading-relaxed';
+
+function highlightBody(body: string, validVars: Set<string>) {
+  return body.split(VAR_SPLIT).map((seg, i) => {
+    const name = seg.match(VAR_NAME)?.[1];
+    if (name == null) return <span key={i}>{seg}</span>;
+    const known = validVars.has(name);
+    return (
+      <span
+        key={i}
+        className={cn(
+          'rounded-[3px]',
+          // No horizontal padding: it would widen the box and shift every
+          // following character away from the textarea's real caret position.
+          known
+            ? 'bg-brand/30 text-foreground'
+            : 'text-destructive underline decoration-dotted underline-offset-2',
+        )}
+      >
+        {seg}
+      </span>
+    );
+  });
+}
+
+/**
+ * A prompt editor that colours `{{variables}}` inline. A native textarea can't
+ * style its own text, so the visible text is rendered by a backdrop div and the
+ * textarea sits on top with transparent text (but a real caret). Known variables
+ * get a brand highlight; unknown ones (typos that won't be substituted) are
+ * flagged so they stand out rather than silently failing at run time.
+ */
+const HighlightedTextarea = forwardRef<
+  HTMLTextAreaElement,
+  {
+    id?: string;
+    value: string;
+    validVars: Set<string>;
+    onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  }
+>(({ id, value, validVars, onChange }, ref) => {
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLTextAreaElement>(null);
+  const setRefs = (el: HTMLTextAreaElement | null) => {
+    innerRef.current = el;
+    if (typeof ref === 'function') ref(el);
+    else if (ref) ref.current = el;
+  };
+
+  const syncScroll = () => {
+    const el = innerRef.current;
+    const bd = backdropRef.current;
+    if (el && bd) {
+      bd.scrollTop = el.scrollTop;
+      bd.scrollLeft = el.scrollLeft;
+    }
+  };
+  // Keep the backdrop aligned when the value changes programmatically (variable
+  // insert, reset) or the textarea auto-scrolls while typing at the bottom.
+  useEffect(syncScroll, [value]);
+
+  return (
+    <div className="relative">
+      <div
+        ref={backdropRef}
+        aria-hidden
+        className={cn(
+          EDITOR_TYPOGRAPHY,
+          'pointer-events-none absolute inset-0 w-full overflow-hidden border-transparent whitespace-pre-wrap text-foreground wrap-break-word dark:bg-input/30',
+        )}
+      >
+        {highlightBody(value, validVars)}
+        {/* A trailing newline the div would otherwise collapse — keeps the
+            backdrop's last line height matching the textarea's. */}
+        {'\n'}
+      </div>
+      <Textarea
+        id={id}
+        ref={setRefs}
+        value={value}
+        spellCheck={false}
+        onChange={onChange}
+        onScroll={syncScroll}
+        className={cn(
+          EDITOR_TYPOGRAPHY,
+          'relative bg-transparent text-transparent caret-foreground dark:bg-transparent',
+        )}
+      />
+    </div>
+  );
+});
+HighlightedTextarea.displayName = 'HighlightedTextarea';
 
 function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) {
   const docs = useTestDocuments(true);

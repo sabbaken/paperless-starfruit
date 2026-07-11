@@ -131,6 +131,9 @@ export type ConnectionTestResult = z.infer<typeof connectionTestResultSchema>;
 
 /** Single-row application settings. */
 export const settingsSchema = z.object({
+  /** Master switch: when true the poller stops enqueuing and the worker stops
+   * claiming, so document processing halts until resumed (an in-flight job finishes). */
+  paused: z.boolean().default(false),
   pollIntervalSec: z.number().int().min(15).default(60),
   autoApply: z.boolean().default(true),
   createNewTags: z.boolean().default(false),

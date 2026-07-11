@@ -10,3 +10,12 @@ export function useRetryJob() {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: statsKeys.all }),
   });
 }
+
+/** Clear the queue; refresh the dashboard so the emptied queue counts show. */
+export function useClearQueue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => jobsApi.clearQueue(),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: statsKeys.all }),
+  });
+}

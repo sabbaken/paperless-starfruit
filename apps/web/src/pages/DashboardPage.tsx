@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   CheckCircle2,
   ChevronRight,
@@ -6,14 +8,19 @@ import {
   ListTodo,
   Loader2,
   type LucideIcon,
+  Pause,
+  Play,
   RotateCw,
+  Trash2,
   TriangleAlert,
 } from 'lucide-react';
 import type { JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
-import { useRetryJob } from '@/api/jobs';
+import { useClearQueue, useRetryJob } from '@/api/jobs';
+import { useSettings, useUpdateSettings } from '@/api/settings';
 import { cn } from '@/lib/utils';
 import { DocumentLink } from '@/components/document-link';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/ui/page-section';
 import {
@@ -35,7 +42,31 @@ const STATUS_TONE: Record<JobSummary['status'], string> = {
 export function DashboardPage() {
   const navigate = useNavigate();
   const stats = useStats({ refetchInterval: 5000 });
+  const settings = useSettings();
+  const updateSettings = useUpdateSettings();
+  const clearQueue = useClearQueue();
   const retry = useRetryJob();
+  const [confirmingClear, setConfirmingClear] = useState(false);
+
+  const paused = settings.data?.paused ?? false;
+
+  const togglePaused = () => {
+    const next = !paused;
+    void toast.promise(updateSettings.mutateAsync({ paused: next }), {
+      loading: 'Saving…',
+      success: next ? 'Processing paused' : 'Processing resumed',
+      error: (e) => (e instanceof Error ? e.message : 'Save failed'),
+    });
+  };
+
+  const handleClearQueue = () => {
+    setConfirmingClear(false);
+    void toast.promise(clearQueue.mutateAsync(), {
+      loading: 'Clearing…',
+      success: 'Queue cleared',
+      error: (e) => (e instanceof Error ? e.message : 'Failed to clear queue'),
+    });
+  };
 
   if (stats.isLoading || !stats.data) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
@@ -51,9 +82,57 @@ export function DashboardPage() {
   return (
     <div className="space-y-8">
       <div className="rounded-xl border bg-card p-5 sm:p-6">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Document pipeline
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Document pipeline
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={paused ? 'default' : 'outline'}
+              className="h-7 px-2.5"
+              disabled={!settings.data || updateSettings.isPending}
+              onClick={togglePaused}
+            >
+              {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+              {paused ? 'Resume' : 'Pause'}
+            </Button>
+            {confirmingClear ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 px-2.5"
+                  disabled={clearQueue.isPending}
+                  onClick={handleClearQueue}
+                >
+                  Confirm clear
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2.5"
+                  onClick={() => setConfirmingClear(false)}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2.5"
+                disabled={queue.queued === 0 || clearQueue.isPending}
+                onClick={() => setConfirmingClear(true)}
+              >
+                <Trash2 className="size-3.5" />
+                Clear queue
+              </Button>
+            )}
+          </div>
+        </div>
 
         <div className="mt-4 grid grid-cols-2 gap-x-2 gap-y-5 sm:flex sm:items-stretch">
           <Stage

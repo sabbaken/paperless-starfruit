@@ -7,6 +7,7 @@ describe('SettingsService', () => {
   it('creates the row with column defaults on first read', () => {
     const svc = new SettingsService(createTestDb());
     expect(svc.get()).toEqual({
+      paused: false,
       pollIntervalSec: 60,
       autoApply: true,
       createNewTags: false,

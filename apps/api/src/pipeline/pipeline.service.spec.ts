@@ -30,6 +30,7 @@ async function realPdf(pages: number): Promise<Buffer> {
 }
 
 const DEFAULT_SETTINGS: Settings = {
+  paused: false,
   pollIntervalSec: 60,
   autoApply: false,
   createNewTags: false,

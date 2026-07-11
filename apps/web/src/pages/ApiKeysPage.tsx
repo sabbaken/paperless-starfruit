@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  KeyRound,
   Loader2,
   Pencil,
   Plus,
@@ -28,6 +27,7 @@ import {
   useUpdateProvider,
 } from '@/api/providers';
 import { cn } from '@/lib/utils';
+import { ProviderLogo } from '@/components/provider-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -88,7 +88,7 @@ export function ApiKeysPage() {
           const meta = PROVIDER_KIND_META[kind];
           return (
             <li key={kind} className="flex items-center gap-3 py-3">
-              <KeyRound className="size-4 shrink-0 text-muted-foreground" />
+              <ProviderLogo kind={kind} className="shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{meta.label}</span>

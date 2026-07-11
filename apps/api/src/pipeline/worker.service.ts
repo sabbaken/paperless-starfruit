@@ -5,6 +5,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 import { QueueService } from '../queue/queue.service';
+import { SettingsService } from '../settings/settings.service';
 import type { Job } from '../db/schema';
 import { PipelineService } from './pipeline.service';
 import { DeferJobError } from './defer-job.error';
@@ -29,6 +30,7 @@ export class WorkerService implements OnApplicationBootstrap, OnModuleDestroy {
   constructor(
     private readonly queue: QueueService,
     private readonly pipeline: PipelineService,
+    private readonly settings: SettingsService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -56,6 +58,12 @@ export class WorkerService implements OnApplicationBootstrap, OnModuleDestroy {
     while (!this.stopped) {
       let job: Job | null = null;
       try {
+        // Paused: don't drain the backlog either — idle until unpaused. Any job
+        // already claimed above finishes; only new claims are held back.
+        if (this.settings.get().paused) {
+          await this.idle();
+          continue;
+        }
         job = this.queue.claimNext();
       } catch (err) {
         this.logger.error(`failed to claim a job: ${message(err)}`);

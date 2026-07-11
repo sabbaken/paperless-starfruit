@@ -128,6 +128,22 @@ export class QueueService {
     return this.enqueue(documentId);
   }
 
+  /**
+   * Clear the queue — delete every not-yet-started (`queued`) job (the dashboard
+   * "Clear queue" action). A `running` job is left to finish, and `done`/`failed`
+   * history is untouched. Returns the number of jobs removed. Note: while
+   * processing is active the poller re-enqueues tagged documents on its next
+   * tick, so this is most useful while paused.
+   */
+  clearQueued(): number {
+    const removed = this.db
+      .delete(job)
+      .where(eq(job.status, JOB_STATUS.QUEUED))
+      .returning({ id: job.id })
+      .all();
+    return removed.length;
+  }
+
   /** Has this document already failed terminally (attempts exhausted)? */
   hasTerminalFailure(documentId: number): boolean {
     const rows = this.db

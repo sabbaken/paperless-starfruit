@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `paused` integer DEFAULT false NOT NULL;

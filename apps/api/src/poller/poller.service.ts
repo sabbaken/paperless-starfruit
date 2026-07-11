@@ -82,8 +82,10 @@ export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
   private async tick(): Promise<void> {
     let intervalSec = MIN_INTERVAL_SEC;
     try {
-      intervalSec = this.settings.get().pollIntervalSec;
-      await this.pollOnce();
+      const s = this.settings.get();
+      intervalSec = s.pollIntervalSec;
+      // Paused: skip enqueuing but keep rescheduling so polling resumes on unpause.
+      if (!s.paused) await this.pollOnce();
     } catch (err) {
       this.logger.warn(`poll failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
