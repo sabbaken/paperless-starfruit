@@ -102,6 +102,10 @@ username/password, registration closes and only login works (there is no default
 
 - **Persistence:** the SQLite database is at `/data/app.db` on a named volume. Back that up
   to keep your config, prompts, queue and audit history.
+- **Automatic updates:** both compose files ship a Watchtower service that auto-updates the
+  Starfruit container when a new image is released (only the labelled container — nothing else
+  on the host). Remove the `watchtower` service, or pin a version tag instead of `:latest`, to
+  upgrade deliberately.
 - **Behind a reverse proxy:** put your TLS terminator (Caddy/Traefik/nginx) in front of the
   published port (`7827` by default). Auth is a bearer token, not a cookie, so no extra
   CORS/cookie config is needed; set `CORS_ORIGIN` only if you want to restrict it.

@@ -28,6 +28,8 @@ Two compose files, depending on where you start:
       paperless-starfruit:
         image: ghcr.io/sabbaken/paperless-starfruit/api:latest
         restart: unless-stopped
+        labels:
+          - 'com.centurylinklabs.watchtower.enable=true' # auto-update (see watchtower below)
         ports:
           - '7827:3000'
         volumes:
@@ -35,6 +37,16 @@ Two compose files, depending on where you start:
         environment:
           DATABASE_PATH: /data/app.db
           ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
+
+      # Auto-updates: pulls a newer image when one is published and recreates
+      # the labelled container. Only touches containers with the label above,
+      # so your existing paperless stack is left alone. Drop it to opt out.
+      watchtower:
+        image: nickfedor/watchtower:latest # maintained fork of containrrr/watchtower
+        restart: unless-stopped
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        command: --label-enable --cleanup --interval 300 # check every 5 min
 
     volumes:
       paperless_starfruit_data:
@@ -101,6 +113,8 @@ Two compose files, depending on where you start:
       paperless-starfruit:
         image: ghcr.io/sabbaken/paperless-starfruit/api:latest
         restart: unless-stopped
+        labels:
+          - 'com.centurylinklabs.watchtower.enable=true' # auto-update (see watchtower below)
         depends_on:
           - paperless
         ports:
@@ -110,6 +124,16 @@ Two compose files, depending on where you start:
         environment:
           DATABASE_PATH: /data/app.db
           ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env}
+
+      # Auto-updates: pulls a newer image when one is published and recreates
+      # the labelled container. `--label-enable` means only Starfruit updates,
+      # not paperless or Redis. Drop this service to opt out.
+      watchtower:
+        image: nickfedor/watchtower:latest # maintained fork of containrrr/watchtower
+        restart: unless-stopped
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        command: --label-enable --cleanup --interval 300 # check every 5 min
 
     volumes:
       redisdata:
@@ -179,6 +203,12 @@ These are the _only_ runtime variables. Everything else lives in the UI.
   published port (`7827` by default).
 - **Health.** `GET /api/health` backs the image's `HEALTHCHECK`. Migrations apply
   automatically on boot; there is no separate migrate step.
+- **Automatic updates.** The compose files include a [Watchtower](https://github.com/nicholas-fedor/watchtower)
+  service that checks the registry and, when a newer image is published, pulls it and recreates
+  the Starfruit container in place. It only updates containers carrying the
+  `com.centurylinklabs.watchtower.enable=true` label — so nothing else on the host is touched.
+  Remove that label (or the `watchtower` service) to stay on a fixed image, and pin a version tag
+  like `:1.1.0` instead of `:latest` if you'd rather upgrade deliberately.
 - **Building from source** (optional). Clone the repo and swap `image:` for the commented
   `build:` block in `docker/docker-compose.yml`.
 
