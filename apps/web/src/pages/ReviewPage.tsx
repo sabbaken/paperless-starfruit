@@ -30,7 +30,7 @@ export function ReviewPage() {
   const settings = useSettings();
   const [openId, setOpenId] = useState<number | null>(null);
 
-  // Wait for settings too — the empty-state copy depends on extractionEnabled,
+  // Wait for settings too. The empty-state copy depends on extractionEnabled,
   // and rendering before it resolves would flash the wrong explanation.
   if (items.isLoading || settings.isLoading) {
     return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
@@ -88,7 +88,7 @@ function ReviewList({
                 </>
               ) : (
                 <>
-                  Extraction is turned off — documents are only OCR&apos;d, so no suggestions are
+                  Extraction is turned off. Documents are only OCR&apos;d, so no suggestions are
                   queued. Re-enable it in Settings → Processing.
                 </>
               )}
@@ -115,7 +115,7 @@ function ReviewList({
               onClick={() =>
                 bulk.mutate([...selected], {
                   // Keep only the items that failed selected, so the user can
-                  // see them, retry, or open one — a full success clears all.
+                  // see them, retry, or open one. A full success clears all.
                   onSuccess: (results) =>
                     setSelected(new Set(results.filter((r) => !r.ok).map((r) => r.id))),
                 })

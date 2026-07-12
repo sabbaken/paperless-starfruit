@@ -20,7 +20,6 @@ import { useClearQueue, useRetryJob } from '@/api/jobs';
 import { useSettings, useUpdateSettings } from '@/api/settings';
 import { cn } from '@/lib/utils';
 import { DocumentLink } from '@/components/document-link';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/ui/page-section';
 import {

@@ -1,16 +1,16 @@
 ---
-// How it works — the same vertical stepper the app's Processing settings use:
-// icon circles on a rail, one compact card per stage, top to bottom = the
-// document's journey. Kept to one short line per step on purpose.
+// The "How it works" section reuses the vertical stepper from the app's
+// Processing settings: icon circles on a rail, one compact card per stage,
+// top to bottom = the document's journey. Kept to one short line per step on purpose.
 const steps = [
   {
     t: 'Tag a document',
-    d: 'Add <code>psf-process</code> in paperless — that one tag is the whole trigger.',
+    d: 'Add <code>psf-process</code> in paperless. That one tag is the whole trigger.',
     icon: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/>',
   },
   {
     t: 'OCR',
-    d: 'A vision model re-reads the scan — or skip it and reuse paperless&rsquo;s own text.',
+    d: 'A vision model re-reads the scan, or skip it and reuse paperless&rsquo;s own text.',
     icon: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/>',
     note: 'optional',
   },
@@ -20,7 +20,7 @@ const steps = [
     icon: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   },
   {
-    t: 'Apply — or review',
+    t: 'Apply or review',
     d: 'Written back to paperless automatically, or queued for your approval.',
     icon: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
   },
@@ -65,7 +65,7 @@ const steps = [
     </ol>
 
     <p class="flow__foot">
-      Re-tag to run a document again — unchanged content is skipped, so re-runs are free.
+      Re-tag to run a document again. Unchanged content is skipped, so re-runs are free.
     </p>
   </div>
 </section>

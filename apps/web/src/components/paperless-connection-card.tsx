@@ -43,7 +43,7 @@ interface StatusView {
 export interface PaperlessConnectionCardProps {
   className?: string;
   /**
-   * Called after the connection is successfully saved — e.g. so an onboarding
+   * Called after the connection is successfully saved, e.g. so an onboarding
    * flow can advance to the next step. The card itself stays mounted.
    */
   onConnected?: () => void;
@@ -70,13 +70,13 @@ export interface PaperlessConnectionFormProps {
   className?: string;
   /** Called after the connection is successfully saved. */
   onConnected?: () => void;
-  /** Offer disconnect when connected — wanted in settings, not in onboarding. */
+  /** Offer disconnect when connected. Wanted in settings, not in onboarding. */
   showDisconnect?: boolean;
 }
 
 /**
  * Self-contained paperless-ngx connection form: URL + token, a read-only test,
- * and save — with live status feedback. Owns its own data (react-query), so it
+ * and save, with live status feedback. Owns its own data (react-query), so it
  * drops straight into the settings card or the onboarding flow unchanged.
  */
 export function PaperlessConnectionForm({

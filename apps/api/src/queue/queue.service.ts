@@ -7,7 +7,7 @@ import { job, type Job } from '../db/schema';
 
 /**
  * Minimal SQLite-table queue. `better-sqlite3` is synchronous and single-process,
- * so every operation here runs in one uninterruptible tick — claims are race-free
+ * so every operation here runs in one uninterruptible tick: claims are race-free
  * without any broker, reaper, or visibility timeout.
  */
 @Injectable()
@@ -83,7 +83,7 @@ export class QueueService {
 
   /**
    * Drop a job so it isn't retried this round but isn't counted as a failure
-   * either — used when the document simply isn't ready yet (e.g. paperless
+   * either; used when the document simply isn't ready yet (e.g. paperless
    * hasn't OCR'd it). Deleting it frees the active-per-doc slot so the next poll
    * re-enqueues a fresh job, "waiting for the next poll" without consuming an
    * attempt. At ~7 docs/day the lost row carries no history worth keeping.
@@ -94,7 +94,7 @@ export class QueueService {
 
   /**
    * Reset jobs left `running` by a crash (the process died before complete/fail
-   * ran). Re-queue while attempts remain, else fail — the same cap as `fail()`,
+   * ran). Re-queue while attempts remain, else fail: the same cap as `fail()`,
    * and attempts was already incremented at claim time, so a poison job can't
    * loop. Call once at boot, before the first claim. Returns the rows recovered.
    */
@@ -114,8 +114,8 @@ export class QueueService {
 
   /**
    * Manually un-stick a terminally-failed document (the dashboard "Retry"
-   * action). Deletes the document's `failed` rows — the rows `hasTerminalFailure`
-   * keys on, so the poller stops skipping it — then enqueues a fresh job. It is
+   * action). Deletes the document's `failed` rows (the rows `hasTerminalFailure`
+   * keys on, so the poller stops skipping it), then enqueues a fresh job. It is
    * per-DOCUMENT, not per-row: leaving any failed row for the doc would keep the
    * block in place. The trigger tag is still on the doc in paperless, so the
    * fresh job reprocesses it. Returns true if a new job was enqueued.
@@ -129,7 +129,7 @@ export class QueueService {
   }
 
   /**
-   * Clear the queue — delete every not-yet-started (`queued`) job (the dashboard
+   * Clear the queue: delete every not-yet-started (`queued`) job (the dashboard
    * "Clear queue" action). A `running` job is left to finish, and `done`/`failed`
    * history is untouched. Returns the number of jobs removed. Note: while
    * processing is active the poller re-enqueues tagged documents on its next

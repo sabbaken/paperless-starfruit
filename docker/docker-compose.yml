@@ -1,4 +1,4 @@
-# Standalone compose for Paperless Starfruit — a single container, no external
+# Standalone compose for Paperless Starfruit: a single container, no external
 # services. Uses the pre-built image from ghcr.io, so this file works on its
 # own: no repo checkout or local build needed. The SQLite DB lives on the named
 # volume; the paperless connection and provider keys are configured from the
@@ -23,7 +23,7 @@ services:
       # Remove this label to keep the container on its current image.
       - 'com.centurylinklabs.watchtower.enable=true'
     ports:
-      # Host port 7827 ("star" on a phone keypad) — deliberately uncommon so
+      # Host port 7827 ("star" on a phone keypad), deliberately uncommon so
       # this file works as-is, unlike 3000 which is usually taken. The app
       # inside the container still listens on 3000.
       - '7827:3000'
@@ -31,7 +31,7 @@ services:
       - paperless_starfruit_data:/data
     environment:
       DATABASE_PATH: /data/app.db
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set — see the comment above}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set, see the comment above}
       # Optional: lock CORS to specific origins (comma-separated). Unset reflects
       # the request origin, which is fine since auth is a bearer token, not a cookie.
       # CORS_ORIGIN: https://paperless-ai.home.lan
@@ -40,7 +40,7 @@ services:
   # Auto-updates (optional). Watchtower watches the registry and, when a newer
   # image is published, pulls it and recreates the container with the same
   # config. `--label-enable` means it only touches containers carrying the
-  # watchtower label above — so nothing else on the host (e.g. your existing
+  # watchtower label above, so nothing else on the host (e.g. your existing
   # paperless-ngx stack) is affected. Delete this whole service to opt out.
   watchtower:
     image: nickfedor/watchtower:latest # maintained fork (containrrr/watchtower is archived)
@@ -65,7 +65,7 @@ services:
 #       name: paperless_default          # <- your paperless stack's network
 #
 # Then in the web UI set the paperless URL to the in-network service name, e.g.
-# http://webserver:8000 — NOT http://localhost:8000 (localhost is this container).
+# http://webserver:8000, NOT http://localhost:8000 (localhost is this container).
 
 volumes:
   paperless_starfruit_data:

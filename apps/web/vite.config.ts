@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 // Resolve the shared package to its TypeScript source. The package emits
 // CommonJS for the NestJS API, but Vite/rollup can't statically trace named
-// exports through CJS `export *` chains — bundling the ESM source sidesteps
+// exports through CJS `export *` chains; bundling the ESM source sidesteps
 // that and means web dev needs no prebuild of `shared`.
 const sharedSrc = fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url));
 const srcDir = fileURLToPath(new URL('./src', import.meta.url));

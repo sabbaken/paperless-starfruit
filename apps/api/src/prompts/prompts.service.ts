@@ -32,7 +32,7 @@ export class PromptsService {
     return this.toConfig(key);
   }
 
-  /** The effective body for a run — the override if set, else the default. */
+  /** The effective body for a run: the override if set, else the default. */
   getBody(key: PromptKey): string {
     return this.override(key)?.body ?? DEFAULT_PROMPTS[key];
   }

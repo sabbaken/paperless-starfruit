@@ -41,7 +41,7 @@ const MISTRAL_OCR: ResolvedProvider = {
 };
 const OPTS = { language: 'auto' };
 
-describe('OcrService — vision-LLM OCR', () => {
+describe('OcrService: vision-LLM OCR', () => {
   beforeEach(() => generateTextMock.mockReset());
 
   it('sends a PDF as a file part and returns text + normalised usage', async () => {
@@ -147,7 +147,7 @@ describe('OcrService — vision-LLM OCR', () => {
   });
 });
 
-describe('OcrService — Mistral OCR endpoint', () => {
+describe('OcrService: Mistral OCR endpoint', () => {
   beforeEach(() => generateTextMock.mockReset());
   afterEach(() => vi.unstubAllGlobals());
 
@@ -167,7 +167,7 @@ describe('OcrService — Mistral OCR endpoint', () => {
       OPTS,
     );
 
-    // Dedicated endpoint — the vision-LLM path is not used.
+    // Dedicated endpoint: the vision-LLM path is not used.
     expect(generateTextMock).not.toHaveBeenCalled();
     expect(out.text).toBe('page one\n\npage two');
     expect(out.pages).toBe(2);

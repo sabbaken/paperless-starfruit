@@ -7,7 +7,7 @@ import { IS_PUBLIC } from './public.decorator';
 /**
  * Global guard: every route requires a valid bearer token unless marked
  * `@Public()` (health, the auth bootstrap routes). Registered as an APP_GUARD,
- * so the whole API — including credential reads/writes — is locked by default.
+ * so the whole API (including credential reads/writes) is locked by default.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {

@@ -106,10 +106,10 @@ export class ConnectionService {
 function describeError(err: unknown): string {
   if (err instanceof PaperlessError) {
     if (err.status === 401 || err.status === 403) {
-      return 'Authentication failed — check the API token.';
+      return 'Authentication failed. Check the API token.';
     }
     if (err.status === 406) {
-      return 'This paperless does not support the chosen API version — leave it blank to auto-detect.';
+      return 'This paperless does not support the chosen API version. Leave it blank to auto-detect.';
     }
     return err.message;
   }

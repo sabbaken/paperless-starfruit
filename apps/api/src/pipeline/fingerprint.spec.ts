@@ -44,7 +44,7 @@ describe('configFingerprint', () => {
     expect(configFingerprint({ llm: null, ocr })).toContain('llm:off');
   });
 
-  it('pins the exact byte format — a silent format change would mass-reprocess every install', () => {
+  it('pins the exact byte format: a silent format change would mass-reprocess every install', () => {
     expect(configFingerprint({ llm, ocr: null })).toBe('v2|llm:anthropic/claude-haiku-4-5|ocr:off');
     expect(configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } })).toBe(
       'v2|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest',

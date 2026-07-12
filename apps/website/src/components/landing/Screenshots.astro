@@ -1,5 +1,5 @@
 ---
-// Screenshots — one big horizontally-scrollable carousel. Slides are plain
+// Screenshots: one big horizontally-scrollable carousel. Slides are plain
 // bordered images (no window chrome); scroll-snap does the work, the arrow
 // buttons are a JS-only nicety on top. Drop images into `public/screenshots/`.
 const shots = [
@@ -76,7 +76,7 @@ const shots = [
   <div
     class="shots__track"
     role="region"
-    aria-label="App screenshots — scrolls horizontally"
+    aria-label="App screenshots, scrolls horizontally"
     tabindex="0"
   >
     {
@@ -84,12 +84,12 @@ const shots = [
         <figure class="slide">
           <img
             src={s.src}
-            alt={`${s.label} — Paperless Starfruit`}
+            alt={`${s.label} in Paperless Starfruit`}
             loading="lazy"
             draggable="false"
           />
           <figcaption class="slide__cap">
-            <strong>{s.label}</strong> — {s.caption}
+            <strong>{s.label}</strong>: {s.caption}
           </figcaption>
         </figure>
       ))
@@ -99,7 +99,7 @@ const shots = [
 
 <script>
   // Arrow buttons: scroll the track one slide at a time. Scroll/drag/keyboard
-  // work without this — the buttons are only an extra affordance.
+  // work without this; the buttons are only an extra affordance.
   document.querySelectorAll<HTMLElement>('.shots').forEach((root) => {
     const track = root.querySelector<HTMLElement>('.shots__track');
     if (!track) return;

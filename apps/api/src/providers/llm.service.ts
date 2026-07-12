@@ -52,7 +52,7 @@ export interface GenerateStructuredArgs<T> {
   prompt: string;
   /**
    * Multimodal parts (the original document as a `file`/`image` part) placed
-   * BEFORE the prompt text in a single user message — the model reads the
+   * BEFORE the prompt text in a single user message: the model reads the
    * visual document as primary evidence and the prompt/OCR text as an aid.
    * Leading position also keeps the document block a stable prefix, so an
    * Anthropic extraction call re-reads the block the OCR call just cached.
@@ -93,8 +93,8 @@ export class LlmService {
     } catch (err) {
       if (!NoObjectGeneratedError.isInstance(err)) throw err;
       // The SDK wraps the real cause: a JSONParseError (bad JSON) or a
-      // TypeValidationError (valid JSON, wrong shape). Feed the right hint back
-      // — a "no markdown" nudge is useless when the JSON parsed but mis-matched.
+      // TypeValidationError (valid JSON, wrong shape). Feed the right hint back;
+      // a "no markdown" nudge is useless when the JSON parsed but mis-matched.
       const hint = retryHint(err.cause);
       this.logger.warn(hint.log);
       return this.run({
@@ -212,13 +212,13 @@ function retryHint(cause: unknown): { log: string; instruction: string } {
       log: 'structured output was not valid JSON; retrying with a stricter instruction',
       instruction:
         'Your previous response was not valid JSON. Respond with ONLY a single JSON object ' +
-        'that matches the schema — no prose, no markdown, no code fences.',
+        'that matches the schema: no prose, no markdown, no code fences.',
     };
   }
   return {
     log: 'structured output unparseable; retrying with a stricter instruction',
     instruction:
       'Your previous response could not be parsed. Respond with ONLY a single JSON object ' +
-      'that matches the schema — no prose, no markdown, no code fences.',
+      'that matches the schema: no prose, no markdown, no code fences.',
   };
 }

@@ -24,7 +24,7 @@ const STEPS: { label?: string; title: string; description: ReactNode }[] = [
   },
   {
     title: 'API keys',
-    description: 'Connect at least one AI provider — a cloud key or a local endpoint.',
+    description: 'Connect at least one AI provider: a cloud key or a local endpoint.',
   },
   {
     title: 'Processing',
@@ -35,7 +35,7 @@ const STEPS: { label?: string; title: string; description: ReactNode }[] = [
     title: 'How to start processing?',
     description: (
       <>
-        Tag a document with <TriggerTag /> in paperless — Starfruit picks it up on the next poll.
+        Tag a document with <TriggerTag /> in paperless. Starfruit picks it up on the next poll.
       </>
     ),
   },
@@ -107,7 +107,7 @@ export function OnboardingPage() {
       </main>
 
       {/* Outside <main>, so the buttons hug the viewport bottom no matter how
-          tall the step content is — no vertical jumping between steps. Absent
+          tall the step content is. No vertical jumping between steps. Absent
           on the connection step: its "Save & continue" is the next button (and
           Back has nowhere to go); the navbar tabs still allow skipping. */}
       {step > 0 && (
@@ -126,7 +126,7 @@ export function OnboardingPage() {
   );
 }
 
-/** Model choice only — the two pickers, nothing else. Every other processing
+/** Model choice only: the two pickers, nothing else. Every other processing
  *  knob keeps its default and lives in Settings → Processing. "Add a key" in
  *  the picker points back at the API-keys step instead of the settings route. */
 function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
@@ -139,7 +139,7 @@ function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
   // Fill unset model slots with the recommended default (the newest version of
   // each default family, resolved from the same live model list the picker
   // shows), so "Next" works without opening a picker. Only untouched (null)
-  // slots are written — a user's earlier choice is never overwritten. Silent on
+  // slots are written. A user's earlier choice is never overwritten. Silent on
   // purpose: the values appearing in the rows is the feedback. The ref guards
   // the window where the PATCH is in flight but settings haven't refetched yet.
   const defaultsApplied = useRef(false);

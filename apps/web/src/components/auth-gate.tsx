@@ -27,8 +27,8 @@ import { Label } from '@/components/ui/label';
 type AuthStatusQuery = ReturnType<typeof useAuthStatus>;
 
 /**
- * Auth layout route. Wraps the whole app so nothing — including the paperless
- * connection check — is reachable unauthenticated. It redirects to the right
+ * Auth layout route. Wraps the whole app so nothing, including the paperless
+ * connection check, is reachable unauthenticated. It redirects to the right
  * auth route rather than rendering forms inline:
  *   - no admin yet  → /register (first-run setup)
  *   - no/expired token → /login
@@ -51,7 +51,7 @@ export function ProtectedLayout() {
 
 type Mode = 'setup' | 'login';
 
-/** The /login and /register pages — render the card, or redirect if the route
+/** The /login and /register pages: render the card, or redirect if the route
  *  doesn't apply (already authenticated, signup closed, or setup not done). */
 export function AuthRoute({ mode }: { mode: Mode }) {
   const token = useSyncExternalStore(subscribeToken, getToken);

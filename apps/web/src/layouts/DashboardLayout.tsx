@@ -78,7 +78,7 @@ const META: Record<string, { title: string; description: string; width?: 'narrow
   },
 };
 
-/** The GitHub mark, inlined — lucide dropped its brand icons. Sized by the menu button's svg styles. */
+/** The GitHub mark, inlined (lucide dropped its brand icons). Sized by the menu button's svg styles. */
 function GithubIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -220,7 +220,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               {/* The only footer item that's a real <button> (the rest are links,
-                  which get the pointer for free) — the vendored SidebarMenuButton
+                  which get the pointer for free). The vendored SidebarMenuButton
                   doesn't set a cursor itself. */}
               <SidebarMenuButton onClick={logout} tooltip="Sign out" className="cursor-pointer">
                 <LogOut />
@@ -279,7 +279,7 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
 
   // The sub-items only render when the group is expanded AND the sidebar isn't collapsed to
   // icons (the mobile sheet always shows full-width content, so icon-collapse never hides them
-  // there). Highlight the parent only when its active child is hidden — when the child is
+  // there). Highlight the parent only when its active child is hidden. When the child is
   // visible it already carries the active marker, so lighting up the parent too is redundant.
   const { state, isMobile } = useSidebar();
   const childrenVisible = open && (isMobile || state === 'expanded');

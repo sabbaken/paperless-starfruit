@@ -1,4 +1,4 @@
-/** Job lifecycle — deliberately minimal (no backoff/dead-letter for a single-user app). */
+/** Job lifecycle: deliberately minimal (no backoff/dead-letter for a single-user app). */
 export const JOB_STATUS = {
   QUEUED: 'queued',
   RUNNING: 'running',
@@ -17,7 +17,7 @@ export const ACTIVE_JOB_STATUSES: JobStatus[] = [JOB_STATUS.QUEUED, JOB_STATUS.R
  */
 export const DEFAULT_TRIGGER_TAG = 'psf-process';
 
-/** Starfruit's brand yellow — the colour the trigger tag is created with. */
+/** Starfruit's brand yellow, the colour the trigger tag is created with. */
 export const TRIGGER_TAG_COLOR = '#EBC625';
 
 /** Review-item lifecycle. `pending` waits on the user; the rest are terminal. */
@@ -100,8 +100,8 @@ export const CLOUD_PROVIDER_KINDS: ProviderKind[] = [
 
 /**
  * The two prompts the user can fully customise. There are exactly two LLM calls
- * with editable text — the single metadata-extraction call and the vision-LLM OCR
- * call — so there are two templates, each a whole prompt (not per-field snippets).
+ * with editable text (the single metadata-extraction call and the vision-LLM OCR
+ * call), so there are two templates, each a whole prompt (not per-field snippets).
  */
 export const PROMPT_KEY = {
   EXTRACTION: 'extraction',

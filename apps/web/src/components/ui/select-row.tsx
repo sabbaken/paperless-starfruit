@@ -11,7 +11,7 @@ interface SelectRowProps {
   onClick: () => void;
 }
 
-/** A button row that opens a picker — icon + label/hint on the left, value + chevron on the right. */
+/** A button row that opens a picker: icon + label/hint on the left, value + chevron on the right. */
 export function SelectRow({
   icon,
   label,

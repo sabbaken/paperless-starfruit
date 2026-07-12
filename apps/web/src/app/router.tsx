@@ -28,14 +28,14 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public auth routes — redirect away when they don't apply. */}
+        {/* Public auth routes: redirect away when they don't apply. */}
         <Route path="/login" element={<AuthRoute mode="login" />} />
         <Route path="/register" element={<AuthRoute mode="setup" />} />
 
         {/* Everything else requires auth; the layout guard redirects otherwise. */}
         <Route element={<ProtectedLayout />}>
           {/* Guided setup lives outside the app chrome and the connection gate,
-              so it's reachable before paperless is connected — and any time
+              so it's reachable before paperless is connected, and any time
               after, for re-running it by hand. The step is part of the URL
               (1-based); the page validates it and bounces junk back to step 1. */}
           <Route path="/onboarding" element={<Navigate to="/onboarding/1" replace />} />

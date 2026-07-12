@@ -1,7 +1,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 /**
- * Salted scrypt password hashing — no external dependency. scrypt is memory-hard
+ * Salted scrypt password hashing, with no external dependency. scrypt is memory-hard
  * (deliberately slow) so a leaked hash resists brute force. The cost parameters
  * are stored in the encoded string, so they can be raised later without breaking
  * existing hashes.

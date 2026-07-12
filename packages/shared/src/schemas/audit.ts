@@ -5,10 +5,10 @@ import { z } from 'zod';
  * exact prompt sent to the LLM (with the document content substituted in) and
  * the model's full response, so a misclassification can be traced to what the
  * model actually saw and said. Skips/approvals are recorded too but carry no
- * prompt/output — hence the nullable fields and the `hasDetail` flag.
+ * prompt/output, hence the nullable fields and the `hasDetail` flag.
  */
 
-/** Decisions the pipeline/review record — the values worth filtering the log by. */
+/** Decisions the pipeline/review record: the values worth filtering the log by. */
 export const AUDIT_DECISIONS = [
   'auto-applied',
   'review-queued',
@@ -18,7 +18,7 @@ export const AUDIT_DECISIONS = [
   'rejected',
 ] as const;
 
-/** A single audit row as shown in the history list — metadata only, no heavy prompt/output. */
+/** A single audit row as shown in the history list: metadata only, no heavy prompt/output. */
 export const auditEntrySummarySchema = z.object({
   id: z.number().int(),
   jobId: z.number().int().nullable(),
@@ -31,7 +31,7 @@ export const auditEntrySummarySchema = z.object({
 });
 export type AuditEntrySummary = z.infer<typeof auditEntrySummarySchema>;
 
-/** Full detail — the exact prompt sent and the model's full response, for debugging. */
+/** Full detail: the exact prompt sent and the model's full response, for debugging. */
 export const auditEntryDetailSchema = auditEntrySummarySchema.extend({
   prompt: z.string().nullable(),
   rawOutput: z.string().nullable(),

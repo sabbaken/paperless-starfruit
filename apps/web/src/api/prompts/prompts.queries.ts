@@ -9,7 +9,7 @@ export function usePrompts() {
 
 /**
  * Recent documents for the "test on a document" picker. Only fetched when a test
- * panel is open (`enabled`) — it needs a live paperless connection, so eager
+ * panel is open (`enabled`). It needs a live paperless connection, so eager
  * fetching would surface an error on a fresh install.
  */
 export function useTestDocuments(enabled: boolean) {

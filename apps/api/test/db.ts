@@ -6,7 +6,7 @@ import * as schema from '../src/db/schema';
 import type { Db } from '../src/db/client';
 
 /**
- * A fresh in-memory database with all migrations applied — for unit tests.
+ * A fresh in-memory database with all migrations applied, for unit tests.
  * Lives outside `src/` so the production build never compiles it.
  */
 export function createTestDb(): Db {

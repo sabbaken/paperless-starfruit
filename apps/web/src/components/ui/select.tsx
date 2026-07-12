@@ -2,7 +2,7 @@ import { forwardRef, type SelectHTMLAttributes } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Styled native <select> — keeps the dependency-free, hand-rolled UI kit. */
+/** Styled native <select>: keeps the dependency-free, hand-rolled UI kit. */
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, children, ...props }, ref) => (
     <div className="relative">

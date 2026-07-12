@@ -27,7 +27,7 @@ import { extractionVars, ocrVars, renderTemplate } from './render';
 
 /**
  * Runs a (possibly unsaved) prompt body against a real paperless document so the
- * user can preview what the model would return — the "test on a document" panel.
+ * user can preview what the model would return: the "test on a document" panel.
  * Mirrors the pipeline's provider/taxonomy wiring without touching the queue,
  * review or audit; OCR tests never write the text back.
  */
@@ -145,8 +145,8 @@ export class PromptTestService {
     if (providerId == null || !model) {
       throw new BadRequestException(
         role === 'OCR'
-          ? 'No OCR model is selected — choose one in Settings → Processing first.'
-          : 'No language model is selected — choose one in Settings → Processing first.',
+          ? 'No OCR model is selected. Choose one in Settings → Processing first.'
+          : 'No language model is selected. Choose one in Settings → Processing first.',
       );
     }
     const credential = this.providers.getCredential(providerId);

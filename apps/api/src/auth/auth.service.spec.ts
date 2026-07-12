@@ -3,7 +3,7 @@ import { createTestDb } from '../../test/db';
 import type { CryptoService } from '../crypto/crypto.service';
 import { AuthService } from './auth.service';
 
-// A fixed signing key — no ENCRYPTION_KEY / ConfigService needed in tests.
+// A fixed signing key; no ENCRYPTION_KEY / ConfigService needed in tests.
 const crypto = { deriveKey: () => Buffer.alloc(32, 7) } as unknown as CryptoService;
 
 const make = () => new AuthService(createTestDb(), crypto);
@@ -50,7 +50,7 @@ describe('AuthService', () => {
     const a = svc(Buffer.alloc(32, 1));
     const { token } = a.register(CREDS);
     const b = svc(Buffer.alloc(32, 2));
-    b.register(CREDS); // claim b too, so it's the key — not "no user" — that rejects
+    b.register(CREDS); // claim b too, so it's the key, not "no user", that rejects
     expect(b.verify(token)).toBeNull();
   });
 });

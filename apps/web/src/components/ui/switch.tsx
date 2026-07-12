@@ -7,7 +7,7 @@ interface SwitchProps {
   disabled?: boolean;
 }
 
-/** Accessible toggle (role="switch") — dependency-free, matches the UI kit. */
+/** Accessible toggle (role="switch"): dependency-free, matches the UI kit. */
 export function Switch({ checked, onCheckedChange, id, disabled }: SwitchProps) {
   return (
     <button

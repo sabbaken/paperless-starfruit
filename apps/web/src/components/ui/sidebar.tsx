@@ -18,7 +18,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-// NOTE: deviates from vanilla shadcn — the upstream component persists open state
+// NOTE: deviates from vanilla shadcn. The upstream component persists open state
 // to a `sidebar_state` cookie, but this is a Vite SPA (no SSR to read it back) and
 // persistence is owned by the Redux settings slice. The cookie write was removed.
 const SIDEBAR_WIDTH = '16rem';

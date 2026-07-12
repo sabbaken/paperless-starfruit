@@ -9,7 +9,7 @@ const DEFAULT_RELEASE_API_URL =
   'https://api.github.com/repos/sabbaken/paperless-starfruit/releases/latest';
 /** Fallback "where to upgrade" link when the release response carries no page URL. */
 const DEFAULT_RELEASE_URL = 'https://github.com/sabbaken/paperless-starfruit/releases';
-/** Cache a good response this long — update checks are cheap and rare. */
+/** Cache a good response this long; update checks are cheap and rare. */
 const OK_TTL_MS = 6 * 60 * 60 * 1000;
 /** Cache a failed fetch only briefly so a transient outage self-heals. */
 const ERROR_TTL_MS = 10 * 60 * 1000;
@@ -24,7 +24,7 @@ interface Cached {
 
 /**
  * Resolves update status for `GET /api/version`: the running build's version vs
- * the latest GitHub release. The opt-out is honoured at the network layer — when
+ * the latest GitHub release. The opt-out is honoured at the network layer: when
  * `checkForUpdates` is off we never reach out to GitHub at all.
  */
 @Injectable()
@@ -98,7 +98,7 @@ function readProductVersion(): string {
       };
       if (pkg.name === 'paperless-starfruit') return pkg.version ?? '0.0.0';
     } catch {
-      /* no package.json here — keep climbing */
+      /* no package.json here; keep climbing */
     }
     const parent = dirname(dir);
     if (parent === dir) break;

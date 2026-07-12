@@ -46,7 +46,7 @@ export default defineConfig({
         { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
       ],
       // The custom landing owns `/`, so Starlight has no content at the site
-      // root — disable its built-in 404 (a branded `src/pages/404.astro` covers it).
+      // root. Disable its built-in 404 (a branded `src/pages/404.astro` covers it).
       disable404Route: true,
       pagination: true,
       sidebar: [

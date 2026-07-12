@@ -9,7 +9,7 @@ import type { Request } from 'express';
 
 /**
  * Per-IP fixed-window rate limit for the credential endpoints (login/register)
- * to blunt brute force. In-memory and singleton-scoped — fine for a single
+ * to blunt brute force. In-memory and singleton-scoped: fine for a single
  * self-hosted instance; no Redis, no `@nestjs/throttler` dependency.
  */
 @Injectable()
@@ -30,7 +30,7 @@ export class LoginThrottleGuard implements CanActivate {
       return true;
     }
     if (entry.count >= this.limit) {
-      throw new HttpException('Too many attempts — wait a minute.', HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException('Too many attempts. Wait a minute.', HttpStatus.TOO_MANY_REQUESTS);
     }
     entry.count += 1;
     return true;

@@ -43,7 +43,7 @@ export class AuditService {
 
   /**
    * A filtered, paginated page of audit rows for the history list. Returns
-   * metadata only — `hasDetail` is computed in SQL so the (potentially large)
+   * metadata only; `hasDetail` is computed in SQL so the (potentially large)
    * prompt/output text isn't shipped for every row; fetch one via {@link get}.
    */
   list(query: AuditQuery): AuditList {
@@ -86,7 +86,7 @@ export class AuditService {
     return { items, total };
   }
 
-  /** Full detail for one entry — the exact prompt sent and the model's full response. */
+  /** Full detail for one entry: the exact prompt sent and the model's full response. */
   get(id: number): AuditEntryDetail | null {
     const row = this.db.select().from(auditLog).where(eq(auditLog.id, id)).all()[0];
     return row ? toDetail(row) : null;
@@ -99,10 +99,10 @@ export class AuditService {
     if (query.decision) clauses.push(eq(auditLog.decision, query.decision));
     const q = query.q?.trim();
     if (q) {
-      // A plain case-insensitive LIKE over the prompt + model output — enough to
+      // A plain case-insensitive LIKE over the prompt + model output, enough to
       // find "which run mentioned X" at single-user scale (no FTS needed). Treat
       // the query as a literal substring: escape LIKE's `%`/`_` wildcards (and the
-      // escape char) and pair with an explicit ESCAPE — drizzle's like() omits it,
+      // escape char) and pair with an explicit ESCAPE; drizzle's like() omits it,
       // so use a raw fragment.
       const term = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
       const match = or(

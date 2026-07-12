@@ -198,7 +198,7 @@ describe('PipelineService.process', () => {
       title: 'ACME Invoice',
       tags: [9, 7], // keeps existing 9, drops trigger 100, adds suggested 7
       correspondent: 3,
-      created: '2024-03-02', // date-only — no UTC-midnight day shift
+      created: '2024-03-02', // date-only: no UTC-midnight day shift
     });
     expect(review.create).not.toHaveBeenCalled();
     expect(audit.record).toHaveBeenCalledWith(
@@ -239,7 +239,7 @@ describe('PipelineService.process', () => {
 
     await pipeline.process(JOB);
 
-    // The prompt vars must not mention the hidden tag — neither in the offered
+    // The prompt vars must not mention the hidden tag, neither in the offered
     // taxonomy nor as one of the document's current tags.
     const [, vars] = prompts.render.mock.calls[0] as [string, Record<string, string>];
     expect(vars.all_tags).not.toContain('Existing');
@@ -315,7 +315,7 @@ describe('PipelineService.process', () => {
       doc: { tags: [9, TRIGGER_TAG] },
       settings: { autoApply: true },
     });
-    // A monthly statement exposes only a period — the model returns YYYY-MM.
+    // A monthly statement exposes only a period; the model returns YYYY-MM.
     vi.mocked(llm.generateStructured).mockResolvedValueOnce({
       object: { ...EXTRACTION, date: '2024-03' },
       usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
@@ -392,7 +392,7 @@ describe('PipelineService.process', () => {
   });
 });
 
-describe('PipelineService.process — page limits', () => {
+describe('PipelineService.process: page limits', () => {
   it('skips extraction AND OCR when page_count exceeds the extraction limit', async () => {
     const { pipeline, client, llm, ocr, audit } = makePipeline({
       doc: { tags: [9, TRIGGER_TAG], page_count: 100 },
@@ -403,13 +403,13 @@ describe('PipelineService.process — page limits', () => {
 
     expect(result).toMatchObject({ decision: 'skipped', cost: null });
     expect(llm.generateStructured).not.toHaveBeenCalled();
-    // Neither OCR nor download happens — the whole document is left untouched.
+    // Neither OCR nor download happens; the whole document is left untouched.
     expect(ocr.ocr).not.toHaveBeenCalled();
     expect(client.downloadOriginal).not.toHaveBeenCalled();
     // The trigger tag is dropped so it isn't re-polled; nothing else is changed.
     expect(client.patchDocument).toHaveBeenCalledWith(5, { tags: [9] });
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'skipped' }));
-    // The skip's hash must NOT match what a real OCR-off completion would produce —
+    // The skip's hash must NOT match what a real OCR-off completion would produce;
     // otherwise raising the limit and re-tagging would be wrongly skipped as "done".
     const realOcrOffHash = contentHash(
       'Invoice from ACME total 42 dated 2024-03-02',
@@ -431,7 +431,7 @@ describe('PipelineService.process — page limits', () => {
     const result = await pipeline.process(JOB);
 
     expect(result.decision).toBe('auto-applied');
-    // OCR is skipped — paperless's own text is reused for extraction. The
+    // OCR is skipped; paperless's own text is reused for extraction. The
     // original is still downloaded once, as the extraction call's attachment.
     expect(ocr.ocr).not.toHaveBeenCalled();
     expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
@@ -456,7 +456,7 @@ describe('PipelineService.process — page limits', () => {
 
     await pipeline.process(JOB);
 
-    // 10 pages, limit 10 — "larger than" is strict, so OCR still runs.
+    // 10 pages, limit 10: "larger than" is strict, so OCR still runs.
     expect(ocr.ocr).toHaveBeenCalledOnce();
     expect(client.downloadOriginal).toHaveBeenCalledWith(5);
   });
@@ -477,12 +477,12 @@ describe('PipelineService.process — page limits', () => {
   });
 });
 
-describe('PipelineService.process — OCR (M5)', () => {
+describe('PipelineService.process: OCR (M5)', () => {
   it('OCRs the original and folds the text into the auto PATCH (one re-index)', async () => {
     const { pipeline, client, ocr } = makePipeline({
       doc: { tags: [9, TRIGGER_TAG], content: 'stale tesseract text' },
       settings: { ...OCR_ON, autoApply: true },
-      ocrText: 'Fresh OCR — Invoice from ACME total 42 dated 2024-03-02',
+      ocrText: 'Fresh OCR: Invoice from ACME total 42 dated 2024-03-02',
     });
 
     const result = await pipeline.process(JOB);
@@ -493,7 +493,7 @@ describe('PipelineService.process — OCR (M5)', () => {
     // Single PATCH carries the OCR write-back alongside the metadata.
     expect(client.patchDocument).toHaveBeenCalledOnce();
     const [, patch] = client.patchDocument.mock.calls[0];
-    expect(patch.content).toBe('Fresh OCR — Invoice from ACME total 42 dated 2024-03-02');
+    expect(patch.content).toBe('Fresh OCR: Invoice from ACME total 42 dated 2024-03-02');
     // cost = extraction (15) + vision-LLM OCR (150)
     expect(result.cost).toBe(165);
   });
@@ -508,7 +508,7 @@ describe('PipelineService.process — OCR (M5)', () => {
     const result = await pipeline.process(JOB);
 
     expect(result.decision).toBe('review-queued');
-    // Content is not a reviewable suggestion — write it back now, on its own PATCH.
+    // Content is not a reviewable suggestion; write it back now, on its own PATCH.
     expect(client.patchDocument).toHaveBeenCalledWith(5, { content: 'newly recognised text' });
     expect(review.create).toHaveBeenCalledOnce();
   });
@@ -542,7 +542,7 @@ describe('PipelineService.process — OCR (M5)', () => {
   it('marks the document for the Anthropic prompt cache only when OCR and extraction share provider + model', async () => {
     const CACHE_MARKER = { anthropic: { cacheControl: { type: 'ephemeral' } } };
 
-    // OCR_ON uses the same provider id and model as the LLM defaults — the one
+    // OCR_ON uses the same provider id and model as the LLM defaults, the one
     // pairing where extraction re-reads the entry the OCR call just wrote, so
     // both document parts carry the marker.
     const shared = makePipeline({ doc: { tags: [TRIGGER_TAG] }, settings: OCR_ON });
@@ -552,7 +552,7 @@ describe('PipelineService.process — OCR (M5)', () => {
     expect(sharedPart.providerOptions).toEqual(CACHE_MARKER);
 
     // A different OCR model means the caches never meet (they are scoped per
-    // model) — a marker would only add the 25% write surcharge, so neither
+    // model); a marker would only add the 25% write surcharge, so neither
     // call carries it.
     const split = makePipeline({
       doc: { tags: [TRIGGER_TAG] },
@@ -564,7 +564,7 @@ describe('PipelineService.process — OCR (M5)', () => {
     expect(splitPart.providerOptions).toBeUndefined();
   });
 
-  it('fails (not defers) when OCR returns no text — a blank/unreadable original', async () => {
+  it('fails (not defers) when OCR returns no text: a blank/unreadable original', async () => {
     const { pipeline } = makePipeline({
       doc: { tags: [TRIGGER_TAG] },
       settings: OCR_ON,
@@ -611,7 +611,7 @@ describe('PipelineService.process — OCR (M5)', () => {
     expect(ocr.ocr).toHaveBeenCalledTimes(1);
     expect(client.downloadOriginal).toHaveBeenCalledTimes(1);
 
-    // Retry (same job): the OCR result is reused from cache — no re-OCR, no
+    // Retry (same job): the OCR result is reused from cache; no re-OCR, no
     // re-bill. The original is re-fetched only for the extraction attachment.
     await pipeline.process(JOB);
     expect(ocr.ocr).toHaveBeenCalledTimes(1);
@@ -635,7 +635,7 @@ describe('PipelineService.process — OCR (M5)', () => {
     // OCR ran (to compute the hash) but extraction was skipped.
     expect(result.cost).toBe(150);
     expect(llm.generateStructured).not.toHaveBeenCalled();
-    // The doc's content had drifted from the recognised text — the skip PATCH
+    // The doc's content had drifted from the recognised text; the skip PATCH
     // restores it alongside the trigger-tag drop rather than discarding paid OCR.
     expect(client.patchDocument).toHaveBeenCalledWith(5, {
       content: 'OCR text of the document',
@@ -644,10 +644,10 @@ describe('PipelineService.process — OCR (M5)', () => {
   });
 });
 
-describe('PipelineService.process — extraction disabled (OCR-only)', () => {
+describe('PipelineService.process: extraction disabled (OCR-only)', () => {
   const EXTRACTION_OFF: Partial<Settings> = { ...OCR_ON, extractionEnabled: false };
 
-  it('OCRs, writes the text back and drops the trigger tag in one PATCH — no extraction', async () => {
+  it('OCRs, writes the text back and drops the trigger tag in one PATCH, with no extraction', async () => {
     const { pipeline, client, ocr, llm, review, audit, prompts } = makePipeline({
       doc: { tags: [9, TRIGGER_TAG], content: 'stale' },
       settings: EXTRACTION_OFF,
@@ -725,7 +725,7 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
     const result = await pipeline.process(JOB);
 
     expect(result).toMatchObject({ decision: 'skipped', cost: 150 });
-    // The OCR text was paid for either way — write it back alongside the tag
+    // The OCR text was paid for either way; write it back alongside the tag
     // drop, or the explicit re-tag would bill OCR and change nothing.
     expect(client.patchDocument).toHaveBeenCalledOnce();
     expect(client.patchDocument).toHaveBeenCalledWith(5, {
@@ -777,7 +777,7 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
     await expect(pipeline.process(JOB)).rejects.toThrow(/paperless 500/);
     expect(ocr.ocr).toHaveBeenCalledTimes(1);
 
-    // Retry (same job): the OCR result is reused from cache — no re-download, no re-bill.
+    // Retry (same job): the OCR result is reused from cache; no re-download, no re-bill.
     const result = await pipeline.process(JOB);
     expect(result).toMatchObject({ decision: 'ocr-only', cost: 150 });
     expect(ocr.ocr).toHaveBeenCalledTimes(1);
@@ -802,7 +802,7 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
     expect(client.patchDocument).toHaveBeenCalledWith(5, { tags: [9] });
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ decision: 'skipped' }));
     // The skip's hash must NOT match what a real OCR-only completion would
-    // produce — raising the limit and re-tagging must reprocess, not look "done".
+    // produce; raising the limit and re-tagging must reprocess, not look "done".
     const ocrFp = configFingerprint({
       llm: null,
       ocr: { kind: 'anthropic', model: 'claude-haiku-4-5' },
@@ -813,7 +813,7 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
     );
   });
 
-  it('ignores the extraction page limit — only the OCR limit governs', async () => {
+  it('ignores the extraction page limit: only the OCR limit governs', async () => {
     const { pipeline, ocr } = makePipeline({
       doc: { tags: [TRIGGER_TAG], content: 'stale', page_count: 100 },
       settings: { ...EXTRACTION_OFF, extractMaxPages: 50, ocrMaxPages: 200 },
@@ -831,13 +831,11 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
       settings: { extractionEnabled: false },
     });
     const promise = pipeline.process(JOB);
-    await expect(promise).rejects.toThrow(
-      /Extraction is disabled and OCR cannot run — enable OCR/i,
-    );
-    // A real failure, NOT a defer — a defer never burns attempts, so a dead-end
+    await expect(promise).rejects.toThrow(/Extraction is disabled and OCR cannot run; enable OCR/i);
+    // A real failure, NOT a defer: a defer never burns attempts, so a dead-end
     // config would silently re-poll forever instead of going terminal.
     await expect(promise).rejects.not.toBeInstanceOf(DeferJobError);
-    // The trigger tag is kept — the failure must stay visible and retryable.
+    // The trigger tag is kept; the failure must stay visible and retryable.
     expect(client.patchDocument).not.toHaveBeenCalled();
   });
 
@@ -852,7 +850,7 @@ describe('PipelineService.process — extraction disabled (OCR-only)', () => {
     });
     const promise = pipeline.process(JOB);
     await expect(promise).rejects.toThrow(
-      /Extraction is disabled and OCR cannot run — select an OCR model/i,
+      /Extraction is disabled and OCR cannot run; select an OCR model/i,
     );
     await expect(promise).rejects.not.toBeInstanceOf(DeferJobError);
   });

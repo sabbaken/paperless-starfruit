@@ -1,14 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
- * Minimal HS256 JWT (sign + verify) over `node:crypto` — no jsonwebtoken
+ * Minimal HS256 JWT (sign + verify) over `node:crypto`, with no jsonwebtoken
  * dependency, in keeping with this app's hand-rolled, single-container style.
  * The algorithm is hardcoded (no header-driven alg selection), so the classic
  * "alg=none" / algorithm-confusion attacks don't apply, and the signature is
  * compared in constant time.
  */
 export interface TokenClaims {
-  /** Subject — the admin username. */
+  /** Subject: the admin username. */
   sub: string;
   /** Issued-at / expiry, epoch seconds. */
   iat: number;

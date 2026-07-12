@@ -11,7 +11,7 @@ export const providerKindSchema = z.enum([
 
 /**
  * Capability flags resolved from the provider kind. They drive behaviour rather
- * than assumptions — e.g. `supportsVision` gates vision-LLM OCR (M5), and
+ * than assumptions: e.g. `supportsVision` gates vision-LLM OCR (M5), and
  * `billingUnit` decides how cost is surfaced.
  */
 export const providerCapsSchema = z.object({
@@ -30,7 +30,7 @@ const optionalUrl = z.preprocess(
 
 /**
  * The user-editable, non-secret fields of a credential. A credential is now just
- * an API key (or local endpoint) per provider — the model is chosen separately,
+ * an API key (or local endpoint) per provider. The model is chosen separately,
  * in processing settings.
  */
 const providerFieldsSchema = z.object({
@@ -58,20 +58,20 @@ const requireKeyAndUrl = (
   }
 };
 
-/** Credential as exposed to the web UI — the API key is NEVER returned. */
+/** Credential as exposed to the web UI. The API key is NEVER returned. */
 export const providerConfigSchema = providerFieldsSchema.extend({
   id: z.number().int(),
   caps: providerCapsSchema,
 });
 export type ProviderConfig = z.infer<typeof providerConfigSchema>;
 
-/** Create payload — key required for cloud kinds, optional for local. */
+/** Create payload: key required for cloud kinds, optional for local. */
 export const providerInputSchema = providerFieldsSchema
   .extend({ apiKey: z.string().optional() })
   .superRefine((v, ctx) => requireKeyAndUrl(v, ctx, true));
 export type ProviderInput = z.infer<typeof providerInputSchema>;
 
-/** Update payload — a blank key means "keep the stored one". */
+/** Update payload: a blank key means "keep the stored one". */
 export const providerUpdateSchema = providerFieldsSchema
   .extend({ apiKey: z.string().optional() })
   .superRefine((v, ctx) => requireKeyAndUrl(v, ctx, false));
@@ -163,6 +163,6 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 
-/** PATCH payload for settings — every field optional, validated where present. */
+/** PATCH payload for settings: every field optional, validated where present. */
 export const settingsUpdateSchema = settingsSchema.partial();
 export type SettingsUpdate = z.infer<typeof settingsUpdateSchema>;

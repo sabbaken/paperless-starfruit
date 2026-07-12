@@ -20,7 +20,7 @@ function useEnter() {
   };
 }
 
-/** First-run setup — create the admin account and log straight in. */
+/** First-run setup: create the admin account and log straight in. */
 export function useRegister() {
   const enter = useEnter();
   return useMutation({ mutationFn: authApi.register, onSuccess: (r) => enter(r.token) });

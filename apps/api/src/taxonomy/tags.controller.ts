@@ -49,7 +49,7 @@ export class TagsController {
 
   @Get()
   async list(): Promise<TagView[]> {
-    // Bypass the snapshot TTL — an admin list must reflect edits made in
+    // Bypass the snapshot TTL: an admin list must reflect edits made in
     // paperless itself moments ago (and this refreshes the cache as a bonus).
     const client = this.requireClient();
     const { tags } = await this.rethrow(() => this.taxonomy.getSnapshot(client, true));
@@ -64,7 +64,7 @@ export class TagsController {
   async create(@Body(createPipe) input: TagCreate): Promise<TagView> {
     if (isTrigger(input.name)) {
       throw new BadRequestException(
-        `"${DEFAULT_TRIGGER_TAG}" is the processing trigger tag — it already exists.`,
+        `"${DEFAULT_TRIGGER_TAG}" is the processing trigger tag; it already exists.`,
       );
     }
     const client = this.requireClient();
@@ -85,7 +85,7 @@ export class TagsController {
     if (!existing) throw new NotFoundException(`Tag ${id} not found in paperless.`);
     if (isTrigger(existing.name)) {
       throw new BadRequestException(
-        'The processing trigger tag cannot be edited — Starfruit finds documents by its name.',
+        'The processing trigger tag cannot be edited. Starfruit finds documents by its name.',
       );
     }
     if (input.name && isTrigger(input.name)) {
@@ -137,7 +137,7 @@ export class TagsController {
       if (err.status === 404) {
         throw new NotFoundException('The tag no longer exists in paperless.');
       }
-      // Network failure, revoked token, 5xx — paperless's fault, not the client's.
+      // Network failure, revoked token, 5xx: paperless's fault, not the client's.
       throw new BadGatewayException(err.message);
     }
   }

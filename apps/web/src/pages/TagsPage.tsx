@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 
-/** paperless's own default for new tags — a sensible starting swatch. */
+/** paperless's own default for new tags, a sensible starting swatch. */
 const DEFAULT_COLOR = '#a6cee3';
 
 type FormState = { mode: 'create' } | { mode: 'edit'; tag: TagView };
@@ -64,7 +64,7 @@ function toTreeRows(tags: TagView[]): TagRow[] {
     }
   };
   visit(roots, 0);
-  // A parent cycle strands its whole subtree off the root walk — show those flat.
+  // A parent cycle strands its whole subtree off the root walk. Show those flat.
   for (const tag of tags) {
     if (!seen.has(tag.id)) rows.push({ tag, depth: 0 });
   }
@@ -147,7 +147,7 @@ export function TagsPage() {
             </EmptyMedia>
             <EmptyTitle>No tags yet</EmptyTitle>
             <EmptyDescription>
-              Create your first tag — it appears in paperless immediately.
+              Create your first tag. It appears in paperless immediately.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -186,7 +186,7 @@ export function TagsPage() {
                       <span
                         className={cn(
                           'font-medium',
-                          // Struck-through, not just dimmed — an accidentally hidden
+                          // Struck-through, not just dimmed. An accidentally hidden
                           // tag should be impossible to overlook.
                           tag.hidden && 'text-muted-foreground line-through',
                         )}
@@ -224,8 +224,8 @@ export function TagsPage() {
                           }
                           title={
                             tag.hidden
-                              ? 'Hidden from the AI — click to show it again'
-                              : 'Visible to the AI — click to hide it'
+                              ? 'Hidden from the AI. Click to show it again'
+                              : 'Visible to the AI. Click to hide it'
                           }
                           disabled={toggleHidden.isPending && toggleHidden.variables?.id === tag.id}
                           onClick={() =>
@@ -304,7 +304,7 @@ function TagForm({ tag, onDone }: { tag?: TagView; onDone: () => void }) {
 
   const onSave = handleSubmit((v) => {
     if (editing && tag) {
-      // Only send what changed — a hint-only edit shouldn't PATCH paperless.
+      // Only send what changed. A hint-only edit shouldn't PATCH paperless.
       // A colorless tag always gets the color the dialog displayed, so what
       // the user saw (and possibly deliberately kept) is what gets saved.
       const input: TagUpdate = {};

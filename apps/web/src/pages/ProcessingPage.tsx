@@ -40,7 +40,7 @@ export function ProcessingPage() {
 type PickerTarget = 'llm' | 'ocr';
 
 /**
- * The pipeline as a vertical stepper — one card per stage (OCR → extraction →
+ * The pipeline as a vertical stepper: one card per stage (OCR → extraction →
  * apply), each carrying its own model and knobs, top to bottom the document's
  * journey. Each stage has a per-file page limit so a 1000-page scan doesn't
  * run up cloud OCR / LLM cost; the stages gate independently, and a document
@@ -67,7 +67,7 @@ function PipelineStepper({
 
   // Toggles commit instantly; page-limit inputs commit a short pause after the
   // last keystroke. A limit is sent only when blank (cleared) or a positive
-  // integer — partial/invalid entries are skipped until corrected.
+  // integer. Partial/invalid entries are skipped until corrected.
   const commitLimits = useDebouncedCallback(() => {
     const patch: SettingsUpdate = {};
     const ocr = sendableLimit(form.ocrMaxPages);
@@ -134,11 +134,11 @@ function PipelineStepper({
             </div>
           </div>
         ) : !ocrConfigured ? (
-          // Keep the model row reachable — it's the only way to configure OCR.
+          // Keep the model row reachable. It's the only way to configure OCR.
           <div className="border-t">
             <SelectRow label="Model" value={null} onClick={() => setPicker('ocr')} />
             <p className="pb-3 text-xs text-muted-foreground">
-              Pick an OCR model to enable OCR — until then paperless's own text is used.
+              Pick an OCR model to enable OCR. Until then paperless's own text is used.
             </p>
           </div>
         ) : (
@@ -207,7 +207,7 @@ function PipelineStepper({
             </div>
           </div>
         ) : form.extractionEnabled ? (
-          // Keep the model row reachable — it's the only way to configure extraction.
+          // Keep the model row reachable. It's the only way to configure extraction.
           <div className="border-t">
             <SelectRow label="Model" value={null} onClick={() => setPicker('llm')} />
             <p className="pb-3 text-xs text-muted-foreground">
@@ -217,13 +217,13 @@ function PipelineStepper({
         ) : (
           <div className="border-t py-3">
             <p className="text-xs text-muted-foreground">
-              Documents keep their existing metadata — only OCR runs.
+              Documents keep their existing metadata. Only OCR runs.
             </p>
             {(!ocrConfigured || !form.ocrEnabled) && (
               <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
                 {!ocrConfigured
-                  ? "No OCR model is configured either, so documents can't be processed — pick one in the OCR step or re-enable extraction."
-                  : "OCR is off too, so documents can't be processed — enable at least one step."}
+                  ? "No OCR model is configured either, so documents can't be processed. Pick one in the OCR step or re-enable extraction."
+                  : "OCR is off too, so documents can't be processed. Enable at least one step."}
               </p>
             )}
           </div>
@@ -268,7 +268,7 @@ function PipelineStepper({
           </div>
         ) : (
           <p className="border-t py-3 text-xs text-muted-foreground">
-            Extraction is off — there are no suggestions to apply. OCR text is written straight to
+            Extraction is off. There are no suggestions to apply. OCR text is written straight to
             the document.
           </p>
         )}
@@ -298,7 +298,7 @@ function PipelineStepper({
 /**
  * One pipeline stage: the card itself plus the rail icon hanging in the margin
  * to its left. The rail is absolutely positioned so it never affects the card's
- * width — every card on the page lines up — and hidden when the viewport has no
+ * width (every card on the page lines up) and hidden when the viewport has no
  * spare margin to hang it in.
  */
 function Stage({
@@ -329,7 +329,7 @@ function Stage({
   );
 }
 
-/** One of the two apply-mode choices — a selectable card with radio semantics. */
+/** One of the two apply-mode choices: a selectable card with radio semantics. */
 function ApplyOption({
   icon: Icon,
   title,
@@ -385,7 +385,7 @@ function GeneralForm({ initial }: { initial: Settings }) {
         .map((s) => s.trim())
         .filter(Boolean),
     };
-    // Skip out-of-range intervals (e.g. mid-edit empties) — the server rejects < 15.
+    // Skip out-of-range intervals (e.g. mid-edit empties). The server rejects < 15.
     if (Number.isFinite(form.pollIntervalSec) && form.pollIntervalSec >= 15) {
       patch.pollIntervalSec = form.pollIntervalSec;
     }

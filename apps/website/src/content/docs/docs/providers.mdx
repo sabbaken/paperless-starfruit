@@ -11,7 +11,7 @@ providers you want, and the keys never leave your server.
 ## Cloud providers
 
 Each takes a single API key; models come from a curated catalog. Pick the provider, paste
-the key, and hit **Test** — a probe call confirms it's reachable.
+the key, and hit **Test**. A probe call confirms it's reachable.
 
 | Provider  | Kind        | Example models                                           |
 | --------- | ----------- | -------------------------------------------------------- |
@@ -22,7 +22,7 @@ the key, and hit **Test** — a probe call confirms it's reachable.
 
 ## Local & OpenAI-compatible
 
-For self-hosted or third-party gateways — **Ollama, LM Studio, vLLM, OpenRouter** — choose
+For self-hosted or third-party gateways (**Ollama, LM Studio, vLLM, OpenRouter**), choose
 **OpenAI-compatible**: give the endpoint a name, set its base URL (e.g.
 `http://localhost:11434/v1`), and optionally an API key (many local endpoints don't need
 one). Models are **discovered live** from the server rather than a fixed catalog, and you
@@ -38,9 +38,9 @@ can add as many endpoints as you like.
 
 - **Encrypted at rest** (AES-GCM) with a key derived from `ENCRYPTION_KEY`, which only your
   server holds.
-- **Never returned to the browser** — editing a saved key shows a _“leave blank to keep
+- **Never returned to the browser**: editing a saved key shows a _“leave blank to keep
   current key”_ placeholder, not the value.
-- **No vendor in the middle** — requests go straight from your container to the provider.
+- **No vendor in the middle**: requests go straight from your container to the provider.
 
 ## Picking models
 

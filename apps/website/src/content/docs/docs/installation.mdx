@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Pull the official image and deploy with Docker Compose — next to an existing paperless-ngx, or as a full stack that includes one.
+description: Pull the official image and deploy with Docker Compose, next to an existing paperless-ngx or as a full stack that includes one.
 ---
 
 import { Aside, Tabs, TabItem, Code } from '@astrojs/starlight/components';
@@ -9,7 +9,7 @@ import { Aside, Tabs, TabItem, Code } from '@astrojs/starlight/components';
 import composeStandalone from '@compose/docker-compose.yml?raw';
 import composeFull from '@compose/docker-compose.full.yml?raw';
 
-Paperless Starfruit ships as **one container** — a Node process plus a volume for its SQLite
+Paperless Starfruit ships as **one container**: a Node process plus a volume for its SQLite
 database. No Postgres, no Redis. Pre-built images are published to GitHub Container Registry,
 so there is nothing to clone or build:
 
@@ -39,10 +39,10 @@ Two compose files, depending on where you start:
 
     The container has to reach paperless over the network:
 
-    - If paperless has a LAN address or published port, just enter that URL in the UI later —
+    - If paperless has a LAN address or published port, just enter that URL in the UI later,
       e.g. `http://192.168.1.10:8000` or `https://paperless.home.lan`.
     - To use the Docker service name instead, attach the container to your paperless stack's
-      network — find it with `docker network ls` (usually `<project>_default`), then:
+      network. Find it with `docker network ls` (usually `<project>_default`), then:
 
       ```yaml
       services:
@@ -54,12 +54,12 @@ Two compose files, depending on where you start:
           name: paperless_default   # your paperless stack's network
       ```
 
-      and use `http://webserver:8000` as the paperless URL — **not** `localhost`, which is
+      and use `http://webserver:8000` as the paperless URL, **not** `localhost`, which is
       this container.
 
   </TabItem>
   <TabItem label="From scratch (paperless-ngx included)">
-    A full stack — Redis + paperless-ngx + Paperless Starfruit. Save as `docker-compose.full.yml`
+    A full stack: Redis + paperless-ngx + Paperless Starfruit. Save as `docker-compose.full.yml`
     (this is [`docker/docker-compose.full.yml`](https://github.com/sabbaken/paperless-starfruit/blob/master/docker/docker-compose.full.yml)
     from the repo, shown verbatim):
 
@@ -77,19 +77,19 @@ Two compose files, depending on where you start:
     docker compose -f docker-compose.full.yml run --rm paperless createsuperuser
     ```
 
-    paperless-ngx comes up on `http://localhost:8000` — log in with the superuser you just
-    created. In the Starfruit UI, use `http://paperless:8000` as the paperless URL — the
-    in-network service name, not `localhost`.
+    paperless-ngx comes up on `http://localhost:8000`. Log in with the superuser you just
+    created. In the Starfruit UI, use `http://paperless:8000` as the paperless URL (the
+    in-network service name, not `localhost`).
 
   </TabItem>
 </Tabs>
 
-Then open **`http://localhost:7827`** — the container serves the API and the web UI on the
+Then open **`http://localhost:7827`**. The container serves the API and the web UI on the
 same port. On first run the UI shows a _“create admin”_ card; once you set the admin username
 and password, registration closes and only login works. There is no default password.
 
 <Aside type="note" title="Why port 7827?">
-  It's “star” on a phone keypad — and, unlike 3000, almost certainly free on your host, so the files
+  It's “star” on a phone keypad and, unlike 3000, almost certainly free on your host, so the files
   above work as-is. The app inside the container still listens on 3000; change the left side of the
   `ports:` mapping to publish it elsewhere.
 </Aside>
@@ -106,25 +106,25 @@ These are the _only_ runtime variables. Everything else lives in the UI.
 
 | Variable         | Required | Default        | Purpose                                                                                  |
 | ---------------- | -------- | -------------- | ---------------------------------------------------------------------------------------- |
-| `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials and signs admin sessions.       |
+| `ENCRYPTION_KEY` | **yes**  | (none)         | 32-byte key (base64 or hex). Encrypts stored credentials and signs admin sessions.       |
 | `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path. Its directory is created if missing.                                   |
 | `PORT`           | no       | `3000`         | Port the app listens on _inside_ the container (the compose files publish it as `7827`). |
 | `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down.            |
 
 ## Operating notes
 
-- **Persistence.** Everything — config, prompts, job queue, review items, audit history — is
+- **Persistence.** Everything (config, prompts, job queue, review items, audit history) is
   one SQLite file at `/data/app.db` on a named volume. Back that volume up and you have a
   complete snapshot.
 - **Reverse proxy.** Auth is a bearer token, not a cookie, so no extra CORS or cookie
-  configuration is needed — put your TLS terminator (Caddy, Traefik, nginx) in front of the
+  configuration is needed. Put your TLS terminator (Caddy, Traefik, nginx) in front of the
   published port (`7827` by default).
 - **Health.** `GET /api/health` backs the image's `HEALTHCHECK`. Migrations apply
   automatically on boot; there is no separate migrate step.
 - **Automatic updates.** The compose files include a [Watchtower](https://github.com/nicholas-fedor/watchtower)
   service that checks the registry and, when a newer image is published, pulls it and recreates
   the Starfruit container in place. It only updates containers carrying the
-  `com.centurylinklabs.watchtower.enable=true` label — so nothing else on the host is touched.
+  `com.centurylinklabs.watchtower.enable=true` label, so nothing else on the host is touched.
   Remove that label (or the `watchtower` service) to stay on a fixed image, and pin a version tag
   like `:1.1.0` instead of `:latest` if you'd rather upgrade deliberately.
 - **Building from source** (optional). Clone the repo and swap `image:` for the commented

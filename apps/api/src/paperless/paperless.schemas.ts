@@ -29,7 +29,7 @@ export const paperlessTagSchema = z.object({
   color: z.string().nullable().optional(),
   /** How many documents carry the tag; shown in the tags admin table. */
   document_count: z.number().int().optional(),
-  /** Parent tag id — nested tags, paperless-ngx ≥ 2.19. Absent on older versions. */
+  /** Parent tag id: nested tags, paperless-ngx ≥ 2.19. Absent on older versions. */
   parent: z.number().int().nullable().optional(),
 });
 export type PaperlessTag = z.infer<typeof paperlessTagSchema>;
@@ -55,5 +55,5 @@ export const paperlessDocumentSchema = z.object({
 });
 export type PaperlessDocument = z.infer<typeof paperlessDocumentSchema>;
 
-/** Minimal envelope for the connection probe — we only need the total count. */
+/** Minimal envelope for the connection probe; we only need the total count. */
 export const documentCountSchema = z.object({ count: z.number().int() });

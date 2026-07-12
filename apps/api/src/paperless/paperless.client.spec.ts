@@ -13,7 +13,7 @@ function json(body: unknown, init: ResponseInit = {}): Response {
 }
 
 function client(): PaperlessClient {
-  // trailing slash is intentional — it must be normalized away
+  // trailing slash is intentional; it must be normalized away
   return new PaperlessClient({ baseUrl: 'http://pl.local/', token: 'tok', apiVersion: 9 });
 }
 

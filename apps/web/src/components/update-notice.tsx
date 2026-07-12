@@ -7,7 +7,7 @@ const DISMISSED_KEY = 'paperless-starfruit:dismissed-update';
 /**
  * A compact "new release available" notice for the sidebar footer. Shows only
  * when the backend reports an update and the user hasn't dismissed *this*
- * version — dismissal is per-version, so the next release re-surfaces it.
+ * version. Dismissal is per-version, so the next release re-surfaces it.
  * Hidden when the sidebar is collapsed to icons.
  */
 export function UpdateNotice() {
@@ -21,7 +21,7 @@ export function UpdateNotice() {
     try {
       localStorage.setItem(DISMISSED_KEY, latest);
     } catch {
-      /* storage disabled (private mode) — just hide for this session */
+      /* storage disabled (private mode): just hide for this session */
     }
     setDismissed(latest);
   };
@@ -38,7 +38,7 @@ export function UpdateNotice() {
             rel="noreferrer"
             className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            v{latest} — view release
+            v{latest}: view release
           </a>
         ) : (
           <p className="text-muted-foreground">v{latest}</p>

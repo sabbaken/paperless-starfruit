@@ -13,14 +13,14 @@ const MISTRAL_API_BASE = 'https://api.mistral.ai';
 /** OCR model ids beginning with this route to the dedicated endpoint (vs vision-LLM OCR). */
 export const MISTRAL_OCR_MODEL_PREFIX = 'mistral-ocr';
 
-/** Tolerant view of the `/v1/ocr` response — we only need the per-page text + page count. */
+/** Tolerant view of the `/v1/ocr` response; we only need the per-page text + page count. */
 const ocrResponseSchema = z.object({
   pages: z.array(z.object({ markdown: z.string() })),
   usage_info: z.object({ pages_processed: z.number().int().optional() }).nullish(),
 });
 
 /**
- * Mistral's dedicated OCR endpoint (`POST /v1/ocr`) — page-billed, not token-billed.
+ * Mistral's dedicated OCR endpoint (`POST /v1/ocr`): page-billed, not token-billed.
  * The original bytes are sent inline as a base64 data URI: no public URL is needed
  * (the document lives behind a self-hosted paperless). Returns the per-page Markdown
  * joined in page order.

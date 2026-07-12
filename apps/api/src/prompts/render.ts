@@ -40,11 +40,11 @@ export interface ExtractionVarInput {
 /** Directive sentences the create-new toggles expand to inside the extraction prompt. */
 const TAG_POLICY = {
   on: 'If none fits, you may introduce a new tag.',
-  off: 'Do not invent new tags — if none fits, use no tag rather than creating one.',
+  off: 'Do not invent new tags; if none fits, use no tag rather than creating one.',
 };
 const CORRESPONDENT_POLICY = {
   on: 'If none matches, you may introduce a new correspondent.',
-  off: 'Do not invent a new correspondent — if none matches, return null.',
+  off: 'Do not invent a new correspondent; if none matches, return null.',
 };
 
 export function extractionVars(i: ExtractionVarInput): Record<string, string> {
@@ -87,10 +87,10 @@ function list(values: string[]): string {
 /**
  * The `{{all_tags}}` value. Plain comma list while no tag carries a hint (the
  * historical format); as soon as one does, a Markdown table of the *hinted*
- * tags with the rest as a compact list below — hints stay next to their tag
+ * tags with the rest as a compact list below; hints stay next to their tag
  * without a table row per unhinted tag bloating the prompt. Wrapped in
  * newlines so the block stays intact when the placeholder sits mid-line
- * ("Existing tags: {{all_tags}} — prefer these.").
+ * ("Existing tags: {{all_tags}}, prefer these.").
  */
 function tagList(tags: TagContext[]): string {
   if (!tags.length) return '(none)';

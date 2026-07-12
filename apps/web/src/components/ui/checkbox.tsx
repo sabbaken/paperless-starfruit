@@ -8,7 +8,7 @@ interface CheckboxProps {
   'aria-label'?: string;
 }
 
-/** Accessible checkbox (role="checkbox") — dependency-free, matches the UI kit. */
+/** Accessible checkbox (role="checkbox"): dependency-free, matches the UI kit. */
 export function Checkbox({ checked, onCheckedChange, id, ...rest }: CheckboxProps) {
   return (
     <button

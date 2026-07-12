@@ -1,4 +1,4 @@
-# Local dev paperless-ngx — a real instance to develop Paperless Starfruit against.
+# Local dev paperless-ngx: a real instance to develop Paperless Starfruit against.
 # NOT for production: it runs paperless on SQLite + Redis with a default admin
 # login, which is fine for a throwaway dev box and nothing else.
 #

@@ -7,12 +7,12 @@
  *   1. starts the apps/web Vite dev server on a dedicated port,
  *   2. opens it in Playwright with a fake auth token + light theme,
  *   3. answers every `/api/**` call with the fixtures below (no real backend,
- *      no paperless — so the data, and therefore the screenshots, are identical
+ *      no paperless, so the data, and therefore the screenshots, are identical
  *      every time),
  *   4. screenshots Dashboard, Review (the side-by-side detail), Prompts and
  *      API keys into apps/website/public/screenshots/.
  *
- * This is a MANUAL tool — it is not wired into the build or CI. Run it when the
+ * This is a MANUAL tool. It is not wired into the build or CI. Run it when the
  * UI changes, eyeball the output, and commit the PNGs. To change what's shown,
  * edit the FIXTURES below (they mirror the app's real API response shapes).
  *
@@ -33,7 +33,7 @@ const BASE = `http://localhost:${PORT}`;
 const TOKEN_KEY = 'paperless-starfruit.token';
 
 // ---------------------------------------------------------------------------
-// FIXTURES — mirror the real API response shapes (see apps/web/src/api + the
+// FIXTURES: mirror the real API response shapes (see apps/web/src/api + the
 // shared package). Edit these to change what the screenshots show.
 // ---------------------------------------------------------------------------
 const authStatus = { initialized: true, authenticated: true };
@@ -63,7 +63,7 @@ const stats = {
 
 // Shared between the review list and the review detail.
 const reviewSuggestion = {
-  title: 'Electricity invoice — March 2026',
+  title: 'Electricity invoice, March 2026',
   tags: [
     { id: 7, name: 'utilities', isNew: false },
     { id: null, name: 'invoice', isNew: true },
@@ -93,7 +93,7 @@ const reviewList = [
     status: 'pending',
     createdAt: 1772060400,
     suggestions: {
-      title: 'Rental agreement — Storgatan 4',
+      title: 'Rental agreement, Storgatan 4',
       tags: [
         { id: 21, name: 'housing', isNew: false },
         { id: null, name: 'contract', isNew: true },
@@ -136,7 +136,7 @@ const prompts = [
     customized: false,
     body: `You extract structured metadata from a single archived document for a paperless-ngx system.
 Return concise, human-meaningful values:
-- title: a short descriptive title — no file extensions, no reference numbers as the whole title.
+- title: a short descriptive title (no file extensions, no reference numbers as the whole title).
 - tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits. {{tag_policy}}
 - correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches. {{correspondent_policy}}
 - date: the document's own date (when it was issued or written) as YYYY-MM-DD, or null if not evident. Never use today's date as a fallback.
@@ -162,7 +162,7 @@ Existing correspondents: {{all_correspondents}}
       {
         name: 'all_tags',
         label: 'Existing tags',
-        description: 'Every tag already in paperless — encourages reuse over invention.',
+        description: 'Every tag already in paperless, to encourage reuse over invention.',
       },
       {
         name: 'all_correspondents',
@@ -205,7 +205,7 @@ Existing correspondents: {{all_correspondents}}
       'Instructions for the vision model that reads a document’s original file into text. Used when OCR is enabled and the OCR model is a vision LLM.',
     customized: false,
     body: `You are a precise OCR engine. Transcribe the attached document exactly as written.
-Output ONLY the document text — no preamble, no commentary, no code fences.
+Output ONLY the document text: no preamble, no commentary, no code fences.
 Preserve the reading order, line breaks and structure. Render tables as simple Markdown tables.
 Do not translate, summarise, correct spelling, or invent content. Mark an unreadable run as [illegible].
 Document language hint: {{language}}.`,
@@ -223,9 +223,9 @@ Document language hint: {{language}}.`,
 for (const p of prompts) p.default = p.body;
 
 const testDocuments = [
-  { id: 1042, title: 'Electricity invoice — March 2026' },
-  { id: 1043, title: 'Rental agreement — Storgatan 4' },
-  { id: 1031, title: 'Bank statement — February 2026' },
+  { id: 1042, title: 'Electricity invoice, March 2026' },
+  { id: 1043, title: 'Rental agreement, Storgatan 4' },
+  { id: 1031, title: 'Bank statement, February 2026' },
 ];
 
 const providers = [
@@ -445,7 +445,7 @@ async function main() {
     await context.addInitScript((key) => localStorage.setItem(key, 'screenshot'), TOKEN_KEY);
 
     // Answer every API call from the fixtures; warn on anything unhandled.
-    // Match only paths rooted at `/api/` — NOT a substring glob like `**/api/**`,
+    // Match only paths rooted at `/api/`, NOT a substring glob like `**/api/**`,
     // which would also swallow Vite's own modules (e.g. /src/api/auth/index.ts).
     await context.route(
       (url) => url.pathname.startsWith('/api/'),

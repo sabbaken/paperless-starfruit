@@ -24,7 +24,7 @@ describe('buildLanguageModel', () => {
     expect(modelId({ ...base, kind: PROVIDER_KIND.ANTHROPIC, model: 'claude-haiku-4.5' })).toBe(
       'claude-haiku-4-5',
     );
-    // Already-native ids are unchanged (idempotent — no dots to convert).
+    // Already-native ids are unchanged (idempotent, no dots to convert).
     expect(modelId({ ...base, kind: PROVIDER_KIND.ANTHROPIC, model: 'claude-haiku-4-5' })).toBe(
       'claude-haiku-4-5',
     );

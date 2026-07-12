@@ -1,7 +1,7 @@
 # <img src="apps/website/public/paperless-starfruit.png" height="36" alt="" /> Paperless Starfruit
 
 A self-hosted, bring-your-own-keys AI companion for [paperless-ngx](https://docs.paperless-ngx.com/):
-better OCR and automatic titles, tags, correspondents and dates — configured entirely from a web UI.
+better OCR and automatic titles, tags, correspondents and dates, configured entirely from a web UI.
 
 **[Website](https://paperless-starfruit.vercel.app/)** · **[Docs](https://paperless-starfruit.vercel.app/docs/)** · **[Install](https://paperless-starfruit.vercel.app/docs/installation/)**
 
@@ -10,12 +10,12 @@ better OCR and automatic titles, tags, correspondents and dates — configured e
 
 <table>
   <tr>
-    <td><img src="apps/website/public/screenshots/dashboard.png" alt="Dashboard — queue, throughput and recent runs" /></td>
-    <td><img src="apps/website/public/screenshots/review.png" alt="Review queue — AI suggestions side-by-side with the document" /></td>
+    <td><img src="apps/website/public/screenshots/dashboard.png" alt="Dashboard: queue, throughput and recent runs" /></td>
+    <td><img src="apps/website/public/screenshots/review.png" alt="Review queue: AI suggestions side-by-side with the document" /></td>
   </tr>
   <tr>
-    <td><img src="apps/website/public/screenshots/tags.png" alt="Tags — per-tag hints the AI follows" /></td>
-    <td><img src="apps/website/public/screenshots/prompts.png" alt="Prompts — edit and test what each model is asked" /></td>
+    <td><img src="apps/website/public/screenshots/tags.png" alt="Tags: per-tag hints the AI follows" /></td>
+    <td><img src="apps/website/public/screenshots/prompts.png" alt="Prompts: edit and test what each model is asked" /></td>
   </tr>
 </table>
 
@@ -29,7 +29,7 @@ better OCR and automatic titles, tags, correspondents and dates — configured e
 ## Layout
 
 ```
-apps/api      NestJS — API + poller + worker, one process (also serves the built SPA)
+apps/api      NestJS: API + poller + worker, one process (also serves the built SPA)
 apps/web      React + Vite admin SPA
 packages/shared   Zod schemas, types, constants (FE/BE contract)
 ```
@@ -40,8 +40,8 @@ packages/shared   Zod schemas, types, constants (FE/BE contract)
 2. The poller picks it up, OCRs it (optional) and asks an LLM for a title, tags, correspondent and date.
 3. Depending on the **Auto-apply** setting, the result is either written straight back to paperless (and the trigger tag removed), or queued in the **Review** screen for you to approve/edit/reject.
 
-Everything — the paperless connection, provider keys, models, prompts, page limits, polling
-interval — is configured in the web UI. The only thing set outside the UI is a handful of
+Everything is configured in the web UI: the paperless connection, provider keys, models,
+prompts, page limits, the polling interval. The only thing set outside the UI is a handful of
 environment variables for the process itself (below).
 
 ## Deploy (self-hosting)
@@ -59,11 +59,11 @@ Two compose files, depending on where you start (full walkthrough in the
 
 ### Already running paperless-ngx
 
-Use [`docker/docker-compose.yml`](docker/docker-compose.yml) — just the Starfruit container.
+Use [`docker/docker-compose.yml`](docker/docker-compose.yml) (just the Starfruit container).
 Put the one required secret in a `.env` next to it and start:
 
 ```bash
-# Keep ENCRYPTION_KEY stable — see below.
+# Keep ENCRYPTION_KEY stable (see below).
 echo "ENCRYPTION_KEY=$(openssl rand -base64 32)" > .env
 
 docker compose up -d
@@ -71,11 +71,11 @@ docker compose up -d
 
 To let the container reach paperless, attach it to your paperless stack's Docker network
 (see the commented example at the bottom of the compose file) and use the in-network service
-name (e.g. `http://webserver:8000`) as the paperless URL in the UI — not `localhost`.
+name (e.g. `http://webserver:8000`) as the paperless URL in the UI, not `localhost`.
 
 ### Starting from scratch (paperless-ngx included)
 
-Use [`docker/docker-compose.full.yml`](docker/docker-compose.full.yml) — Redis +
+Use [`docker/docker-compose.full.yml`](docker/docker-compose.full.yml): Redis +
 paperless-ngx + Paperless Starfruit together. This one needs two secrets:
 
 ```bash
@@ -89,13 +89,13 @@ docker compose -f docker-compose.full.yml run --rm paperless createsuperuser
 ```
 
 paperless-ngx comes up on **http://localhost:8000** (log in with the superuser you just
-created). In the Starfruit UI, set the paperless URL to `http://paperless:8000` — the
-in-network service name, not `localhost`.
+created). In the Starfruit UI, set the paperless URL to `http://paperless:8000` (the
+in-network service name, not `localhost`).
 
 ### First run
 
-Open **http://localhost:7827** — the container serves both the API and the web UI on
-the same port. (The compose files publish the app on host port **7827** — deliberately
+Open **http://localhost:7827**. The container serves both the API and the web UI on
+the same port. (The compose files publish the app on host port **7827**, deliberately
 uncommon so they work as-is; change the left side of the `ports:` mapping to move it.)
 On first run, the UI shows a **"create admin"** card; once you set the admin
 username/password, registration closes and only login works (there is no default password).
@@ -103,7 +103,7 @@ username/password, registration closes and only login works (there is no default
 - **Persistence:** the SQLite database is at `/data/app.db` on a named volume. Back that up
   to keep your config, prompts, queue and audit history.
 - **Automatic updates:** both compose files ship a Watchtower service that auto-updates the
-  Starfruit container when a new image is released (only the labelled container — nothing else
+  Starfruit container when a new image is released (only the labelled container, nothing else
   on the host). Remove the `watchtower` service, or pin a version tag instead of `:latest`, to
   upgrade deliberately.
 - **Behind a reverse proxy:** put your TLS terminator (Caddy/Traefik/nginx) in front of the
@@ -119,37 +119,37 @@ These four are the _only_ runtime env vars. Everything else is configured in the
 
 | Variable         | Required | Default        | Purpose                                                                                  |
 | ---------------- | -------- | -------------- | ---------------------------------------------------------------------------------------- |
-| `ENCRYPTION_KEY` | **yes**  | —              | 32-byte key (base64 or hex). Encrypts stored credentials **and** signs admin sessions.   |
+| `ENCRYPTION_KEY` | **yes**  | (none)         | 32-byte key (base64 or hex). Encrypts stored credentials **and** signs admin sessions.   |
 | `DATABASE_PATH`  | no       | `/data/app.db` | SQLite file path (its directory is created if missing).                                  |
 | `PORT`           | no       | `3000`         | Port the app listens on _inside_ the container (the compose files publish it as `7827`). |
 | `CORS_ORIGIN`    | no       | reflect origin | Comma-separated allowed origins. Leave unset unless you want to lock it down.            |
 
 > **Keep `ENCRYPTION_KEY` stable.** Rotating it logs the admin out _and_ makes every stored
-> paperless/provider credential undecryptable — you'd have to re-enter them. Store it like any
+> paperless/provider credential undecryptable. You'd have to re-enter them. Store it like any
 > other production secret.
 
 Configured in the UI (not env): the paperless URL + token, AI provider keys, model choices,
 prompts, page limits, the polling interval, auto-apply, and the correspondent blacklist. Worker
-concurrency is fixed at 1 by design (single-user scale — simplicity over throughput).
+concurrency is fixed at 1 by design (single-user scale: simplicity over throughput).
 
 ### Connect paperless (least-privilege)
 
 In the UI's Connection screen, enter your paperless base URL and an API token, and hit
-**Test connection**. Leave **API version** blank — it's auto-detected.
+**Test connection**. Leave **API version** blank; it's auto-detected.
 
 Prefer a **dedicated paperless user** over the superuser: create a paperless account that can
 _view and change documents_ and _view and add tags and correspondents_, then mint that user's
 token (paperless: **Settings → My Profile → API Auth Token**). The token is stored encrypted at
 rest. Because this app must reach self-hosted/LAN URLs (paperless on a private IP, a local
-Ollama, etc.), the admin-entered URLs are intentionally **not** SSRF-restricted — the security
+Ollama, etc.), the admin-entered URLs are intentionally **not** SSRF-restricted: the security
 model is "one trusted admin".
 
 ### Configure AI providers
 
 Add provider credentials in the **API Keys** screen. Supported kinds:
 
-- **Anthropic, OpenAI, Google, Mistral** — one API key each; models come from a curated catalog.
-- **OpenAI-compatible** — for local/self-hosted endpoints (Ollama, LM Studio, vLLM, OpenRouter);
+- **Anthropic, OpenAI, Google, Mistral**: one API key each; models come from a curated catalog.
+- **OpenAI-compatible**: for local/self-hosted endpoints (Ollama, LM Studio, vLLM, OpenRouter);
   set a base URL, the API key is optional, and models are discovered live.
 
 Keys are encrypted at rest (AES-GCM) and never returned to the browser unmasked. Pick the default
@@ -163,7 +163,7 @@ cp .env.example .env   # then set ENCRYPTION_KEY (see the comment in the file)
 pnpm dev               # run api (:3000) + web (:5173) together
 ```
 
-Open **http://localhost:5173** — the web dev server proxies `/api` to the API on port 3000.
+Open **http://localhost:5173**. The web dev server proxies `/api` to the API on port 3000.
 (In production the API serves the built SPA itself on the same port.)
 
 - **Migrations apply automatically on API boot**, so there's no separate migrate step for a normal
@@ -174,7 +174,7 @@ Open **http://localhost:5173** — the web dev server proxies `/api` to the API 
 ## Local paperless-ngx for testing
 
 A throwaway paperless-ngx instance to develop against (SQLite + Redis, default
-`admin` / `admin` login — dev only):
+`admin` / `admin` login, dev only):
 
 ```bash
 pnpm paperless:up       # start paperless on http://localhost:8000 (first boot ~30-60s)

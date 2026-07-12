@@ -1,5 +1,5 @@
 # Full-stack example: paperless-ngx + Paperless Starfruit in one stack, using
-# the pre-built Starfruit image from ghcr.io — no repo checkout or local build
+# the pre-built Starfruit image from ghcr.io: no repo checkout or local build
 # needed, this file works on its own. If you ALREADY run paperless-ngx, use
 # docker-compose.yml instead and attach it to your existing stack's network.
 #
@@ -16,7 +16,7 @@
 #   http://localhost:8000   paperless-ngx (log in with the superuser you created)
 #   http://localhost:7827   Paperless Starfruit (first visit shows "create admin")
 #
-# In the Starfruit UI, set the paperless URL to http://paperless:8000 — the
+# In the Starfruit UI, set the paperless URL to http://paperless:8000, the
 # in-network service name, NOT http://localhost:8000 (inside the Starfruit
 # container, localhost is the container itself).
 services:
@@ -36,7 +36,7 @@ services:
       - '8000:8000'
     environment:
       PAPERLESS_REDIS: redis://broker:6379
-      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?set PAPERLESS_SECRET_KEY in .env — any long random string}
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?set PAPERLESS_SECRET_KEY in .env (any long random string)}
       # The URL paperless is reached at in the browser (needed for CSRF).
       # Change this when serving behind a reverse proxy / real hostname.
       PAPERLESS_URL: ${PAPERLESS_URL:-http://localhost:8000}
@@ -65,7 +65,7 @@ services:
     depends_on:
       - paperless
     ports:
-      # Host port 7827 ("star" on a phone keypad) — deliberately uncommon so
+      # Host port 7827 ("star" on a phone keypad), deliberately uncommon so
       # this file works as-is, unlike 3000 which is usually taken. The app
       # inside the container still listens on 3000.
       - '7827:3000'
@@ -76,7 +76,7 @@ services:
       # Encrypts stored credentials and signs admin sessions. Keep it stable:
       # rotating it logs the admin out and makes saved credentials
       # undecryptable.
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env — generate with `openssl rand -base64 32`}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY in .env (generate with `openssl rand -base64 32`)}
       # Optional: lock CORS to specific origins (comma-separated). Unset
       # reflects the request origin, which is fine since auth is a bearer
       # token, not a cookie.
@@ -85,7 +85,7 @@ services:
   # Auto-updates (optional). Watchtower watches the registry and, when a newer
   # image is published, pulls it and recreates the container with the same
   # config. `--label-enable` means it only touches containers carrying the
-  # watchtower label above — so paperless, Redis, etc. are left alone and only
+  # watchtower label above, so paperless, Redis, etc. are left alone and only
   # Starfruit auto-updates. Delete this whole service to opt out.
   watchtower:
     image: nickfedor/watchtower:latest # maintained fork (containrrr/watchtower is archived)

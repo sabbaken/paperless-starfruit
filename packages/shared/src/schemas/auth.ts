@@ -6,14 +6,14 @@ import { z } from 'zod';
  * login is possible.
  */
 
-/** First-run setup payload — stricter password rules than login. */
+/** First-run setup payload: stricter password rules than login. */
 export const registerInputSchema = z.object({
   username: z.string().trim().min(3).max(64),
   password: z.string().min(8).max(256),
 });
 export type RegisterInput = z.infer<typeof registerInputSchema>;
 
-/** Login payload — accept whatever was registered, don't leak the rules. */
+/** Login payload: accept whatever was registered, don't leak the rules. */
 export const loginInputSchema = z.object({
   username: z.string().trim().min(1),
   password: z.string().min(1),
@@ -30,7 +30,7 @@ export const authStatusSchema = z.object({
 });
 export type AuthStatus = z.infer<typeof authStatusSchema>;
 
-/** Successful login/register — the bearer token + who it belongs to. */
+/** Successful login/register: the bearer token + who it belongs to. */
 export const authResultSchema = z.object({
   token: z.string(),
   username: z.string(),

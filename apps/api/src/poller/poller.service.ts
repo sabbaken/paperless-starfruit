@@ -60,11 +60,11 @@ export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
     let enqueued = 0;
     for (const doc of results) {
       // A pending review item means we already processed it and are waiting on
-      // the user — don't re-enqueue (the trigger tag stays until they decide).
+      // the user; don't re-enqueue (the trigger tag stays until they decide).
       if (this.review.hasPending(doc.id)) continue;
       // A terminally-failed job keeps its trigger tag too; without this guard
       // we'd re-enqueue (and re-spend on the LLM) every cycle forever. Re-tagging
-      // does NOT clear this — the `failed` rows persist regardless of the tag.
+      // does NOT clear this; the `failed` rows persist regardless of the tag.
       // Use the dashboard "Retry" action (POST /jobs/:documentId/retry) to drop
       // those rows and reprocess after fixing the cause.
       if (this.queue.hasTerminalFailure(doc.id)) continue;

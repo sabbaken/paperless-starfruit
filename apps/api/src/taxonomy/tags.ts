@@ -1,5 +1,5 @@
 /**
- * current ∪ add, minus `remove` — order-stable, de-duplicated. Used wherever we
+ * current ∪ add, minus `remove`; order-stable, de-duplicated. Used wherever we
  * write a document's tag array: merge the AI's tags with the existing ones and
  * drop the trigger tag in the same PATCH, never a blind overwrite.
  */

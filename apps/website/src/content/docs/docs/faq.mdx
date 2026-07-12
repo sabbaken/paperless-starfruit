@@ -10,7 +10,7 @@ import { Aside } from '@astrojs/starlight/components';
 - Is the tag exactly **`psf-process`**? It's case-sensitive.
 - Is the [paperless connection](/docs/connect-paperless/) saved and testing green?
 - Have you selected a **language model** on the [Processing](/docs/processing/) screen?
-- Wait one poll interval (60s by default). Then check the **dashboard** — the job should
+- Wait one poll interval (60s by default). Then check the **dashboard**: the job should
   appear as queued, running, done or failed.
 - If it shows **failed**, open the error on the dashboard; use **Retry** after fixing the
   cause.
@@ -26,14 +26,14 @@ At a typical ~50 documents/week this is small, and you control it:
 - Turn **extraction off** to use the service as a pure OCR write-back tool and only pay for
   OCR.
 - Use a cheaper model for OCR than for extraction.
-- Set **page caps** so big files don't run expensive OCR — or aren't processed at all. The
+- Set **page caps** so big files don't run expensive OCR, or aren't processed at all. The
   OCR cap also trims what extraction sees: over it, only the document's first and last pages
   are attached to the extraction call instead of the whole file.
 
 The dashboard shows total tokens used, and every run's cost is in the
 **History** log.
 
-## Re-running a document costs nothing — why?
+## Why does re-running a document cost nothing?
 
 If you re-tag a document and nothing relevant changed (same recognised text, same models),
 the [skip-if-identical guard](/docs/pipeline/#reprocessing) recognises the result would be
@@ -48,7 +48,7 @@ OCR), whereas reusing paperless's text is free.
 
 ## Where is my data?
 
-Everything — config, prompts, the job queue, review items and audit history — is in a single
+Everything (config, prompts, the job queue, review items and audit history) is in a single
 SQLite file at `/data/app.db` on the container's data volume. Back that volume up and you
 have a complete snapshot.
 
@@ -68,7 +68,7 @@ the database, then creating a new admin in the UI.
 
 Avoid it. `ENCRYPTION_KEY` both encrypts stored credentials and signs admin sessions, so
 rotating it logs the admin out **and** makes every stored paperless/provider credential
-undecryptable — you'd have to re-enter them all. Treat it as a stable production secret.
+undecryptable. You'd have to re-enter them all. Treat it as a stable production secret.
 
 ## Is it affiliated with paperless-ngx?
 
@@ -78,5 +78,5 @@ public REST API. It is not part of, or endorsed by, the paperless-ngx project.
 ## How do I debug a bad result?
 
 Open the **History** screen. Every run records the **fully-rendered prompt** that was sent
-and the **raw model response**, searchable — so you can see exactly why a title or tag came
+and the **raw model response**, searchable, so you can see exactly why a title or tag came
 out the way it did, and adjust your [prompt](/docs/prompts/) accordingly.

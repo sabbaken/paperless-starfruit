@@ -10,17 +10,17 @@ import {
 
 /**
  * How much of the original document extraction gets to SEE, on top of the OCR
- * text: the whole file, only its first and last pages (long documents — dates,
+ * text: the whole file, only its first and last pages (long documents: dates,
  * letterheads and signatures live on the edges), or nothing (provider can't
- * take visual input). Decidable from settings + paperless metadata alone —
- * before the file is downloaded — so it can also feed the config fingerprint.
+ * take visual input). Decidable from settings + paperless metadata alone,
+ * before the file is downloaded, so it can also feed the config fingerprint.
  */
 export type VisualMode = 'full' | 'trimmed' | 'none';
 
 export function visualMode(opts: {
   kind: ProviderKind;
   pageCount: number | null;
-  /** `settings.ocrMaxPages` — the shared "too big for a vision model" limit; null = no trimming. */
+  /** `settings.ocrMaxPages`: the shared "too big for a vision model" limit; null = no trimming. */
   maxFullPages: number | null;
 }): VisualMode {
   if (!defaultCaps(opts.kind).supportsVision) return 'none';
@@ -33,16 +33,16 @@ export function visualMode(opts: {
 /**
  * Build the multimodal part that carries the original document into the
  * extraction call. Mirrors the OCR call's part shape byte-for-byte (same media
- * type normalisation, same `document.pdf` filename, and — with `cacheDocument`
- * — the same cache marker) so that on Anthropic the extraction request
+ * type normalisation, same `document.pdf` filename, and, with `cacheDocument`,
+ * the same cache marker) so that on Anthropic the extraction request
  * re-reads the document block the OCR request just cached instead of paying
  * full price for a second read. The pipeline sets `cacheDocument` only when
- * both calls share a credential + model — the one pairing where the cache
+ * both calls share a credential + model, the one pairing where the cache
  * entry is actually re-read (see `ANTHROPIC_CACHE_CONTROL`).
  *
  * Returns null when this provider/file combination can't take the attachment
  * (non-image file on a kind without PDF file-part support, exotic media type,
- * or a PDF that pdf-lib can't parse) — extraction then runs text-only, exactly
+ * or a PDF that pdf-lib can't parse); extraction then runs text-only, exactly
  * as before.
  */
 export async function buildExtractionFilePart(opts: {
@@ -55,7 +55,7 @@ export async function buildExtractionFilePart(opts: {
   const mediaType = normaliseMediaType(opts.contentType);
   const cachePart = opts.cacheDocument ? { providerOptions: ANTHROPIC_CACHE_CONTROL } : {};
   if (isImageMediaType(mediaType)) {
-    // Single image original — there is nothing to trim.
+    // Single image original: there is nothing to trim.
     return { type: 'image', image: opts.data, mediaType, ...cachePart };
   }
   if (mediaType !== 'application/pdf' || !PDF_FILE_PART_KINDS.has(opts.kind)) return null;
@@ -71,10 +71,10 @@ export async function buildExtractionFilePart(opts: {
 }
 
 /**
- * Copy the first and last pages into a fresh two-page PDF (pure-JS pdf-lib —
+ * Copy the first and last pages into a fresh two-page PDF (pure-JS pdf-lib,
  * no rasterizer dependency; vision providers render PDF pages server-side
  * anyway, so the model still sees the pages). Null when the PDF can't be
- * parsed — the caller degrades to text-only extraction rather than failing
+ * parsed; the caller degrades to text-only extraction rather than failing
  * the job over an optional attachment.
  */
 async function firstAndLastPages(data: Buffer): Promise<Buffer | null> {

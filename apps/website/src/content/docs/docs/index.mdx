@@ -7,8 +7,8 @@ import { CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
 
 **Paperless Starfruit** is a self-hosted, bring-your-own-keys AI companion for
 [paperless-ngx](https://docs.paperless-ngx.com/). It adds the two things paperless can't do
-on its own: **higher-quality OCR** and **automatic metadata** — a clean title, tags,
-correspondent and date for every document you tag.
+on its own: **higher-quality OCR** and **automatic metadata** (a clean title, tags,
+correspondent and date for every document you tag).
 
 Everything is configured from the web UI; the only outside setup is a handful of environment
 variables for the process itself.
@@ -16,13 +16,13 @@ variables for the process itself.
 ## How it fits
 
 It runs as a **second container beside paperless-ngx** and talks to it over the same REST API
-you already use. It never touches your library directly — it reads the documents you tag,
+you already use. It never touches your library directly: it reads the documents you tag,
 asks the AI models _you_ connect for metadata, and writes the result back.
 
 <Aside type="tip" title="Bring your own keys">
   No account, no bundled AI. Connect your own provider keys (Anthropic, OpenAI, Google, Mistral) or
   a model on your own hardware. Keys are encrypted at rest and requests go straight from your
-  container to the provider — nothing routes through a vendor.
+  container to the provider. Nothing routes through a vendor.
 </Aside>
 
 ## The ideas to know
@@ -33,10 +33,10 @@ asks the AI models _you_ connect for metadata, and writes the result back.
   paperless already extracted. Extraction runs on that text either way.
 - **Extraction is one call.** A single language-model request returns a title, tags,
   correspondent and date, validated against a strict schema. Vision-capable models also see
-  the original document — letterheads and signatures beat a garbled text layer.
+  the original document: letterheads and signatures beat a garbled text layer.
 - **You decide how it applies.** _Auto-apply_ writes changes straight back to paperless;
   turn it off and every suggestion waits in the **review queue** for your approval.
-- **Single container, single admin.** A Node process and a SQLite file — no Postgres,
+- **Single container, single admin.** A Node process and a SQLite file: no Postgres,
   no Redis. On first run you create one admin account.
 
 ## Start here

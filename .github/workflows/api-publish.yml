@@ -5,8 +5,8 @@ name: API · Publish image
 # v1.2.0) names the version: the image is built from the tagged commit, stamped
 # with APP_VERSION, tagged `<version>` (plus `latest` for non-prereleases), and
 # the pull command is appended to the release notes. Use the manual trigger to
-# rebuild an existing release's image (e.g. after a base-image security fix) —
-# it never moves `latest` unless explicitly asked to.
+# rebuild an existing release's image (e.g. after a base-image security fix).
+# It never moves `latest` unless explicitly asked to.
 on:
   release:
     types: [published]
@@ -65,7 +65,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: . # repo root — Dockerfile needs the workspace + packages/shared
+          context: . # repo root: Dockerfile needs the workspace + packages/shared
           file: docker/Dockerfile
           push: true
           build-args: |

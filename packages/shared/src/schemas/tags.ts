@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Cap on the per-tag AI hint — every hint is injected into every extraction
+ * Cap on the per-tag AI hint. Every hint is injected into every extraction
  * prompt, so they must stay short.
  */
 export const TAG_COMMENT_MAX = 500;
@@ -11,7 +11,7 @@ const tagColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'must be a #rrggbb 
 
 /**
  * One paperless tag as shown on the Tags page: the paperless-owned fields plus
- * the local `comment` — a user-written hint injected into the extraction
+ * the local `comment`, a user-written hint injected into the extraction
  * prompt so the model knows when the tag applies. `isTrigger` marks the tag
  * Starfruit itself uses to pick up documents (renaming it would orphan the
  * poller, so the UI blocks editing it).

@@ -9,7 +9,7 @@ interface SwitchRowProps {
   disabled?: boolean;
 }
 
-/** A labelled switch row — label (+ optional hint) on the left, Switch on the right. */
+/** A labelled switch row: label (+ optional hint) on the left, Switch on the right. */
 export function SwitchRow({ label, hint, checked, onCheckedChange, disabled }: SwitchRowProps) {
   const id = useId();
   return (

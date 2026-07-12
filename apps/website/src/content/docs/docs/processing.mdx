@@ -11,9 +11,9 @@ The **Processing** screen is where you pick the models and tune how documents ar
 
 Two model slots, each chosen from your [connected providers](/docs/providers/):
 
-- **OCR model** — reads scanned documents. Used only when OCR is enabled. Must be
+- **OCR model**: reads scanned documents. Used only when OCR is enabled. Must be
   vision-capable.
-- **Language model** — extracts the title, tags, correspondent and date.
+- **Language model**: extracts the title, tags, correspondent and date.
 
 If you haven't connected a provider yet, the picker links you to the API Keys screen.
 
@@ -21,28 +21,28 @@ If you haven't connected a provider yet, the picker links you to the API Keys sc
 
 ### OCR
 
-- **Run OCR before extraction** — when on, each original is re-read with your OCR model and
+- **Run OCR before extraction**: when on, each original is re-read with your OCR model and
   the result is written back to paperless's `content`. When off, paperless's own (free)
   Tesseract text is reused. _Disabled until you pick an OCR model._
-- **Skip OCR above … pages** — larger files reuse paperless's text instead of paying for
+- **Skip OCR above … pages**: larger files reuse paperless's text instead of paying for
   OCR, **and** extraction sees only their first and last pages instead of the whole
   original. Blank means no limit.
 
 ### Extraction
 
 Extraction reads more than text: when the language model is vision-capable, the **original
-document is attached** to the call as visual evidence — layout, letterheads, stamps and
-signatures — with the recognised text as an aid. Files over the _OCR_ page cap attach only
+document is attached** to the call as visual evidence (layout, letterheads, stamps and
+signatures), with the recognised text as an aid. Files over the _OCR_ page cap attach only
 their first and last pages; models that can't take files run on text alone.
 
-- **Run extraction** — when off, the pipeline stops after OCR (OCR-only mode): the
+- **Run extraction**: when off, the pipeline stops after OCR (OCR-only mode). The
   recognised text is written back, the trigger tag is dropped, and the document's metadata
   is left untouched. No language model is required then. Turning _both_ extraction and OCR
-  off leaves the pipeline nothing to do — jobs fail with a configuration error.
-- **Create new tags** — let the AI create tags that don't exist yet.
-- **Create new correspondents** — let the AI create correspondents that don't exist yet.
-- **Skip extraction above … pages** — larger files are skipped _entirely_ — no OCR, no
-  extraction. Blank means no limit.
+  off leaves the pipeline nothing to do, so jobs fail with a configuration error.
+- **Create new tags**: let the AI create tags that don't exist yet.
+- **Create new correspondents**: let the AI create correspondents that don't exist yet.
+- **Skip extraction above … pages**: larger files are skipped _entirely_ (no OCR, no
+  extraction). Blank means no limit.
 
 <Aside type="tip" title="Two caps, two jobs">
   The **extraction** cap is the outer gate (over it → skip everything). The **OCR** cap is the inner
@@ -55,16 +55,16 @@ their first and last pages; models that can't take files run on text alone.
 
 ### Apply
 
-- **Auto-apply suggestions** — when on, changes are written to paperless immediately and the
+- **Auto-apply suggestions**: when on, changes are written to paperless immediately and the
   trigger tag is dropped. When off, every result is queued for [review](/docs/review/).
 
 ## General
 
-- **Poll interval (seconds)** — how often the poller checks paperless. Floored at **15s**
+- **Poll interval (seconds)**: how often the poller checks paperless. Floored at **15s**
   (PATCH/upload are CPU-heavy on paperless).
-- **Output language** — the language the model writes metadata in. `auto` uses the
+- **Output language**: the language the model writes metadata in. `auto` uses the
   document's own language.
-- **Correspondent blacklist** — one name per line; these are never assigned or created as a
+- **Correspondent blacklist**: one name per line; these are never assigned or created as a
   correspondent.
 
 ## Defaults

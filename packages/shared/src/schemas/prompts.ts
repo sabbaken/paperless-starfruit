@@ -14,7 +14,7 @@ export const promptConfigSchema = z.object({
   key: promptKeySchema,
   label: z.string(),
   description: z.string(),
-  /** The effective body — the user's override if set, otherwise the built-in default. */
+  /** The effective body: the user's override if set, otherwise the built-in default. */
   body: z.string(),
   /** The built-in default, so the editor can show/diff against it. */
   default: z.string(),
@@ -24,7 +24,7 @@ export const promptConfigSchema = z.object({
 });
 export type PromptConfig = z.infer<typeof promptConfigSchema>;
 
-/** Save payload — an empty body is rejected (use reset to return to the default). */
+/** Save payload: an empty body is rejected (use reset to return to the default). */
 export const promptUpdateSchema = z.object({
   body: z.string().min(1),
 });
@@ -32,7 +32,7 @@ export type PromptUpdate = z.infer<typeof promptUpdateSchema>;
 
 /**
  * Test payload: run a (possibly unsaved) body against a real document. `body`
- * is optional — omitted, the saved/default body is used.
+ * is optional. Omitted, the saved/default body is used.
  */
 export const promptTestInputSchema = z.object({
   documentId: z.number().int().positive(),

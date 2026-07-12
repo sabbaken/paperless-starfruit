@@ -33,7 +33,7 @@ export class AuthController {
     };
   }
 
-  /** First-run setup — creates the one admin. 409 once an admin exists. */
+  /** First-run setup: creates the one admin. 409 once an admin exists. */
   @Public()
   @UseGuards(LoginThrottleGuard)
   @Post('register')

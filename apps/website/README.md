@@ -3,8 +3,8 @@
 The marketing landing page (`/`) and documentation (`/docs`) for Paperless
 Starfruit, built with [Astro](https://astro.build) + [Starlight](https://starlight.astro.build).
 
-- **Landing** — a custom Astro page at `src/pages/index.astro`.
-- **Docs** — Starlight, with content under `src/content/docs/docs/` so it is
+- **Landing**: a custom Astro page at `src/pages/index.astro`.
+- **Docs**: Starlight, with content under `src/content/docs/docs/` so it is
   served at `/docs/*` while the root stays the custom landing.
 
 ## Commands
@@ -21,7 +21,7 @@ pnpm --filter @paperless-starfruit/website lint        # eslint
 The landing's “A look at the app” section uses real screenshots of the admin UI,
 generated **manually** (not in the build or CI) and committed to
 `public/screenshots/`. The generator drives the real `apps/web` UI with Playwright
-but answers every API call from fixtures, so the same pages — with the same data —
+but answers every API call from fixtures, so the same pages, with the same data,
 come out identical every run.
 
 ```bash

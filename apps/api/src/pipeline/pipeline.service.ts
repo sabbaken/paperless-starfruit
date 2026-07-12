@@ -55,7 +55,7 @@ export class PipelineService {
    * tag creation, the re-index-heavy PATCH) doesn't re-download and re-bill OCR
    * when the worker retries the job. Keyed by document id + OCR provider/model;
    * evicted once the job settles. Bounded by in-flight docs (worker concurrency
-   * is 1) and lost on restart — at most one re-OCR, never a permanent leak of work.
+   * is 1) and lost on restart: at most one re-OCR, never a permanent leak of work.
    */
   private readonly ocrCache = new Map<number, { key: string; text: string; usage?: LlmUsage }>();
 
@@ -79,7 +79,7 @@ export class PipelineService {
     if (!client) throw new Error('No paperless connection is configured.');
 
     const settings = this.settings.get();
-    // `null` = extraction is off (OCR-only mode) — no LLM model is required then.
+    // `null` = extraction is off (OCR-only mode); no LLM model is required then.
     const provider = settings.extractionEnabled
       ? this.resolveProvider(settings.llmProviderId, settings.llmModel, 'LLM')
       : null;
@@ -88,7 +88,7 @@ export class PipelineService {
     const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
 
     // --- Step 2: page-based cost gates. `page_count` comes straight from paperless;
-    // when it's unknown (null) no gate applies — we can't prove the file is oversized. ---
+    // when it's unknown (null) no gate applies: we can't prove the file is oversized. ---
     const pageCount = doc.page_count ?? null;
     const overLimit = (limit: number | null) =>
       limit != null && pageCount != null && pageCount > limit;
@@ -97,18 +97,18 @@ export class PipelineService {
     // neither OCR nor extraction. We leave whatever paperless already recognised,
     // drop the trigger tag so it isn't re-polled, and record the skip. Re-tagging it
     // (or raising the limit) is the explicit "process me anyway" signal. With
-    // extraction off the gate doesn't apply — only the OCR limit governs then.
+    // extraction off the gate doesn't apply; only the OCR limit governs then.
     if (settings.extractionEnabled && overLimit(settings.extractMaxPages)) {
       await this.dropTriggerTags(client, doc, triggerTagId);
       this.audit.record({ jobId: job.id, documentId: job.documentId, decision: 'skipped' });
-      // A previous attempt may have OCR'd before the limit was lowered — the
+      // A previous attempt may have OCR'd before the limit was lowered; the
       // gate settles the job, so honour the cache's evict-on-settle contract.
       this.ocrCache.delete(job.documentId);
       this.logger.log(
         `job ${job.id} (doc ${job.documentId}) skipped: ${pageCount} pages over the extraction limit (${settings.extractMaxPages})`,
       );
       // A sentinel hash that can never equal a real completion's hash (those are
-      // `<version>|llm:…|ocr:…`). Raising the limit and re-tagging must reprocess —
+      // `<version>|llm:…|ocr:…`). Raising the limit and re-tagging must reprocess;
       // it must not look "already done". The page gate itself suppresses redundant
       // reruns while the document is still oversized.
       return {
@@ -123,17 +123,17 @@ export class PipelineService {
     // Tesseract text (free). ---
     const ocrModelSelected = settings.ocrProviderId != null && !!settings.ocrModel;
     if (settings.extractionEnabled && settings.ocrEnabled && !ocrModelSelected) {
-      // Don't fail the job over a missing model — degrade to paperless's text and
+      // Don't fail the job over a missing model; degrade to paperless's text and
       // say so. The Processing UI also disables the OCR controls until a model is set.
       this.logger.warn(
-        `job ${job.id} (doc ${job.documentId}): OCR is on but no OCR model is selected — using paperless's existing text. Pick an OCR model in Settings → Processing.`,
+        `job ${job.id} (doc ${job.documentId}): OCR is on but no OCR model is selected; using paperless's existing text. Pick an OCR model in Settings → Processing.`,
       );
     }
     const runOcr = settings.ocrEnabled && ocrModelSelected && !overLimit(settings.ocrMaxPages);
 
     // Anthropic's prompt cache is scoped to one API key and one model, and a
     // cache write costs 1.25× the normal input price. Mark the document block
-    // as cacheable only when this run's OCR and extraction calls share both —
+    // as cacheable only when this run's OCR and extraction calls share both:
     // the one pairing where extraction actually re-reads (at ~10%) what OCR
     // just wrote. Any other combination would pay the write surcharge on every
     // call with zero reads.
@@ -147,7 +147,7 @@ export class PipelineService {
     // OCR-only mode with no runnable OCR step: nothing this pipeline can do.
     // Over the page limit that mirrors the extraction gate above (skip + drop
     // the trigger tag; raising the limit and re-tagging reprocesses). Anything
-    // else is a config dead end — fail the job loudly (it goes terminal and
+    // else is a config dead end: fail the job loudly (it goes terminal and
     // shows on the dashboard) instead of silently un-tagging documents.
     if (!settings.extractionEnabled && !runOcr) {
       if (settings.ocrEnabled && ocrModelSelected) {
@@ -166,7 +166,7 @@ export class PipelineService {
       }
       const fix = !settings.ocrEnabled ? 'enable OCR' : 'select an OCR model';
       throw new Error(
-        `Extraction is disabled and OCR cannot run — ${fix} in Settings → Processing, or re-enable extraction.`,
+        `Extraction is disabled and OCR cannot run; ${fix} in Settings → Processing, or re-enable extraction.`,
       );
     }
     const existing = (doc.content ?? '').trim();
@@ -183,7 +183,7 @@ export class PipelineService {
       const cached = this.ocrCache.get(job.documentId);
       if (cached?.key === ocrKey) {
         // A previous attempt already OCR'd this exact document+config and then
-        // failed downstream — reuse it instead of paying for OCR again.
+        // failed downstream; reuse it instead of paying for OCR again.
         text = cached.text;
         ocrUsage = cached.usage;
       } else {
@@ -200,17 +200,17 @@ export class PipelineService {
         text = result.text.trim();
         ocrUsage = result.usage;
         // The original IS present (we just downloaded it), so empty OCR means the
-        // page is blank/unreadable — a real failure, not a "not ready yet" defer.
+        // page is blank/unreadable: a real failure, not a "not ready yet" defer.
         // Failing consumes attempts and eventually goes terminal, instead of
         // re-OCR'ing (and re-billing) the same blank page every poll.
         if (!text)
-          throw new Error('OCR produced no text — the document may be blank or unreadable.');
+          throw new Error('OCR produced no text. The document may be blank or unreadable.');
         this.ocrCache.set(job.documentId, { key: ocrKey, text, usage: ocrUsage });
       }
     } else {
       text = existing;
       if (!text) {
-        // Not a failure — paperless likely hasn't OCR'd it yet. Defer so we don't
+        // Not a failure: paperless likely hasn't OCR'd it yet. Defer so we don't
         // burn every attempt back-to-back before the text exists (see worker). Point
         // at whichever knob is actually blocking OCR so the message isn't misleading.
         const fix = !settings.ocrEnabled
@@ -219,7 +219,7 @@ export class PipelineService {
             ? 'select an OCR model'
             : 'raise the OCR page limit';
         throw new DeferJobError(
-          `Document has no text yet — ${fix} or wait for paperless to OCR it.`,
+          `Document has no text yet; ${fix} or wait for paperless to OCR it.`,
         );
       }
     }
@@ -235,7 +235,7 @@ export class PipelineService {
     // if the set is edited mid-run.
     const hiddenTagIds = provider ? this.hiddenTags.ids() : new Set<number>();
     // How much of the original the extraction model gets to see (full/trimmed/
-    // none). The OCR page limit does double duty as the threshold — both gates
+    // none). The OCR page limit does double duty as the threshold: both gates
     // exist to keep oversized files away from vision models. Part of the
     // fingerprint: changing the limit changes the model's input, so it must
     // reprocess rather than skip-as-identical.
@@ -255,7 +255,7 @@ export class PipelineService {
     // an identical result was already produced, so clear the trigger tag so the
     // document isn't re-polled forever. The completed run wrote this OCR text
     // back then, but paperless's `content` may have drifted since (paperless
-    // re-OCR, manual edit) — restore it in the same PATCH, or an explicit re-tag
+    // re-OCR, manual edit); restore it in the same PATCH, or an explicit re-tag
     // would bill OCR and change nothing. No pending review item can exist at
     // this point (the poller's pending-check guards against re-enqueuing one).
     // We still report any OCR tokens we just spent computing the hash.
@@ -308,7 +308,7 @@ export class PipelineService {
           .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         // The prompt reflects the user's intent (the raw setting), not the
-        // auto-gated `create` below — so in review mode the model still proposes
+        // auto-gated `create` below, so in review mode the model still proposes
         // new tags/correspondents the human can approve.
         allowNewTags: settings.createNewTags,
         allowNewCorrespondents: settings.createNewCorrespondents,
@@ -341,7 +341,7 @@ export class PipelineService {
       });
       if (!filePart) {
         this.logger.debug(
-          `job ${job.id} (doc ${job.documentId}): original not attachable for ${provider.kind} — extracting from text only`,
+          `job ${job.id} (doc ${job.documentId}): original not attachable for ${provider.kind}; extracting from text only`,
         );
       }
     }
@@ -369,12 +369,12 @@ export class PipelineService {
     // decides whether to write immediately or queue the suggestion for review.
     const isAuto = settings.autoApply;
     // Only create new entities without a human gate (auto mode), and only the
-    // kinds the user opted into — tags and correspondents are gated separately.
+    // kinds the user opted into; tags and correspondents are gated separately.
     const createTags = isAuto && settings.createNewTags;
     const createCorrespondents = isAuto && settings.createNewCorrespondents;
 
     // The model never saw hidden tags, but it can still guess one's name from
-    // the document itself (e.g. "Inbox") — and reconciliation would match it to
+    // the document itself (e.g. "Inbox"), and reconciliation would match it to
     // the real tag. Drop such suggestions outright, mirroring the
     // correspondent blacklist.
     const norm = (s: string) => s.trim().toLowerCase();
@@ -382,7 +382,7 @@ export class PipelineService {
     const suggestedTags = extraction.tags.filter((name) => !hiddenNames.has(norm(name)));
 
     // Resolve against the same snapshot the prompt was rendered from: a Tags-page
-    // edit during the (long) LLM call must not shift the ground under this job —
+    // edit during the (long) LLM call must not shift the ground under this job:
     // e.g. a rename would otherwise re-create the old name as a duplicate tag.
     const resolvedTags = await this.taxonomy.resolveTags(client, suggestedTags, {
       create: createTags,
@@ -418,7 +418,7 @@ export class PipelineService {
     }
 
     // Review mode: the metadata waits on approval, but the OCR text is not a
-    // reviewable suggestion — write it back now so the review preview shows it.
+    // reviewable suggestion; write it back now so the review preview shows it.
     if (ocrChanged) await client.patchDocument(doc.id, { content: text });
 
     const suggestions: ReviewSuggestions = {
@@ -450,13 +450,13 @@ export class PipelineService {
     if (providerId == null || !model) {
       throw new Error(
         role === 'OCR'
-          ? 'OCR is on but no OCR model is selected — choose one in Settings → Processing, or turn OCR off.'
-          : 'No LLM model selected — choose one in Settings → Processing.',
+          ? 'OCR is on but no OCR model is selected. Choose one in Settings → Processing, or turn OCR off.'
+          : 'No LLM model selected. Choose one in Settings → Processing.',
       );
     }
     const credential = this.providers.getCredential(providerId);
     if (!credential) {
-      throw new Error(`The selected ${role} provider no longer exists — pick another in Settings.`);
+      throw new Error(`The selected ${role} provider no longer exists. Pick another in Settings.`);
     }
     return { ...credential, model };
   }
@@ -477,7 +477,7 @@ export class PipelineService {
     const patch: DocumentPatch = {
       title: s.extraction.title,
       // Merge suggested tags with the current ones and drop the trigger tag in
-      // the same PATCH — tag-replace semantics, never a blind overwrite.
+      // the same PATCH: tag-replace semantics, never a blind overwrite.
       tags: mergeTagIds(doc.tags, addIds, [triggerTagId]),
     };
     if (s.resolvedCorrespondent?.id != null) patch.correspondent = s.resolvedCorrespondent.id;

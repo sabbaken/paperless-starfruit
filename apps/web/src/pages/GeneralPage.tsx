@@ -33,7 +33,7 @@ export function GeneralPage() {
   };
 
   return (
-    // Two settings — two rows. The page header already names the page, so no
+    // Two settings, two rows. The page header already names the page, so no
     // section chrome, and every hint is at most one short line.
     <div className="divide-y">
       <div className="flex flex-wrap items-center justify-between gap-4 py-4">
@@ -70,7 +70,7 @@ export function GeneralPage() {
       <div className="space-y-2 py-4">
         <SwitchRow
           label="Check for updates"
-          hint="Sidebar notice on new releases — only the version number is fetched."
+          hint="Sidebar notice on new releases. Only the version number is fetched."
           checked={checkForUpdates}
           onCheckedChange={setCheckForUpdates}
           disabled={!settings.data || updateSettings.isPending}

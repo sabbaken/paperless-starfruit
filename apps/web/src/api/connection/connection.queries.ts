@@ -7,7 +7,7 @@ export function useConnection() {
   return useQuery({ queryKey: connectionKeys.all, queryFn: connectionApi.get });
 }
 
-/** The connected paperless base URL, or null — for building deep links into its UI. */
+/** The connected paperless base URL, or null, for building deep links into its UI. */
 export function usePaperlessBaseUrl(): string | null {
   const connection = useConnection();
   return connection.data?.connected ? connection.data.baseUrl : null;

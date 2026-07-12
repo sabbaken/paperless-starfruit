@@ -11,7 +11,7 @@
 .idea
 .vscode
 
-# Local data and secrets — never bake these into the image.
+# Local data and secrets. Never bake these into the image.
 **/*.db
 **/*.db-shm
 **/*.db-wal

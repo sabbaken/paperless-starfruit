@@ -45,8 +45,8 @@ function parsePricing(p?: { input?: string; output?: string }): ModelInfo['prici
 
 /**
  * Owns provider credentials (API keys / local endpoints) with the key encrypted
- * at rest and never returned to the client. The bound model is gone — model
- * choice lives in settings — so this also discovers which models each credential
+ * at rest and never returned to the client. The bound model is gone (model
+ * choice lives in settings), so this also discovers which models each credential
  * offers: the curated catalog for cloud kinds, a live `/models` probe for local.
  */
 @Injectable()
@@ -217,7 +217,7 @@ export class ProviderService {
       const models = await this.fetchLocalModels(c.baseUrl, this.crypto.decrypt(c.apiKeyEncrypted));
       return { ...base, manual: false, models };
     } catch {
-      // Endpoint unreachable — let the UI fall back to a manual model id.
+      // Endpoint unreachable; let the UI fall back to a manual model id.
       return { ...base, manual: true, models: [] };
     }
   }
@@ -270,7 +270,7 @@ export class ProviderService {
   }
 }
 
-/** Map a DB row to the client-facing config — the encrypted key is dropped. */
+/** Map a DB row to the client-facing config; the encrypted key is dropped. */
 function toConfig(row: Provider): ProviderConfig {
   const caps = providerCapsSchema.safeParse(row.caps);
   return {

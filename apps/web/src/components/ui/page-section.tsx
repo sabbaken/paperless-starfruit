@@ -12,7 +12,7 @@ interface PageSectionProps {
 
 /**
  * A titled page section: heading, optional description and header action, then
- * content. Deliberately chrome-free — no border, shadow or card background. It
+ * content. Deliberately chrome-free: no border, shadow or card background. It
  * groups related controls through hierarchy and whitespace instead of boxing
  * every block in a card, so a page reads as labelled sections rather than a
  * deck of cards. Reach for a real Card only when a block is a discrete object

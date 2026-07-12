@@ -4,14 +4,14 @@ description: Manage your paperless tags from Starfruit and give each one a hint 
 ---
 
 The **Tags** page lists every tag in your paperless instance. You can create new tags and
-rename or recolor existing ones — changes are written straight to paperless.
+rename or recolor existing ones. Changes are written straight to paperless.
 
 Its real purpose, though, is the **AI hint**: a short note attached to a tag that tells the
-model when the tag applies. Tag names alone are often ambiguous — _"Insurance"_ could mean
-policies, claims, or the company's ads — and the model can only guess. A hint removes the
+model when the tag applies. Tag names alone are often ambiguous (_"Insurance"_ could mean
+policies, claims, or the company's ads), and the model can only guess. A hint removes the
 guessing:
 
-> **Insurance** — Anything from an insurance company: policies, claims, renewal letters.
+> **Insurance**: Anything from an insurance company: policies, claims, renewal letters.
 > Not marketing.
 
 ## How hints reach the model
@@ -30,36 +30,36 @@ become a Markdown table the model can read row by row, with the rest listed comp
 Other existing tags: Receipts, Manuals, Warranty
 ```
 
-Tags without a hint stay in the compact list — still offered for reuse, just without
+Tags without a hint stay in the compact list, still offered for reuse, just without
 guidance (and without a table row each, so hints don't bloat the prompt).
 
 A few practical notes:
 
 - **Keep hints short.** One or two sentences (500 characters max). Every hint is included in
   every extraction prompt, so long hints cost tokens on each document.
-- **Hints live in Starfruit**, not in paperless — they're stored in Starfruit's own database,
+- **Hints live in Starfruit**, not in paperless: they're stored in Starfruit's own database,
   keyed by the paperless tag. Deleting a tag in paperless orphans its hint harmlessly.
-- **Editing a hint doesn't touch processed documents by itself** — but hints are part of the
+- **Editing a hint doesn't touch processed documents by itself**, but hints are part of the
   processing fingerprint, so re-adding the trigger tag to a document after a hint change
   re-runs it with the new guidance (it won't be skipped as an identical run).
-- The **trigger tag** is shown with a badge and can't be edited here — Starfruit finds
+- The **trigger tag** is shown with a badge and can't be edited here, because Starfruit finds
   documents by its name.
 
 ## Hiding a tag from the AI
 
-Some tags aren't for the AI at all — a workflow tag like _"Inbox"_ that you apply
+Some tags aren't for the AI at all: a workflow tag like _"Inbox"_ that you apply
 automatically to mark documents you haven't reviewed yet, for example. If the model sees it
 in the taxonomy, it will happily suggest it.
 
 The eye button on a tag's row toggles **Hidden from AI**. A hidden tag:
 
-- is never offered to the model — it disappears from `{{all_tags}}` and from the document's
+- is never offered to the model: it disappears from `{{all_tags}}` and from the document's
   current-tags context, so the AI doesn't know it exists;
-- can never be applied by extraction — even if the model guesses the name on its own, the
+- can never be applied by extraction: even if the model guesses the name on its own, the
   suggestion is dropped before it reaches the document;
 - stays untouched where it already is: processing merges tags, so a hidden tag already on a
   document survives every run.
 
 Hiding is local to Starfruit (paperless is unaffected), and like hints it's part of the
-processing fingerprint — hide or show a tag and re-tag a document, and it re-runs with the
+processing fingerprint: hide or show a tag and re-tag a document, and it re-runs with the
 new taxonomy instead of being skipped as identical.

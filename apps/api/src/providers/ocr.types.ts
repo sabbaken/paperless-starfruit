@@ -3,7 +3,7 @@ import type { LlmUsage } from './llm.service';
 
 /** Provider kinds whose vision models accept a PDF `file` part directly (per the
  *  AI SDK). Mistral chat (e.g. Pixtral) and generic OpenAI-compatible endpoints
- *  only take images — a PDF must go to one of these, or to Mistral's OCR endpoint. */
+ *  only take images; a PDF must go to one of these, or to Mistral's OCR endpoint. */
 export const PDF_FILE_PART_KINDS = new Set<string>([
   PROVIDER_KIND.ANTHROPIC,
   PROVIDER_KIND.OPENAI,
@@ -15,7 +15,7 @@ export const PDF_FILE_PART_KINDS = new Set<string>([
  * The OCR call writes the document block into the cache and the extraction call
  * that follows re-reads it at ~10% of the input price. Anthropic's cache is
  * scoped to one API key and one model, and a cache WRITE costs 1.25× the normal
- * input price — so the pipeline sets this marker only when OCR and extraction
+ * input price, so the pipeline sets this marker only when OCR and extraction
  * run on the same credential and model (see `cacheDocument` below); any other
  * pairing would pay the write surcharge with zero reads. The document part
  * always goes FIRST in the user message so both requests share an identical
@@ -61,8 +61,8 @@ export interface OcrResult {
 }
 
 /**
- * Normalise a `Content-Type` header to a bare media type. Defaults to PDF —
- * paperless originals are overwhelmingly PDFs — when the header is missing or
+ * Normalise a `Content-Type` header to a bare media type. Defaults to PDF
+ * (paperless originals are overwhelmingly PDFs) when the header is missing or
  * opaque (`application/octet-stream`), so a vision/OCR call still gets a usable
  * media type instead of one a provider would reject.
  */

@@ -12,7 +12,7 @@ export const jobSummarySchema = z.object({
 });
 export type JobSummary = z.infer<typeof jobSummarySchema>;
 
-/** Dashboard snapshot — queue depth, review backlog, token spend, throughput, recent jobs. */
+/** Dashboard snapshot: queue depth, review backlog, token spend, throughput, recent jobs. */
 export const statsSchema = z.object({
   queue: z.object({
     queued: z.number().int(),
@@ -22,7 +22,7 @@ export const statsSchema = z.object({
   }),
   pendingReview: z.number().int(),
   tokenSpend: z.number().int(),
-  /** Jobs completed in the last 24h — a simple at-a-glance throughput gauge. */
+  /** Jobs completed in the last 24h, a simple at-a-glance throughput gauge. */
   throughput: z.number().int(),
   /** Share of finished jobs (done + failed) that failed, lifetime. 0..1; 0 when none have finished. */
   errorRate: z.number(),

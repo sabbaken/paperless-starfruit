@@ -20,7 +20,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  /* Brand — Carambola Yellow #EBC724. Light/vivid, so it carries dark text. */
+  /* Brand: Carambola Yellow #EBC724. Light/vivid, so it carries dark text. */
   --brand: oklch(0.836 0.164 95);
   --brand-foreground: oklch(0.205 0 0);
   --border: oklch(0.922 0 0);

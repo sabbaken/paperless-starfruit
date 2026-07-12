@@ -1,4 +1,4 @@
-/* Starlight theme overrides — Carambola-yellow brand (#EBC625).
+/* Starlight theme overrides: Carambola-yellow brand (#EBC625).
  * The docs chrome is branded with the carambola yellow itself: interactive
  * accents (social icons, active TOC entry, in-content links, focus rings) all
  * resolve to `--psf-brand`, mirroring apps/web where the same yellow is the
@@ -6,12 +6,12 @@
  * `.site-title` below), and the active sidebar item gets a per-theme chip. */
 
 :root {
-  /* Brand source token — carambola yellow (apps/web uses the oklch equivalent,
+  /* Brand source token: carambola yellow (apps/web uses the oklch equivalent,
    * oklch(0.836 0.164 95deg)). */
   --psf-brand: #ebc625;
   --psf-brand-ink: #2b2300;
 
-  /* Active docs sidebar item — pale-gold chip with dark ink on light. */
+  /* Active docs sidebar item: pale-gold chip with dark ink on light. */
   --psf-sidebar-active: #f7f0d4;
   --psf-sidebar-active-ink: var(--psf-brand-ink);
 }
@@ -24,9 +24,9 @@
  * higher-specificity light rule can never win. */
 :root,
 :root[data-theme='light'] {
-  --sl-color-accent-low: #f6ecc1; /* pale tint — subtle brand-wash backgrounds */
+  --sl-color-accent-low: #f6ecc1; /* pale tint, for subtle brand-wash backgrounds */
   --sl-color-accent: var(--psf-brand);
-  --sl-color-accent-high: #a37c00; /* darker brand — stronger-contrast accents */
+  --sl-color-accent-high: #a37c00; /* darker brand, for stronger-contrast accents */
   --sl-color-text-accent: var(--psf-brand);
 }
 
@@ -55,7 +55,7 @@
 
 /* Docs sidebar: the active page pill. Starlight paints it with a solid accent
  * background + inverted (near-white) text; instead the fill/ink come from the
- * per-theme `--psf-sidebar-active*` tokens — a pale-gold chip with dark ink on
+ * per-theme `--psf-sidebar-active*` tokens: a pale-gold chip with dark ink on
  * light, a deep carambola-brown pill with brand-yellow text on dark. The
  * selector is intentionally more specific than Starlight's scoped
  * `[aria-current='page']` rule so it wins regardless of stylesheet order. */
@@ -67,7 +67,7 @@
 }
 
 /* Docs header logo: match the landing nav wordmark exactly (Nav.astro
- * `.nav__brand`) — a 32px rounded mark next to "Paperless Starfruit" set in
+ * `.nav__brand`), a 32px rounded mark next to "Paperless Starfruit" set in
  * Space Grotesk at 1.02rem/600 with tight tracking. The text uses the primary
  * foreground (dark on light, light on dark) rather than the accent, so the
  * header reads identically on the landing and in the docs. */

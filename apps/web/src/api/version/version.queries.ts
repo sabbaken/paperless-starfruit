@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { versionApi } from './version.api';
 import { versionKeys } from './version.keys';
 
-/** Update status — the running build vs the latest published release. */
+/** Update status: the running build vs the latest published release. */
 export function useVersion() {
   return useQuery({
     queryKey: versionKeys.all,

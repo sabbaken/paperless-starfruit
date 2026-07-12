@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * A suggested tag/correspondent resolved against the paperless taxonomy.
- * `id` is null when no existing entity matched — `isNew` then means "will be
+ * `id` is null when no existing entity matched. `isNew` then means "will be
  * created on apply" (in review mode creation is deferred until the user approves).
  */
 export const resolvedTagSchema = z.object({
@@ -15,7 +15,7 @@ export type ResolvedTag = z.infer<typeof resolvedTagSchema>;
 export const resolvedCorrespondentSchema = resolvedTagSchema;
 export type ResolvedCorrespondent = z.infer<typeof resolvedCorrespondentSchema>;
 
-/** The document's metadata before processing — the left-hand side of the diff. */
+/** The document's metadata before processing, the left-hand side of the diff. */
 export const reviewCurrentSchema = z.object({
   title: z.string(),
   tagNames: z.array(z.string()),
@@ -39,7 +39,7 @@ export type ReviewSuggestions = z.infer<typeof reviewSuggestionsSchema>;
 
 export const reviewStatusSchema = z.enum(['pending', 'approved', 'rejected']);
 
-/** A review item as listed in the queue (suggestions inlined — they're small). */
+/** A review item as listed in the queue (suggestions inlined: they're small). */
 export const reviewItemSchema = z.object({
   id: z.number().int(),
   documentId: z.number().int(),

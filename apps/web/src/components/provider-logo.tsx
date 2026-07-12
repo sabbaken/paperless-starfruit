@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils.ts';
 
 /**
  * Brand logos (PNG, served from `public/icons/providers`). `mono` flags pure-black
- * marks (e.g. OpenAI, xAI) that must invert in dark mode to stay visible — coloured
+ * marks (e.g. OpenAI, xAI) that must invert in dark mode to stay visible. Coloured
  * logos are left untouched.
  */
 const LOGOS: Partial<Record<ProviderKind, { src: string; mono?: boolean }>> = {

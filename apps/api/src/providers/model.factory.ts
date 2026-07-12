@@ -6,7 +6,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
 import { PROVIDER_KIND, type ProviderCaps, type ProviderKind } from '@paperless-starfruit/shared';
 
-/** A credential with its secret resolved — never persisted or serialised. */
+/** A credential with its secret resolved, never persisted or serialised. */
 export interface ResolvedCredential {
   name: string;
   kind: ProviderKind;
@@ -14,7 +14,7 @@ export interface ResolvedCredential {
   baseUrl?: string | null;
 }
 
-/** A credential plus the chosen model — what `buildLanguageModel` needs. */
+/** A credential plus the chosen model: what `buildLanguageModel` needs. */
 export interface ResolvedProvider extends ResolvedCredential {
   model: string;
 }
@@ -46,14 +46,14 @@ export function buildLanguageModel(p: ResolvedProvider): LanguageModel {
         apiKey: p.apiKey,
       })(p.model);
     default:
-      // Exhaustiveness guard — a new kind must extend this switch.
+      // Exhaustiveness guard: a new kind must extend this switch.
       throw new Error(`Unsupported provider kind: ${String(p.kind)}`);
   }
 }
 
 /**
- * The live model catalog (Vercel AI Gateway) lists Claude versions with dots —
- * `claude-sonnet-4.6`, `claude-haiku-4.5` — but Anthropic's own API, which we call
+ * The live model catalog (Vercel AI Gateway) lists Claude versions with dots
+ * (`claude-sonnet-4.6`, `claude-haiku-4.5`), but Anthropic's own API, which we call
  * directly with the user's key, uses dashes: `claude-sonnet-4-6`. Native Anthropic
  * ids never contain dots, so normalising dots→dashes is safe (a no-op for an
  * already-native id) and fixes a model id picked from the gateway catalog.

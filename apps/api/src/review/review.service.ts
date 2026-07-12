@@ -84,7 +84,7 @@ export class ReviewService {
         const doc = await client.getDocument(row.documentId);
         documentContent = (doc.content ?? '').slice(0, MAX_PREVIEW_CHARS) || null;
       } catch {
-        // Preview is best-effort — the document may have been deleted in paperless.
+        // Preview is best-effort; the document may have been deleted in paperless.
         documentContent = null;
       }
     }
@@ -160,7 +160,7 @@ export class ReviewService {
       title: payload.title,
       tags: mergeTagIds(doc.tags, addIds, [triggerTagId]),
       ...(correspondent?.id != null ? { correspondent: correspondent.id } : {}),
-      // Date-only — a UTC-midnight datetime shifts a day on UTC-behind servers.
+      // Date-only: a UTC-midnight datetime shifts a day on UTC-behind servers.
       ...(payload.date ? { created: payload.date } : {}),
     };
     await client.patchDocument(doc.id, patch);

@@ -12,8 +12,8 @@ interface StepIndicatorProps {
 
 /**
  * Numbered step tabs for a wizard-style flow. Steps before `current` show a
- * check; every step is clickable, so the flow can be jumped around freely —
- * gating, if any, is the caller's job.
+ * check; every step is clickable, so the flow can be jumped around freely.
+ * Gating, if any, is the caller's job.
  */
 export function StepIndicator({ steps, current, onSelect, className }: StepIndicatorProps) {
   return (

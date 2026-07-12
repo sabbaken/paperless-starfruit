@@ -32,7 +32,7 @@ export const PROMPT_META: Record<PromptKey, PromptMeta> = {
 /**
  * The variables each prompt can reference. Anything not listed here is left
  * untouched (so a typo stays visible rather than silently vanishing). `{{content}}`
- * is the OCR/extraction input text and so is only meaningful for extraction —
+ * is the OCR/extraction input text and so is only meaningful for extraction.
  * OCR *produces* that text.
  */
 export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
@@ -51,7 +51,7 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
       name: 'all_tags',
       label: 'Existing tags',
       description:
-        'Every tag already in paperless — encourages reuse over invention. When any tag has a hint (Tags page), hinted tags render as a Markdown table of tag → hint, the rest as a list below it.',
+        'Every tag already in paperless: encourages reuse over invention. When any tag has a hint (Tags page), hinted tags render as a Markdown table of tag → hint, the rest as a list below it.',
     },
     {
       name: 'all_correspondents',
@@ -106,10 +106,10 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
 export const DEFAULT_PROMPTS: Record<PromptKey, string> = {
   [PROMPT_KEY.EXTRACTION]: `You extract structured metadata from a single archived document for a paperless-ngx system.
 Return concise, human-meaningful values:
-- title: a short descriptive title — no file extensions, no reference numbers as the whole title.
+- title: a short descriptive title, no file extensions, no reference numbers as the whole title.
 - tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits. {{tag_policy}}
 - correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches. {{correspondent_policy}}
-- date: the document's own date (when it was issued or written). Give YYYY-MM-DD when the day is clear. When only a period is evident — a monthly invoice/statement, or a value like "May 2026" — give YYYY-MM (or YYYY when only the year is known); the first day of that period is filled in automatically, so don't invent a day. The original file name below often encodes this date (e.g. "2023-05-invoice.pdf") — prefer it as evidence, and fall back to it when the body doesn't state a date. Use null only when no date or period is evident at all. Never use today's date as a fallback.
+- date: the document's own date (when it was issued or written). Give YYYY-MM-DD when the day is clear. When only a period is evident (a monthly invoice/statement, or a value like "May 2026"), give YYYY-MM (or YYYY when only the year is known); the first day of that period is filled in automatically, so don't invent a day. The original file name below often encodes this date (e.g. "2023-05-invoice.pdf"). Prefer it as evidence, and fall back to it when the body doesn't state a date. Use null only when no date or period is evident at all. Never use today's date as a fallback.
 
 Write all output in {{language}} (use the document's own language when this is "auto").
 
@@ -117,12 +117,12 @@ Original file name: {{filename}}
 Existing tags: {{all_tags}}
 Existing correspondents: {{all_correspondents}}
 
-When the original document is attached as a file or image, treat it as the primary evidence — letterheads, headers, stamps and signatures often carry the correspondent and date — and the transcribed text below as an aid. Long documents may attach only their first and last pages; the text below still covers all of them.
+When the original document is attached as a file or image, treat it as the primary evidence (letterheads, headers, stamps and signatures often carry the correspondent and date) and the transcribed text below as an aid. Long documents may attach only their first and last pages; the text below still covers all of them.
 
 --- DOCUMENT CONTENT ---
 {{content}}`,
   [PROMPT_KEY.OCR]: `You are a precise OCR engine. Transcribe the attached document exactly as written.
-Output ONLY the document text — no preamble, no commentary, no code fences.
+Output ONLY the document text: no preamble, no commentary, no code fences.
 Preserve the reading order, line breaks and structure. Render tables as simple Markdown tables.
 Do not translate, summarise, correct spelling, or invent content. Mark an unreadable run as [illegible].
 Document language hint: {{language}}.`,

@@ -90,11 +90,11 @@ describe('extractionVars', () => {
 
   it('stays a detached block when the placeholder sits mid-line', () => {
     const out = renderTemplate(
-      'Existing tags: {{all_tags}} — always prefer these.',
+      'Existing tags: {{all_tags}}, always prefer these.',
       extractionVars({ ...base, allTags: [{ name: 'Tax', comment: 'Tax office mail' }] }),
     );
     expect(out).toContain('| Tax | Tax office mail |\n');
-    expect(out).toContain('\n — always prefer these.');
+    expect(out).toContain('\n, always prefer these.');
   });
 
   it('truncates very long content', () => {

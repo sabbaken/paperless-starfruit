@@ -1,5 +1,5 @@
 /* =========================================================================
-   Paperless Starfruit — landing page design system.
+   Paperless Starfruit: landing page design system.
    Palette pulled from the carambola fruit itself: gold flesh + olive rind,
    warm ink on clean paper. Type: Space Grotesk (display + UI) paired with
    JetBrains Mono for the structured-data / developer voice.
@@ -12,7 +12,7 @@
   --gold-soft: #f7e9a4;
   --gold-tint: #fbf3cf;
 
-  /* The fruit's green rind — the distinctive counter-accent */
+  /* The fruit's green rind, the distinctive counter-accent */
   --rind: #5e6b2f;
   --rind-deep: #3c461c;
 
@@ -248,7 +248,7 @@ img {
 }
 
 /* scroll-reveal hook. Gated behind `html.js` (set inline before paint) so the
-   content is fully visible when JavaScript is unavailable — it only hides to
+   content is fully visible when JavaScript is unavailable; it only hides to
    animate in when JS is present and motion is allowed. */
 @media (prefers-reduced-motion: no-preference) {
   html.js .reveal {

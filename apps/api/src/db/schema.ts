@@ -31,7 +31,7 @@ export const paperlessConnection = sqliteTable('paperless_connection', {
 /**
  * A configured provider credential (an API key, or a local OpenAI-compatible
  * endpoint). The API key is stored encrypted at rest. The model is no longer
- * bound here — it is chosen per task in settings.
+ * bound here; it is chosen per task in settings.
  */
 export const provider = sqliteTable('provider', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -44,7 +44,7 @@ export const provider = sqliteTable('provider', {
 });
 
 /**
- * User overrides for the built-in prompts. Only customised prompts get a row —
+ * User overrides for the built-in prompts. Only customised prompts get a row;
  * the absence of a row means "use the code default", so "Reset to default" is a
  * plain delete. One row per key (unique).
  */
@@ -58,7 +58,7 @@ export const promptTemplate = sqliteTable('prompt_template', {
 /**
  * A user-written hint for one paperless tag, injected into the extraction
  * prompt so the model knows when the tag applies. Keyed by paperless's own tag
- * id (no FK — the tag lives in paperless); a missing row means "no hint".
+ * id (no FK; the tag lives in paperless); a missing row means "no hint".
  */
 export const tagComment = sqliteTable('tag_comment', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -71,7 +71,7 @@ export const tagComment = sqliteTable('tag_comment', {
  * A paperless tag hidden from the AI: excluded from the extraction prompt
  * (both the offered taxonomy and the document's current tags) and stripped
  * from suggestions if the model guesses the name anyway. Keyed by paperless's
- * tag id (no FK — the tag lives in paperless); a missing row means "visible".
+ * tag id (no FK; the tag lives in paperless); a missing row means "visible".
  */
 export const hiddenTag = sqliteTable('hidden_tag', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -113,7 +113,7 @@ export const settings = sqliteTable('settings', {
 });
 
 /**
- * The queue. `content_hash` is set DURING the job (post-OCR) — a hash of the
+ * The queue. `content_hash` is set DURING the job (post-OCR): a hash of the
  * extraction-input text plus the config fingerprint, never the original file.
  * The partial unique index enforces "one active job per document".
  */

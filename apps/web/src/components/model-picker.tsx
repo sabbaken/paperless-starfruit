@@ -50,7 +50,7 @@ interface ModelPickerProps {
   onAddKey: () => void;
 }
 
-/** A provider — either a connected credential or a locked catalog preview. */
+/** A provider: either a connected credential or a locked catalog preview. */
 interface DisplayGroup {
   id: string;
   name: string;
@@ -58,7 +58,7 @@ interface DisplayGroup {
   providerId: number | null;
   manual: boolean;
   models: ModelInfo[];
-  /** No API key connected yet — shown disabled to hint that it's available. */
+  /** No API key connected yet. Shown disabled to hint that it's available. */
   locked: boolean;
 }
 
@@ -90,7 +90,7 @@ function formatPrice(perToken: number): string {
 
 /**
  * Rough tokens-per-page used to anchor the cost estimate. Real usage swings with
- * document size, layout and language — this is only a relative comparison number.
+ * document size, layout and language. This is only a relative comparison number.
  * cost = tokensIn × priceIn + tokensOut × priceOut.
  */
 const PER_PAGE_TOKENS = {
@@ -195,14 +195,14 @@ export function ModelPicker({
   // The OCR picker (visionOnly) costs more per page than plain text analysis.
   const ocr = !!visionOnly;
   const perPageTooltip = ocr
-    ? 'Rough estimate — ~3,000 input + 900 output tokens per page (OCR). Varies with the document.'
-    : 'Rough estimate — ~1,300 input + 500 output tokens per page (analysis). Varies with the document.';
+    ? 'Rough estimate: ~3,000 input + 900 output tokens per page (OCR). Varies with the document.'
+    : 'Rough estimate: ~1,300 input + 500 output tokens per page (analysis). Varies with the document.';
 
   const connectedApi = models.data?.api ?? [];
   const local = models.data?.local ?? [];
   const catalog = models.data?.catalog ?? {};
 
-  // Supported vendors without a configured credential — previewed as locked rows
+  // Supported vendors without a configured credential, previewed as locked rows
   // so users can see what exists and that adding a key unlocks it.
   const connectedKinds = new Set(connectedApi.map((g) => g.kind));
   const lockedGroups: DisplayGroup[] = (Object.keys(catalog) as ProviderKind[])
@@ -218,7 +218,7 @@ export function ModelPicker({
     }));
 
   // Hidden by default: search/sort over models you can't pick is noise. Forced
-  // visible when nothing is connected yet — an empty picker would hide that
+  // visible when nothing is connected yet. An empty picker would hide that
   // adding a key unlocks these.
   const nothingConnected = connectedApi.length === 0 && local.length === 0;
   const includeLocked = showLocked || nothingConnected;
@@ -228,8 +228,8 @@ export function ModelPicker({
     ...(includeLocked ? lockedGroups : []),
     ...local.map(fromConnected),
   ];
-  // In OCR mode, surface dedicated OCR models (e.g. Mistral OCR) per provider kind —
-  // they aren't language models, so they never come from the catalog/`/models` probe.
+  // In OCR mode, surface dedicated OCR models (e.g. Mistral OCR) per provider kind.
+  // They aren't language models, so they never come from the catalog/`/models` probe.
   const displayGroups = ocr ? allGroups.map(withOcrModels) : allGroups;
   // Endpoints we couldn't list need a free-text model id, so they can't be table rows.
   const manualGroups = displayGroups.filter((g) => g.manual);
@@ -276,7 +276,7 @@ export function ModelPicker({
         <DialogHeader className="shrink-0 space-y-1 border-b px-6 py-4">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Pick a model. Locked rows need an API key — add one to unlock them.
+            Pick a model. Locked rows need an API key. Add one to unlock them.
           </DialogDescription>
         </DialogHeader>
 
@@ -487,7 +487,7 @@ export function ModelPicker({
   );
 }
 
-/** A table header cell — sortable when `sortKey` is given. */
+/** A table header cell, sortable when `sortKey` is given. */
 function Th({
   children,
   className,
@@ -531,7 +531,7 @@ function Th({
   );
 }
 
-/** Local endpoint we couldn't list — let the user type a model id. */
+/** Local endpoint we couldn't list: let the user type a model id. */
 function ManualModel({
   providerId,
   selected,
@@ -547,7 +547,7 @@ function ManualModel({
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        Couldn’t list this endpoint’s models — enter a model id manually.
+        Couldn’t list this endpoint’s models. Enter a model id manually.
       </p>
       <div className="flex gap-2">
         <Input

@@ -47,7 +47,7 @@ function formatTime(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toLocaleString();
 }
 
-/** Job-history / audit log — inspect the exact prompt sent to the LLM and its response. */
+/** Job-history / audit log: inspect the exact prompt sent to the LLM and its response. */
 export function HistoryPage() {
   const [openId, setOpenId] = useState<number | null>(null);
 
@@ -288,7 +288,7 @@ function HistoryDetail({ entry, onClose }: { entry: AuditEntryDetail; onClose: (
         <CardContent>
           <Block
             text={entry.prompt}
-            empty="No prompt was recorded — skips, OCR-only runs and review approvals don't call the extraction model."
+            empty="No prompt was recorded. Skips, OCR-only runs and review approvals don't call the extraction model."
           />
         </CardContent>
       </Card>

@@ -23,7 +23,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    // Expired/invalid session — drop the token so the auth gate flips to login
+    // Expired/invalid session. Drop the token so the auth gate flips to login
     // instead of every page surfacing a 401.
     if (res.status === 401) setToken(null);
     throw new ApiError(await errorMessage(res), res.status);

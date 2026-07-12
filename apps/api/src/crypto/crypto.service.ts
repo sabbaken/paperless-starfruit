@@ -12,7 +12,7 @@ const KEY_BYTES = 32;
  * API keys). The key comes from `ENCRYPTION_KEY` (32 bytes, hex or base64).
  *
  * The key is parsed and validated lazily on first use, not at construction, so
- * the process still boots for health checks when no key is configured — only
+ * the process still boots for health checks when no key is configured; only
  * credential operations fail, and they fail loudly with actionable guidance.
  *
  * Ciphertext layout: base64( iv[12] | authTag[16] | ciphertext ).
@@ -47,7 +47,7 @@ export class CryptoService {
   /**
    * Derive a separate-purpose 32-byte key from the master key via HKDF, so
    * other subsystems (e.g. session-token signing) don't reuse the encryption
-   * key directly. Deterministic — survives restarts; rotating `ENCRYPTION_KEY`
+   * key directly. Deterministic: survives restarts; rotating `ENCRYPTION_KEY`
    * rotates derived keys too (invalidating old sessions, which is acceptable).
    */
   deriveKey(purpose: string, length = 32): Buffer {

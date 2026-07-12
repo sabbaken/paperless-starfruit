@@ -18,14 +18,14 @@ export const providerModelsSchema = z.object({
   providerId: z.number().int(),
   providerName: z.string(),
   kind: providerKindSchema,
-  /** True when a local endpoint couldn't be listed — the UI lets the user type a model id. */
+  /** True when a local endpoint couldn't be listed. The UI lets the user type a model id. */
   manual: z.boolean(),
   models: z.array(modelInfoSchema),
 });
 export type ProviderModels = z.infer<typeof providerModelsSchema>;
 
 /**
- * Dedicated OCR models — not chat/language models, so they never come back from
+ * Dedicated OCR models: not chat/language models, so they never come back from
  * the language-model catalog or a `/models` probe. The OCR model picker injects
  * these per provider kind so they're selectable; the language-model picker never
  * shows them. Mistral OCR (`mistral-ocr-latest`) is page-billed, so it carries no

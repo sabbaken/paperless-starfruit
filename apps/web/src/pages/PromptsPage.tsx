@@ -67,7 +67,7 @@ function PromptList({
   onSelect: (key: PromptKey) => void;
 }) {
   return (
-    // Horizontal pair on small screens, a quiet vertical rail on desktop — no card.
+    // Horizontal pair on small screens, a quiet vertical rail on desktop. No card.
     <nav aria-label="Prompts" className="flex gap-1 lg:flex-col lg:gap-0.5 lg:pt-1">
       {list.map((p) => {
         const Icon = ICONS[p.key];
@@ -106,7 +106,7 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
 
   const canReset = prompt.customized || body !== prompt.default;
 
-  // Edits save themselves (like the settings pages) — a Save button here is easy
+  // Edits save themselves (like the settings pages). A Save button here is easy
   // to miss and "why weren't my changes saved?" is worse than an extra write.
   // After a reset the pending timer must not re-save the old draft, so it's
   // suppressed until the user types again.
@@ -143,8 +143,8 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
     }
     el.focus();
     // Insert through the browser's native edit pipeline: it fires `input` (so the
-    // onChange below updates `body`) AND keeps the undo/redo history intact —
-    // a programmatic value set would wipe the native undo stack.
+    // onChange below updates `body`) AND keeps the undo/redo history intact.
+    // A programmatic value set would wipe the native undo stack.
     const inserted = document.execCommand('insertText', false, token);
     if (!inserted) {
       // Fallback if execCommand is unavailable; loses one undo step but works.
@@ -225,13 +225,13 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
 // Splits a body into `{{var}}` tokens and everything between them. The capture
 // group keeps the delimiters in the result so they can be rendered as spans.
 const VAR_SPLIT = /(\{\{\s*[a-zA-Z_]+\s*\}\})/g;
-// Same token shape the server-side renderer recognises (see render.ts) — used to
+// Same token shape the server-side renderer recognises (see render.ts), used to
 // pull the name back out so it can be checked against the known variables.
 const VAR_NAME = /^\{\{\s*([a-zA-Z_]+)\s*\}\}$/;
 
 // Typography that MUST be byte-identical between the textarea and the backdrop, or
 // the highlight boxes drift out of alignment with the caret. Only color/background
-// may differ between the two layers — anything affecting glyph metrics (font,
+// may differ between the two layers. Anything affecting glyph metrics (font,
 // size, leading, padding, border width) has to match.
 const EDITOR_TYPOGRAPHY = 'min-h-72 rounded-md border px-3 py-2 font-mono text-xs leading-relaxed';
 
@@ -305,7 +305,7 @@ const HighlightedTextarea = forwardRef<
         )}
       >
         {highlightBody(value, validVars)}
-        {/* A trailing newline the div would otherwise collapse — keeps the
+        {/* A trailing newline the div would otherwise collapse. Keeps the
             backdrop's last line height matching the textarea's. */}
         {'\n'}
       </div>

@@ -15,7 +15,7 @@ const IDLE_MS = 1_500;
 
 /**
  * In-process worker: claims queued jobs one at a time and runs the pipeline.
- * Concurrency is 1 by design — a single user at ~7 docs/day, and serial work
+ * Concurrency is 1 by design: a single user at ~7 docs/day, and serial work
  * avoids hammering paperless (PATCH triggers re-index + CPU spikes).
  */
 @Injectable()
@@ -35,7 +35,7 @@ export class WorkerService implements OnApplicationBootstrap, OnModuleDestroy {
 
   onApplicationBootstrap(): void {
     // Reclaim jobs a previous crash left stuck in `running` before we start
-    // claiming — otherwise they're orphaned (claimNext only sees `queued`) and
+    // claiming; otherwise they're orphaned (claimNext only sees `queued`) and
     // their active-per-doc slot blocks the poller from ever re-enqueuing them.
     try {
       const n = this.queue.recoverRunning();
@@ -58,7 +58,7 @@ export class WorkerService implements OnApplicationBootstrap, OnModuleDestroy {
     while (!this.stopped) {
       let job: Job | null = null;
       try {
-        // Paused: don't drain the backlog either — idle until unpaused. Any job
+        // Paused: don't drain the backlog either; idle until unpaused. Any job
         // already claimed above finishes; only new claims are held back.
         if (this.settings.get().paused) {
           await this.idle();
@@ -89,14 +89,14 @@ export class WorkerService implements OnApplicationBootstrap, OnModuleDestroy {
       this.queue.complete(job.id, result.contentHash, result.cost ?? undefined);
       this.logger.log(`job ${job.id} (doc ${job.documentId}): ${result.decision}`);
     } catch (err) {
-      // The doc isn't ready (e.g. not OCR'd yet) — wait for the next poll
+      // The doc isn't ready (e.g. not OCR'd yet); wait for the next poll
       // without burning an attempt.
       if (err instanceof DeferJobError) {
         this.queue.defer(job.id);
         this.logger.debug(`job ${job.id} (doc ${job.documentId}) deferred: ${err.message}`);
         return;
       }
-      // Cancelled by shutdown, not the job's fault — re-queue it for next boot
+      // Cancelled by shutdown, not the job's fault; re-queue it for next boot
       // without consuming an attempt.
       if (signal?.aborted) {
         this.queue.defer(job.id);

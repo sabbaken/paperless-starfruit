@@ -18,7 +18,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .
 # Only build what ships in this image: the API and the web UI it serves
 # statically (shared is pulled in via turbo's `^build`). apps/website is the
-# Astro landing/docs site, deployed separately to Vercel — its package.json
+# Astro landing/docs site, deployed separately to Vercel. Its package.json
 # isn't copied above, so astro was never installed and building it here fails.
 RUN pnpm exec turbo run build \
   --filter=@paperless-starfruit/api \
@@ -31,7 +31,7 @@ RUN rm -rf apps/website
 FROM base AS runtime
 ENV NODE_ENV=production
 ENV DATABASE_PATH=/data/app.db
-# The release version stamped by CI from the release tag — what the app reports
+# The release version stamped by CI from the release tag: what the app reports
 # as "current". Empty for local builds, which fall back to the root package.json.
 ARG APP_VERSION
 ENV APP_VERSION=${APP_VERSION}

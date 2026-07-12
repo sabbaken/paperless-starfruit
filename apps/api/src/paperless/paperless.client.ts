@@ -116,7 +116,7 @@ export class PaperlessClient {
     const schema = paginatedSchema(paperlessDocumentSchema);
     const results: PaperlessDocument[] = [];
     let count = 0;
-    // Follow `next` across pages — a single page would starve documents past
+    // Follow `next` across pages; a single page would starve documents past
     // the first (pending-review docs accumulate at the head of `ordering=added`).
     let next: string | null = `/api/documents/?${this.buildDocumentQuery(params)}`;
     let firstPage = true;
@@ -133,7 +133,7 @@ export class PaperlessClient {
   }
 
   /**
-   * Most-recently-added documents, a single page (no `next` following) — for the
+   * Most-recently-added documents, a single page (no `next` following), for the
    * "test on a document" picker, where a short, fast list beats every document.
    */
   async listRecentDocuments(limit = 20): Promise<PaperlessDocument[]> {

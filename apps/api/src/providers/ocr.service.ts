@@ -18,7 +18,7 @@ import { mistralOcr, MISTRAL_OCR_MODEL_PREFIX } from './mistral-ocr.client';
 const OCR_MAX_OUTPUT_TOKENS = 8_000;
 
 /**
- * Concrete view of `generateText` for the OCR call — we only pass a multimodal
+ * Concrete view of `generateText` for the OCR call: we only pass a multimodal
  * user message and read `text` + `usage`. Mirrors llm.service's narrowing so the
  * SDK's heavy generics don't blow up type inference (TS2589).
  */
@@ -37,9 +37,9 @@ const generateTextFn = generateText as unknown as GenerateTextFn;
 
 /**
  * OCR engine. Two strategies behind one interface (plan §5):
- *   - **Mistral OCR** — the dedicated, page-billed `/v1/ocr` endpoint, used when the
+ *   - **Mistral OCR**: the dedicated, page-billed `/v1/ocr` endpoint, used when the
  *     chosen OCR model is a `mistral-ocr-*` model on a Mistral credential.
- *   - **vision-LLM OCR** — feed the original file/image to any vision-capable model
+ *   - **vision-LLM OCR**: feed the original file/image to any vision-capable model
  *     via the AI SDK, reusing the same provider credentials as extraction.
  */
 @Injectable()
@@ -58,7 +58,7 @@ export class OcrService {
   ): Promise<OcrResult> {
     const mediaType = normaliseMediaType(input.contentType);
     const isImage = isImageMediaType(mediaType);
-    // A PDF (or any non-image) is sent as a `file` part — only Anthropic/Google/OpenAI
+    // A PDF (or any non-image) is sent as a `file` part; only Anthropic/Google/OpenAI
     // accept those. Fail with an actionable message rather than an opaque provider
     // rejection when the chosen OCR model can't take a PDF. Images work everywhere.
     if (!isImage && !PDF_FILE_PART_KINDS.has(provider.kind)) {
@@ -70,7 +70,7 @@ export class OcrService {
     }
     // An image goes in an `image` part; everything else (PDFs) as a `file` part.
     // The cache marker turns the document block into an Anthropic prompt-cache
-    // entry that the extraction call re-reads at ~10% cost — set only when the
+    // entry that the extraction call re-reads at ~10% cost; set only when the
     // caller knows that call shares this one's credential + model (see ocr.types).
     const cachePart = opts.cacheDocument ? { providerOptions: ANTHROPIC_CACHE_CONTROL } : {};
     const docPart = isImage
@@ -84,7 +84,7 @@ export class OcrService {
         };
 
     // The user-editable OCR prompt (M6) carries all the transcription instructions
-    // and goes in the user message alongside the file — so what the user edits is
+    // and goes in the user message alongside the file, so what the user edits is
     // exactly what the model receives. Fall back to a built-in instruction when no
     // prompt is supplied (the pipeline always renders one; this guards tests).
     // Document BEFORE instruction: the document block must be a stable prefix
@@ -104,7 +104,7 @@ export class OcrService {
 /** Minimal default instruction when no rendered prompt is provided. */
 function fallbackOcrPrompt(language: string): string {
   const hint = language && language !== 'auto' ? ` The document is mainly in ${language}.` : '';
-  return `Transcribe all text from the attached document verbatim. Output only the document text — no preamble or commentary.${hint}`;
+  return `Transcribe all text from the attached document verbatim. Output only the document text, with no preamble or commentary.${hint}`;
 }
 
 function isMistralOcr(p: ResolvedProvider): boolean {
