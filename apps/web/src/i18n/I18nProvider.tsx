@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { createT, DEFAULT_LOCALE, type Locale, type TFunction } from '@paperless-starfruit/shared';
 import { useLanguage } from '@/hooks/use-language';
+import { setActiveT } from '@/i18n/t';
 
 interface I18nContextValue {
   /** Translate a dot-path key, with optional `{{var}}` interpolation. */
@@ -26,6 +27,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({ t: createT(language), language, setLanguage }),
     [language, setLanguage],
   );
+  // Mirror the active translator to out-of-React callers (e.g. toast helpers).
+  useEffect(() => setActiveT(value.t), [value.t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
