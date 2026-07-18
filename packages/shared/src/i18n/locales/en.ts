@@ -493,4 +493,130 @@ export const en = {
     hintPlaceholder: 'e.g. Anything from an insurance company: policies, claims, renewal letters.',
     createTag: 'Create tag',
   },
+  site: {
+    byok: {
+      eyebrow: 'Bring your own keys',
+      title: 'Use your own API keys.',
+      lead: 'Connect the providers you already pay for, or a model running on your own hardware.',
+      logoAlt: '{{name}} logo',
+      localName: 'Anything OpenAI-compatible',
+      note: 'Encrypted at rest, and sent straight to the provider, never through us.',
+    },
+    ctaFooter: {
+      title: 'Easy to set up. Easy to use.',
+      lead: 'Free, open source and self-hosted. Connect your keys, tag a document, and let it do the filing for you.',
+      deployButton: 'Deploy with Docker',
+      docsButton: 'Read the docs',
+      footerNavLabel: 'Footer',
+      linkDocs: 'Documentation',
+      linkInstall: 'Install',
+      disclaimer:
+        'An independent companion for paperless-ngx, not affiliated with the paperless-ngx project.',
+    },
+    features: {
+      eyebrow: 'Features',
+      title: 'Everything it does.',
+      ocr: {
+        title: 'Better OCR',
+        description: 'Re-read scans with a vision model when paperless’s own text falls short.',
+      },
+      metadata: {
+        title: 'Automatic metadata',
+        description: 'A clean title, tags, correspondent and date for every document.',
+      },
+      review: {
+        title: 'Review or auto-apply',
+        description: 'Approve, edit or reject each suggestion, or write it straight back.',
+      },
+      prompts: {
+        title: 'Prompts you control',
+        description: 'Edit what each model is asked, and test it on a real document first.',
+      },
+      providers: {
+        title: 'Any provider',
+        description: 'Anthropic, OpenAI, Google, Mistral, or any local OpenAI-compatible model.',
+      },
+      history: {
+        title: 'Full history',
+        description: 'See the exact prompt sent and the model’s reply behind every run.',
+      },
+    },
+    hero: {
+      eyebrow: 'Side-car for paperless-ngx',
+      // Split around the scoped <br>, <span class="hl"> and <em> so those elements
+      // stay in the template and keep Astro's scoped-CSS class (the .hl highlight).
+      titleLine1: 'Tag a document.',
+      titleAfterBr: 'Get it back ',
+      titleHighlight: 'filed',
+      titleAfterHighlight: '.',
+      leadBefore:
+        'It reads the documents you tag and writes back a clean title, tags, correspondent and date, using the OCR and language models ',
+      leadEm: 'you',
+      leadAfter: ' bring.',
+      ctaPrimary: 'Deploy with Docker',
+      ctaSecondary: 'Read the docs',
+      trustLabel: 'At a glance',
+      trustKeys: 'Bring your own keys',
+      trustSelfHosted: 'Self-hosted',
+      trustContainer: 'One container',
+      trustTelemetry: 'No telemetry',
+      figureLabel: 'A scanned document becomes structured metadata',
+    },
+    layout: {
+      title: 'Paperless Starfruit: AI metadata & OCR for paperless-ngx',
+      description:
+        'A self-hosted, bring-your-own-keys AI companion for paperless-ngx: better OCR and automatic title, tags, correspondent and date, all configured from a web UI.',
+    },
+    nav: {
+      brandHomeAria: 'Paperless Starfruit home',
+      primaryAria: 'Primary',
+      docs: 'Docs',
+      githubAria: 'View source on GitHub',
+      deploy: 'Deploy',
+    },
+    notFound: {
+      metaTitle: 'Page not found · Paperless Starfruit',
+      metaDescription: "That page doesn't exist. Head back home or browse the documentation.",
+      eyebrow: 'Error 404',
+      title: 'This page got filed somewhere else.',
+      lead: 'The page you’re looking for doesn’t exist, or never did. Try the documentation, or head back to the start.',
+      backHome: 'Back home',
+      readDocs: 'Read the docs',
+    },
+    pipeline: {
+      eyebrow: 'How it works',
+      title: 'One tag in. A filed document out.',
+      foot: 'Re-tag to run a document again. Unchanged content is skipped, so re-runs are free.',
+      step1: {
+        title: 'Tag a document',
+        d: 'Add <code>psf-process</code> in paperless. That one tag is the whole trigger.',
+      },
+      step2: {
+        title: 'OCR',
+        d: 'A vision model re-reads the scan, or skip it and reuse paperless&rsquo;s own text.',
+        note: 'optional',
+      },
+      step3: {
+        title: 'Extract',
+        d: 'One model call returns the title, tags, correspondent and date.',
+      },
+      step4: {
+        title: 'Apply or review',
+        d: 'Written back to paperless automatically, or queued for your approval.',
+      },
+    },
+    screenshots: {
+      eyebrow: 'Screenshots',
+      title: 'A look at the app.',
+      prevLabel: 'Previous screenshot',
+      nextLabel: 'Next screenshot',
+      trackLabel: 'App screenshots, scrolls horizontally',
+      imageAlt: '{{label}} in Paperless Starfruit',
+      dashboardCaption: 'Queue depth, throughput and recent runs.',
+      reviewCaption: 'Suggestions side-by-side with the document.',
+      tagsCaption: 'Give each tag a hint the AI follows.',
+      promptsCaption: 'Edit and test the prompts each model receives.',
+      apiKeysCaption: 'Add, test and mask your provider keys.',
+    },
+  },
 } as const;

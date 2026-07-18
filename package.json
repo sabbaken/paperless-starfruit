@@ -42,7 +42,14 @@
       "esbuild",
       "@nestjs/core",
       "sharp"
-    ]
+    ],
+    "packageExtensions": {
+      "@hookform/resolvers": {
+        "peerDependencies": {
+          "zod": "*"
+        }
+      }
+    }
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,yml,yaml,astro}": "prettier --write"

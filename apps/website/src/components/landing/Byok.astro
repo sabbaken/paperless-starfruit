@@ -1,5 +1,8 @@
 ---
 // Bring your own keys: the supported providers, kept brief.
+import { createT } from '@paperless-starfruit/shared';
+const t = createT('en');
+
 const cloud = [
   {
     name: 'Anthropic',
@@ -18,17 +21,23 @@ const cloud = [
 
 <section class="keys section" id="keys">
   <div class="container">
-    <p class="eyebrow">Bring your own keys</p>
-    <h2 class="section-title">Use your own API keys.</h2>
+    <p class="eyebrow">{t('site.byok.eyebrow')}</p>
+    <h2 class="section-title">{t('site.byok.title')}</h2>
     <p class="lead">
-      Connect the providers you already pay for, or a model running on your own hardware.
+      {t('site.byok.lead')}
     </p>
 
     <div class="providers">
       {
         cloud.map((p) => (
           <div class="provider">
-            <img src={p.icon} width="28" height="28" alt={`${p.name} logo`} loading="lazy" />
+            <img
+              src={p.icon}
+              width="28"
+              height="28"
+              alt={t('site.byok.logoAlt', { name: p.name })}
+              loading="lazy"
+            />
             <div class="provider__text">
               <span class="provider__name">{p.name}</span>
               <span class="provider__models">{p.models}</span>
@@ -39,7 +48,7 @@ const cloud = [
       <div class="provider provider--local">
         <span class="provider__glyph" aria-hidden="true">&gt;_</span>
         <div class="provider__text">
-          <span class="provider__name">Anything OpenAI-compatible</span>
+          <span class="provider__name">{t('site.byok.localName')}</span>
           <span class="provider__models"
             >Ollama · LM Studio · vLLM · OpenRouter (local or remote)</span
           >
@@ -48,7 +57,7 @@ const cloud = [
     </div>
 
     <p class="keys__note">
-      Encrypted at rest, and sent straight to the provider, never through us.
+      {t('site.byok.note')}
     </p>
   </div>
 </section>

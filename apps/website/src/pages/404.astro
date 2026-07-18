@@ -1,23 +1,19 @@
 ---
 import Landing from '../layouts/Landing.astro';
 import Nav from '../components/landing/Nav.astro';
+import { createT } from '@paperless-starfruit/shared';
+const t = createT('en');
 ---
 
-<Landing
-  title="Page not found · Paperless Starfruit"
-  description="That page doesn't exist. Head back home or browse the documentation."
->
+<Landing title={t('site.notFound.metaTitle')} description={t('site.notFound.metaDescription')}>
   <Nav />
   <main class="nf">
-    <p class="eyebrow">Error 404</p>
-    <h1 class="nf__title">This page got filed somewhere else.</h1>
-    <p class="nf__lead">
-      The page you&rsquo;re looking for doesn&rsquo;t exist, or never did. Try the documentation, or
-      head back to the start.
-    </p>
+    <p class="eyebrow">{t('site.notFound.eyebrow')}</p>
+    <h1 class="nf__title">{t('site.notFound.title')}</h1>
+    <p class="nf__lead">{t('site.notFound.lead')}</p>
     <div class="nf__btns">
-      <a class="btn btn--gold" href="/">Back home</a>
-      <a class="btn btn--ghost" href="/docs/">Read the docs</a>
+      <a class="btn btn--gold" href="/">{t('site.notFound.backHome')}</a>
+      <a class="btn btn--ghost" href="/docs/">{t('site.notFound.readDocs')}</a>
     </div>
   </main>
 </Landing>

@@ -4,16 +4,16 @@
 import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/landing.css';
+import { createT } from '@paperless-starfruit/shared';
+
+const t = createT('en');
 
 interface Props {
   title?: string;
   description?: string;
 }
 
-const {
-  title = 'Paperless Starfruit: AI metadata & OCR for paperless-ngx',
-  description = 'A self-hosted, bring-your-own-keys AI companion for paperless-ngx: better OCR and automatic title, tags, correspondent and date, all configured from a web UI.',
-} = Astro.props;
+const { title = t('site.layout.title'), description = t('site.layout.description') } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const ogImage = new URL('/og.png', Astro.site).href;

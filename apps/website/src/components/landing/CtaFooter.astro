@@ -1,19 +1,20 @@
 ---
 // Closing call-to-action + site footer.
+import { createT } from '@paperless-starfruit/shared';
+const t = createT('en');
 const year = 2026;
 ---
 
 <section class="cta">
   <div class="container cta__inner">
     <img class="cta__logo" src="/paperless-starfruit.png" width="72" height="72" alt="" />
-    <h2 class="cta__title">Easy to set up. Easy to use.</h2>
+    <h2 class="cta__title">{t('site.ctaFooter.title')}</h2>
     <p class="cta__lead">
-      Free, open source and self-hosted. Connect your keys, tag a document, and let it do the filing
-      for you.
+      {t('site.ctaFooter.lead')}
     </p>
     <div class="cta__btns">
-      <a class="btn btn--gold" href="/docs/installation/">Deploy with Docker</a>
-      <a class="btn btn--ghost" href="/docs/">Read the docs</a>
+      <a class="btn btn--gold" href="/docs/installation/">{t('site.ctaFooter.deployButton')}</a>
+      <a class="btn btn--ghost" href="/docs/">{t('site.ctaFooter.docsButton')}</a>
     </div>
   </div>
 </section>
@@ -26,9 +27,9 @@ const year = 2026;
         <span>Paperless Starfruit</span>
       </div>
 
-      <nav class="foot__links" aria-label="Footer">
-        <a href="/docs/">Documentation</a>
-        <a href="/docs/installation/">Install</a>
+      <nav class="foot__links" aria-label={t('site.ctaFooter.footerNavLabel')}>
+        <a href="/docs/">{t('site.ctaFooter.linkDocs')}</a>
+        <a href="/docs/installation/">{t('site.ctaFooter.linkInstall')}</a>
         <a href="https://github.com/sabbaken/paperless-starfruit">GitHub</a>
         <a href="https://docs.paperless-ngx.com/">paperless-ngx</a>
       </nav>
@@ -36,7 +37,7 @@ const year = 2026;
 
     <div class="foot__meta">
       <p>
-        An independent companion for paperless-ngx, not affiliated with the paperless-ngx project.
+        {t('site.ctaFooter.disclaimer')}
       </p>
       <p>© {year}</p>
     </div>

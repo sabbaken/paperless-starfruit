@@ -2,26 +2,32 @@
 // Screenshots: one big horizontally-scrollable carousel. Slides are plain
 // bordered images (no window chrome); scroll-snap does the work, the arrow
 // buttons are a JS-only nicety on top. Drop images into `public/screenshots/`.
+import { createT } from '@paperless-starfruit/shared';
+const t = createT('en');
 const shots = [
   {
     label: 'Dashboard',
-    caption: 'Queue depth, throughput and recent runs.',
+    caption: t('site.screenshots.dashboardCaption'),
     src: '/screenshots/dashboard.png',
   },
   {
     label: 'Review queue',
-    caption: 'Suggestions side-by-side with the document.',
+    caption: t('site.screenshots.reviewCaption'),
     src: '/screenshots/review.png',
   },
-  { label: 'Tags', caption: 'Give each tag a hint the AI follows.', src: '/screenshots/tags.png' },
+  {
+    label: 'Tags',
+    caption: t('site.screenshots.tagsCaption'),
+    src: '/screenshots/tags.png',
+  },
   {
     label: 'Prompts',
-    caption: 'Edit and test the prompts each model receives.',
+    caption: t('site.screenshots.promptsCaption'),
     src: '/screenshots/prompts.png',
   },
   {
     label: 'API keys',
-    caption: 'Add, test and mask your provider keys.',
+    caption: t('site.screenshots.apiKeysCaption'),
     src: '/screenshots/api-keys.png',
   },
 ];
@@ -30,15 +36,15 @@ const shots = [
 <section class="shots section" id="screenshots">
   <div class="container shots__head">
     <div>
-      <p class="eyebrow">Screenshots</p>
-      <h2 class="section-title">A look at the app.</h2>
+      <p class="eyebrow">{t('site.screenshots.eyebrow')}</p>
+      <h2 class="section-title">{t('site.screenshots.title')}</h2>
     </div>
     <div class="shots__nav" aria-hidden="true">
       <button
         class="shots__btn"
         type="button"
         data-dir="-1"
-        aria-label="Previous screenshot"
+        aria-label={t('site.screenshots.prevLabel')}
         tabindex="-1"
       >
         <svg
@@ -56,7 +62,7 @@ const shots = [
         class="shots__btn"
         type="button"
         data-dir="1"
-        aria-label="Next screenshot"
+        aria-label={t('site.screenshots.nextLabel')}
         tabindex="-1"
       >
         <svg
@@ -76,7 +82,7 @@ const shots = [
   <div
     class="shots__track"
     role="region"
-    aria-label="App screenshots, scrolls horizontally"
+    aria-label={t('site.screenshots.trackLabel')}
     tabindex="0"
   >
     {
@@ -84,7 +90,7 @@ const shots = [
         <figure class="slide">
           <img
             src={s.src}
-            alt={`${s.label} in Paperless Starfruit`}
+            alt={t('site.screenshots.imageAlt', { label: s.label })}
             loading="lazy"
             draggable="false"
           />

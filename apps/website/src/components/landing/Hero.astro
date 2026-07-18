@@ -2,23 +2,26 @@
 // Hero. The signature element is the transformation figure on the right: a fresh
 // scan carrying the `psf-process` tag resolving into the four metadata fields the
 // product extracts (title, tags, correspondent, date). It is the product, in one image.
+import { createT } from '@paperless-starfruit/shared';
+const t = createT('en');
 ---
 
 <section class="hero">
   <div class="container hero__grid">
     <div class="hero__copy">
-      <p class="eyebrow">Side-car for paperless-ngx</p>
+      <p class="eyebrow">{t('site.hero.eyebrow')}</p>
       <h1 class="hero__title">
-        Tag a document.<br />Get it back <span class="hl">filed</span>.
+        {t('site.hero.titleLine1')}<br />{t('site.hero.titleAfterBr')}<span class="hl"
+          >{t('site.hero.titleHighlight')}</span
+        >{t('site.hero.titleAfterHighlight')}
       </h1>
       <p class="lead">
-        It reads the documents you tag and writes back a clean title, tags, correspondent and date,
-        using the OCR and language models <em>you</em> bring.
+        {t('site.hero.leadBefore')}<em>{t('site.hero.leadEm')}</em>{t('site.hero.leadAfter')}
       </p>
 
       <div class="hero__cta">
         <a class="btn btn--gold" href="/docs/installation/">
-          Deploy with Docker
+          {t('site.hero.ctaPrimary')}
           <svg
             viewBox="0 0 24 24"
             width="18"
@@ -31,18 +34,18 @@
             ></path></svg
           >
         </a>
-        <a class="btn btn--ghost" href="/docs/">Read the docs</a>
+        <a class="btn btn--ghost" href="/docs/">{t('site.hero.ctaSecondary')}</a>
       </div>
 
-      <ul class="hero__trust" aria-label="At a glance">
-        <li>Bring your own keys</li>
-        <li>Self-hosted</li>
-        <li>One container</li>
-        <li>No telemetry</li>
+      <ul class="hero__trust" aria-label={t('site.hero.trustLabel')}>
+        <li>{t('site.hero.trustKeys')}</li>
+        <li>{t('site.hero.trustSelfHosted')}</li>
+        <li>{t('site.hero.trustContainer')}</li>
+        <li>{t('site.hero.trustTelemetry')}</li>
       </ul>
     </div>
 
-    <figure class="tf" aria-label="A scanned document becomes structured metadata">
+    <figure class="tf" aria-label={t('site.hero.figureLabel')}>
       <div class="tf__panel tf__scan">
         <span class="tf__cap">scanned · doc&nbsp;#1042</span>
         <div class="tf__sheet">

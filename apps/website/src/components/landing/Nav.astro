@@ -1,23 +1,25 @@
 ---
 // Sticky top navigation for the landing page.
+import { createT } from '@paperless-starfruit/shared';
+const t = createT('en');
 ---
 
 <header class="nav">
   <div class="container nav__inner">
-    <a class="nav__brand" href="/" aria-label="Paperless Starfruit home">
+    <a class="nav__brand" href="/" aria-label={t('site.nav.brandHomeAria')}>
       <img src="/paperless-starfruit.png" width="32" height="32" alt="" />
       <span>Paperless Starfruit</span>
     </a>
 
-    <nav class="nav__links" aria-label="Primary">
-      <a href="/docs/">Docs</a>
+    <nav class="nav__links" aria-label={t('site.nav.primaryAria')}>
+      <a href="/docs/">{t('site.nav.docs')}</a>
     </nav>
 
     <div class="nav__actions">
       <a
         class="nav__github"
         href="https://github.com/sabbaken/paperless-starfruit"
-        aria-label="View source on GitHub"
+        aria-label={t('site.nav.githubAria')}
       >
         <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" fill="currentColor">
           <path
@@ -25,7 +27,7 @@
           ></path>
         </svg>
       </a>
-      <a class="btn btn--gold nav__cta" href="/docs/installation/">Deploy</a>
+      <a class="btn btn--gold nav__cta" href="/docs/installation/">{t('site.nav.deploy')}</a>
     </div>
   </div>
 </header>
