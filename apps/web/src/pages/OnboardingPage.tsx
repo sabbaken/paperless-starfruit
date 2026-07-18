@@ -5,6 +5,7 @@ import {
   DEFAULT_TRIGGER_TAG,
   defaultModelSelection,
   TRIGGER_TAG_COLOR,
+  type TFunction,
 } from '@paperless-starfruit/shared';
 import { useAvailableModels, useProviders } from '@/api/providers';
 import { useSettings, useUpdateSettings } from '@/api/settings';
@@ -13,29 +14,31 @@ import { PaperlessConnectionForm } from '@/components/paperless-connection-card'
 import { Button } from '@/components/ui/button';
 import { SelectRow } from '@/components/ui/select-row';
 import { StepIndicator } from '@/components/ui/step-indicator';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { ApiKeysPage } from '@/pages/ApiKeysPage';
 import { toastSave } from '@/lib/toast';
 
 /** `label` is the (short) navbar tab text; it falls back to `title`. */
-const STEPS: { label?: string; title: string; description: ReactNode }[] = [
+const buildSteps = (t: TFunction): { label?: string; title: string; description: ReactNode }[] => [
   {
-    title: 'Connect paperless',
-    description: 'Point Starfruit at your paperless-ngx instance.',
+    title: t('onboarding.connectPaperless.title'),
+    description: t('onboarding.connectPaperless.description'),
   },
   {
-    title: 'API keys',
-    description: 'Connect at least one AI provider: a cloud key or a local endpoint.',
+    title: t('onboarding.apiKeys.title'),
+    description: t('onboarding.apiKeys.description'),
   },
   {
-    title: 'Processing',
-    description: 'Pick which models read and enrich your documents.',
+    title: t('onboarding.processing.title'),
+    description: t('onboarding.processing.description'),
   },
   {
-    label: 'Start processing',
-    title: 'How to start processing?',
+    label: t('onboarding.startProcessing.label'),
+    title: t('onboarding.startProcessing.title'),
     description: (
       <>
-        Tag a document with <TriggerTag /> in paperless. Starfruit picks it up on the next poll.
+        {t('onboarding.startProcessing.tagPrefix')} <TriggerTag />{' '}
+        {t('onboarding.startProcessing.tagSuffix')}
       </>
     ),
   },
@@ -65,13 +68,15 @@ function TriggerTag() {
 export function OnboardingPage() {
   const navigate = useNavigate();
   const params = useParams();
+  const { t } = useTranslation();
+  const steps = buildSteps(t);
 
   const n = Number(params.step);
-  if (!Number.isInteger(n) || n < 1 || n > STEPS.length) {
+  if (!Number.isInteger(n) || n < 1 || n > steps.length) {
     return <Navigate to="/onboarding/1" replace />;
   }
   const step = n - 1;
-  const last = step === STEPS.length - 1;
+  const last = step === steps.length - 1;
   const setStep = (i: number) => navigate(`/onboarding/${i + 1}`);
 
   return (
@@ -87,7 +92,7 @@ export function OnboardingPage() {
           </span>
         </div>
         <StepIndicator
-          steps={STEPS.map((s) => s.label ?? s.title)}
+          steps={steps.map((s) => s.label ?? s.title)}
           current={step}
           onSelect={setStep}
         />
@@ -95,8 +100,8 @@ export function OnboardingPage() {
 
       <main className="mx-auto w-full max-w-xl flex-1 px-6 pt-14 pb-8">
         <div className="space-y-1">
-          <h1 className="text-lg font-semibold tracking-tight">{STEPS[step].title}</h1>
-          <p className="text-sm text-muted-foreground">{STEPS[step].description}</p>
+          <h1 className="text-lg font-semibold tracking-tight">{steps[step].title}</h1>
+          <p className="text-sm text-muted-foreground">{steps[step].description}</p>
         </div>
 
         <div className="mt-6">
@@ -114,10 +119,10 @@ export function OnboardingPage() {
         <footer className="mx-auto w-full max-w-xl px-6 pb-8">
           <div className="flex items-center justify-between">
             <Button variant="ghost" onClick={() => setStep(step - 1)}>
-              Back
+              {t('common.back')}
             </Button>
             <Button onClick={() => (last ? navigate('/dashboard') : setStep(step + 1))}>
-              {last ? 'Done' : 'Next'}
+              {last ? t('common.done') : t('common.next')}
             </Button>
           </div>
         </footer>
@@ -130,6 +135,7 @@ export function OnboardingPage() {
  *  knob keeps its default and lives in Settings → Processing. "Add a key" in
  *  the picker points back at the API-keys step instead of the settings route. */
 function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
+  const { t } = useTranslation();
   const settings = useSettings();
   const providers = useProviders();
   const models = useAvailableModels();
@@ -157,7 +163,12 @@ function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
   const s = settings.data;
   const list = providers.data ?? [];
   const describe = (id: number | null, model: string | null) =>
-    model ? `${list.find((p) => p.id === id)?.name ?? 'Unknown'} · ${model}` : null;
+    model
+      ? t('onboarding.processing.modelValue', {
+          name: list.find((p) => p.id === id)?.name ?? t('onboarding.processing.unknownProvider'),
+          model,
+        })
+      : null;
 
   const onSelectModel = (providerId: number, model: string) => {
     void toastSave(
@@ -175,15 +186,15 @@ function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
       <div className="divide-y">
         <SelectRow
           icon={<ScanText className="size-4" />}
-          label="OCR model"
-          hint="Extract text with a vision model"
+          label={t('onboarding.processing.ocrModel')}
+          hint={t('onboarding.processing.ocrHint')}
           value={describe(s.ocrProviderId, s.ocrModel)}
           onClick={() => setPicker('ocr')}
         />
         <SelectRow
           icon={<Brain className="size-4" />}
-          label="Extraction model"
-          hint="Suggests title, tags, correspondent and date"
+          label={t('onboarding.processing.extractionModel')}
+          hint={t('onboarding.processing.extractionHint')}
           value={describe(s.llmProviderId, s.llmModel)}
           onClick={() => setPicker('llm')}
         />
@@ -191,7 +202,11 @@ function ProcessingStep({ onGoToProviders }: { onGoToProviders: () => void }) {
 
       {picker && (
         <ModelPicker
-          title={picker === 'ocr' ? 'OCR model' : 'Language model'}
+          title={
+            picker === 'ocr'
+              ? t('onboarding.processing.ocrModel')
+              : t('onboarding.processing.languageModel')
+          }
           visionOnly={picker === 'ocr'}
           selected={
             picker === 'ocr'

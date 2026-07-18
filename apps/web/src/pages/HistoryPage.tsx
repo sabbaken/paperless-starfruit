@@ -7,6 +7,7 @@ import {
 } from '@paperless-starfruit/shared';
 import { useAuditDetail, useAuditLog } from '@/api/audit';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,14 @@ function decisionTone(decision: string | null): string {
   return (decision && DECISION_TONE[decision]) || 'text-foreground';
 }
 
+// Narrow a possibly-null/unknown decision to a valid `auditDecisions.*` dict key
+// so `t()` stays type-safe; anything unrecognised renders as "unknown".
+function decisionKey(decision: string | null): (typeof AUDIT_DECISIONS)[number] | 'unknown' {
+  return (AUDIT_DECISIONS as readonly string[]).includes(decision ?? '')
+    ? (decision as (typeof AUDIT_DECISIONS)[number])
+    : 'unknown';
+}
+
 function formatTime(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toLocaleString();
 }
@@ -58,6 +67,7 @@ export function HistoryPage() {
 }
 
 function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [decision, setDecision] = useState<string | undefined>(undefined);
@@ -84,14 +94,14 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
             setQ(e.target.value);
             commitSearch();
           }}
-          placeholder="Search prompts and responses…"
+          placeholder={t('history.searchPlaceholder')}
           className="pl-8"
         />
       </div>
 
       <div className="flex flex-wrap gap-1.5">
         <Chip
-          label="All"
+          label={t('history.all')}
           active={!decision}
           onClick={() => {
             setDecision(undefined);
@@ -101,7 +111,7 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
         {AUDIT_DECISIONS.map((d) => (
           <Chip
             key={d}
-            label={d}
+            label={t(`auditDecisions.${d}`)}
             active={decision === d}
             onClick={() => {
               setDecision(d);
@@ -119,11 +129,11 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
             <EmptyMedia variant="icon">
               <SearchX />
             </EmptyMedia>
-            <EmptyTitle>No matching runs</EmptyTitle>
+            <EmptyTitle>{t('history.emptyTitle')}</EmptyTitle>
             <EmptyDescription>
-              Each time a document tagged <code className="font-mono">psf-process</code> is
-              processed, the prompt sent to the model and its full response are recorded here for
-              debugging.
+              {t('history.emptyDescriptionBefore')}
+              <code className="font-mono">psf-process</code>
+              {t('history.emptyDescriptionAfter')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -133,11 +143,11 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-4">Decision</TableHead>
-                  <TableHead>Document</TableHead>
-                  <TableHead className="w-full">When</TableHead>
-                  <TableHead className="text-right">Tokens</TableHead>
-                  <TableHead aria-label="Open" />
+                  <TableHead className="pl-4">{t('history.decisionHeader')}</TableHead>
+                  <TableHead>{t('history.documentHeader')}</TableHead>
+                  <TableHead className="w-full">{t('history.whenHeader')}</TableHead>
+                  <TableHead className="text-right">{t('history.tokensHeader')}</TableHead>
+                  <TableHead aria-label={t('history.openAria')} />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -155,13 +165,14 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
 }
 
 function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: number) => void }) {
+  const { t } = useTranslation();
   return (
     <TableRow
       onClick={item.hasDetail ? () => onOpen(item.id) : undefined}
       className={cn(!item.hasDetail && 'hover:bg-transparent', item.hasDetail && 'cursor-pointer')}
     >
       <TableCell className={cn('py-3 pl-4 font-medium', decisionTone(item.decision))}>
-        {item.decision ?? 'unknown'}
+        {t(`auditDecisions.${decisionKey(item.decision)}`)}
       </TableCell>
       <TableCell className="py-3">
         <DocumentLink documentId={item.documentId} />
@@ -180,7 +191,7 @@ function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: nu
             onClick={() => onOpen(item.id)}
             className="cursor-pointer hover:text-foreground"
           >
-            view →
+            {t('history.view')}
           </button>
         )}
       </TableCell>
@@ -199,20 +210,19 @@ function Pager({
   count: number;
   onChange: (offset: number) => void;
 }) {
+  const { t } = useTranslation();
   const from = total === 0 ? 0 : offset + 1;
   const to = offset + count;
   const canPrev = offset > 0;
   const canNext = to < total;
 
   if (!canPrev && !canNext) {
-    return <p className="text-xs text-muted-foreground">{total} run(s)</p>;
+    return <p className="text-xs text-muted-foreground">{t('history.runCount', { total })}</p>;
   }
 
   return (
     <div className="flex items-center justify-between">
-      <p className="text-xs text-muted-foreground">
-        {from}–{to} of {total}
-      </p>
+      <p className="text-xs text-muted-foreground">{t('history.pager', { from, to, total })}</p>
       <div className="flex gap-2">
         <Button
           size="sm"
@@ -220,7 +230,7 @@ function Pager({
           disabled={!canPrev}
           onClick={() => onChange(Math.max(0, offset - PAGE_SIZE))}
         >
-          Previous
+          {t('history.previous')}
         </Button>
         <Button
           size="sm"
@@ -228,7 +238,7 @@ function Pager({
           disabled={!canNext}
           onClick={() => onChange(offset + PAGE_SIZE)}
         >
-          Next
+          {t('common.next')}
         </Button>
       </div>
     </div>
@@ -262,46 +272,47 @@ function HistoryDetailView({ id, onClose }: { id: number; onClose: () => void })
 }
 
 function HistoryDetail({ entry, onClose }: { entry: AuditEntryDetail; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <Button variant="ghost" size="sm" onClick={onClose} className="-ml-2 text-muted-foreground">
         <ArrowLeft className="size-4" />
-        Back to history
+        {t('history.backToHistory')}
       </Button>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <span className={cn('font-medium', decisionTone(entry.decision))}>
-          {entry.decision ?? 'unknown'}
+          {t(`auditDecisions.${decisionKey(entry.decision)}`)}
         </span>
         <DocumentLink documentId={entry.documentId} />
-        {entry.jobId != null && <span className="text-muted-foreground">job #{entry.jobId}</span>}
+        {entry.jobId != null && (
+          <span className="text-muted-foreground">
+            {t('history.jobLabel', { jobId: entry.jobId })}
+          </span>
+        )}
         {entry.tokensCost != null && (
-          <span className="text-muted-foreground">{entry.tokensCost.toLocaleString()} tokens</span>
+          <span className="text-muted-foreground">
+            {t('history.tokensLabel', { tokens: entry.tokensCost.toLocaleString() })}
+          </span>
         )}
         <span className="text-muted-foreground">{formatTime(entry.createdAt)}</span>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Prompt sent to the model</CardTitle>
+          <CardTitle className="text-sm">{t('history.promptTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Block
-            text={entry.prompt}
-            empty="No prompt was recorded. Skips, OCR-only runs and review approvals don't call the extraction model."
-          />
+          <Block text={entry.prompt} empty={t('history.promptEmpty')} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Model response</CardTitle>
+          <CardTitle className="text-sm">{t('history.responseTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Block
-            text={formatResponse(entry)}
-            empty="No model response was recorded for this entry."
-          />
+          <Block text={formatResponse(entry)} empty={t('history.responseEmpty')} />
         </CardContent>
       </Card>
     </div>

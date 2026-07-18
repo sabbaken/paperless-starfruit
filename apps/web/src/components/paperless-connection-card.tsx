@@ -16,6 +16,7 @@ import {
   type ConnectionStatus,
   type ConnectionTestResult,
   type PaperlessConnectionInput,
+  type TFunction,
 } from '@paperless-starfruit/shared';
 import {
   useConnection,
@@ -23,6 +24,7 @@ import {
   useSaveConnection,
   useTestConnection,
 } from '@/api/connection';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -51,13 +53,12 @@ export interface PaperlessConnectionCardProps {
 
 /** The settings-page presentation: the bare form wrapped in card chrome. */
 export function PaperlessConnectionCard({ className, onConnected }: PaperlessConnectionCardProps) {
+  const { t } = useTranslation();
   return (
     <Card className={cn('w-full max-w-md', className)}>
       <CardHeader>
-        <CardTitle>Connect paperless</CardTitle>
-        <CardDescription>
-          Read-only access, verified before saving. The token is encrypted at rest.
-        </CardDescription>
+        <CardTitle>{t('paperless.cardTitle')}</CardTitle>
+        <CardDescription>{t('paperless.cardDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <PaperlessConnectionForm onConnected={onConnected} showDisconnect />
@@ -84,6 +85,7 @@ export function PaperlessConnectionForm({
   onConnected,
   showDisconnect = false,
 }: PaperlessConnectionFormProps) {
+  const { t } = useTranslation();
   const connection = useConnection();
   const status = connection.data;
 
@@ -132,6 +134,7 @@ export function PaperlessConnectionForm({
   const connected = status.connected;
 
   const view = computeStatus({
+    t,
     status,
     testPending: test.isPending,
     savePending: save.isPending,
@@ -144,13 +147,13 @@ export function PaperlessConnectionForm({
     <div className={cn('w-full', className)}>
       <form id="connect-form" onSubmit={onSave} className="space-y-4" noValidate>
         <div className="space-y-2">
-          <Label htmlFor="baseUrl">paperless-ngx URL</Label>
+          <Label htmlFor="baseUrl">{t('paperless.baseUrlLabel')}</Label>
           <div className="relative">
             <Globe className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-muted-foreground" />
             <Input
               id="baseUrl"
               className="pl-9"
-              placeholder="paperless.home.lan or 192.168.1.10:8000"
+              placeholder={t('paperless.baseUrlPlaceholder')}
               autoComplete="off"
               spellCheck={false}
               aria-invalid={!!formState.errors.baseUrl}
@@ -160,16 +163,13 @@ export function PaperlessConnectionForm({
           {formState.errors.baseUrl ? (
             <p className="text-sm text-destructive">{formState.errors.baseUrl.message}</p>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              A hostname or an IP&nbsp;+&nbsp;port both work — http:// is assumed if you omit the
-              scheme.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('paperless.baseUrlHint')}</p>
           )}
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="token">API token</Label>
+            <Label htmlFor="token">{t('paperless.tokenLabel')}</Label>
             <a
               href={TOKEN_DOCS_URL}
               target="_blank"
@@ -177,7 +177,7 @@ export function PaperlessConnectionForm({
               tabIndex={-1}
               className="inline-flex items-center gap-0.5 text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-500"
             >
-              Where to get it?
+              {t('paperless.tokenDocsLink')}
               <ArrowUpRight className="size-3.5" />
             </a>
           </div>
@@ -186,7 +186,9 @@ export function PaperlessConnectionForm({
               id="token"
               type={showToken ? 'text' : 'password'}
               className="pr-9"
-              placeholder={connected ? 're-enter to update' : 'paperless API token'}
+              placeholder={
+                connected ? t('paperless.tokenPlaceholderUpdate') : t('paperless.tokenPlaceholder')
+              }
               autoComplete="off"
               spellCheck={false}
               aria-invalid={!!formState.errors.token}
@@ -196,7 +198,7 @@ export function PaperlessConnectionForm({
               type="button"
               tabIndex={-1}
               onClick={() => setShowToken((v) => !v)}
-              aria-label={showToken ? 'Hide token' : 'Show token'}
+              aria-label={showToken ? t('paperless.hideToken') : t('paperless.showToken')}
               className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
             >
               {showToken ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -212,15 +214,15 @@ export function PaperlessConnectionForm({
         <details className="group">
           <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
             <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
-            Advanced
+            {t('paperless.advanced')}
           </summary>
           <div className="space-y-2 pt-3">
-            <Label htmlFor="apiVersion">API version</Label>
+            <Label htmlFor="apiVersion">{t('paperless.apiVersionLabel')}</Label>
             <Input
               id="apiVersion"
               type="number"
               min={1}
-              placeholder="auto-detect"
+              placeholder={t('paperless.apiVersionPlaceholder')}
               className="max-w-32"
               aria-invalid={!!formState.errors.apiVersion}
               {...register('apiVersion', {
@@ -236,9 +238,7 @@ export function PaperlessConnectionForm({
             {formState.errors.apiVersion ? (
               <p className="text-sm text-destructive">{formState.errors.apiVersion.message}</p>
             ) : (
-              <p className="text-xs text-muted-foreground">
-                Leave blank to detect the server&apos;s API version automatically.
-              </p>
+              <p className="text-xs text-muted-foreground">{t('paperless.apiVersionHint')}</p>
             )}
           </div>
         </details>
@@ -254,11 +254,11 @@ export function PaperlessConnectionForm({
             disabled={busy}
           >
             {test.isPending && <Loader2 className="animate-spin" />}
-            Test connection
+            {t('paperless.testConnection')}
           </Button>
           <Button type="submit" form="connect-form" className="flex-1" disabled={busy}>
             {save.isPending && <Loader2 className="animate-spin" />}
-            {connected ? 'Save changes' : 'Save & continue'}
+            {connected ? t('paperless.saveChanges') : t('paperless.saveContinue')}
           </Button>
         </div>
         {showDisconnect && connected && (
@@ -271,7 +271,7 @@ export function PaperlessConnectionForm({
             disabled={disconnect.isPending}
           >
             {disconnect.isPending && <Loader2 className="animate-spin" />}
-            Disconnect
+            {t('paperless.disconnect')}
           </Button>
         )}
       </div>
@@ -311,6 +311,7 @@ function ConnectionStatusAlert({ view }: { view: StatusView }) {
 }
 
 function computeStatus({
+  t,
   status,
   testPending,
   savePending,
@@ -318,6 +319,7 @@ function computeStatus({
   testError,
   saveError,
 }: {
+  t: TFunction;
   status: ConnectionStatus;
   testPending: boolean;
   savePending: boolean;
@@ -325,33 +327,49 @@ function computeStatus({
   testError: Error | null;
   saveError: Error | null;
 }): StatusView {
-  if (testPending) return { tone: 'probing', title: 'Checking server access…' };
-  if (savePending) return { tone: 'probing', title: 'Verifying & storing…' };
+  if (testPending) return { tone: 'probing', title: t('paperless.status.checkingAccess') };
+  if (savePending) return { tone: 'probing', title: t('paperless.status.verifyingStoring') };
 
-  if (saveError) return { tone: 'fault', title: "Couldn't connect", detail: saveError.message };
-  if (testError) return { tone: 'fault', title: "Couldn't connect", detail: testError.message };
+  if (saveError)
+    return {
+      tone: 'fault',
+      title: t('paperless.status.couldntConnect'),
+      detail: saveError.message,
+    };
+  if (testError)
+    return {
+      tone: 'fault',
+      title: t('paperless.status.couldntConnect'),
+      detail: testError.message,
+    };
   if (testResult && !testResult.ok) {
     return {
       tone: 'fault',
-      title: "Couldn't connect",
-      detail: testResult.error ?? 'The instance rejected the request.',
+      title: t('paperless.status.couldntConnect'),
+      detail: testResult.error ?? t('paperless.status.instanceRejected'),
     };
   }
   if (testResult?.ok) {
     return {
       tone: 'success',
-      title: 'Connection verified',
-      detail: describeProbe(testResult.documentCount, testResult.version),
+      title: t('paperless.status.connectionVerified'),
+      detail: describeProbe(t, testResult.documentCount, testResult.version),
     };
   }
-  if (status.connected) return { tone: 'connected', title: 'Connected', detail: status.baseUrl };
+  if (status.connected)
+    return { tone: 'connected', title: t('paperless.status.connected'), detail: status.baseUrl };
   return { tone: 'idle', title: '' };
 }
 
-function describeProbe(count: number | undefined, version: string | undefined): string {
+function describeProbe(
+  t: TFunction,
+  count: number | undefined,
+  version: string | undefined,
+): string {
   const parts: string[] = [];
-  if (version) parts.push(`paperless-ngx ${version}`);
-  if (count !== undefined) parts.push(`${count.toLocaleString()} documents`);
-  parts.push('checked just now');
+  if (version) parts.push(t('paperless.probe.version', { version }));
+  if (count !== undefined)
+    parts.push(t('paperless.probe.documents', { count: count.toLocaleString() }));
+  parts.push(t('paperless.probe.checkedJustNow'));
   return parts.join(' · ');
 }

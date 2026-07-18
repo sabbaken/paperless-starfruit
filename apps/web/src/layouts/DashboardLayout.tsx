@@ -41,42 +41,55 @@ import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { UpdateNotice } from '@/components/update-notice';
+import { useTranslation } from '@/i18n/I18nProvider';
+import type { TFunction } from '@paperless-starfruit/shared';
 import type { NavItem } from '@/types/nav';
 
-const META: Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> = {
+const buildMeta = (
+  t: TFunction,
+): Record<string, { title: string; description: string; width?: 'narrow' | 'wide' }> => ({
   '/dashboard': {
-    title: 'Dashboard',
-    description: 'Queue, throughput and recent activity',
+    title: t('nav.meta.dashboard.title'),
+    description: t('nav.meta.dashboard.description'),
     width: 'wide',
   },
   '/review': {
-    title: 'Review queue',
-    description: 'Approve, edit or reject AI suggestions',
+    title: t('nav.meta.review.title'),
+    description: t('nav.meta.review.description'),
     width: 'wide',
   },
   '/history': {
-    title: 'History',
-    description: 'Inspect the prompts and model responses behind each run',
+    title: t('nav.meta.history.title'),
+    description: t('nav.meta.history.description'),
     width: 'wide',
   },
   '/tags': {
-    title: 'Tags',
-    description: 'Your paperless tags and the hints that guide the AI',
+    title: t('nav.meta.tags.title'),
+    description: t('nav.meta.tags.description'),
     width: 'wide',
   },
-  '/settings/general': { title: 'General', description: 'Theme and app preferences' },
-  '/settings/connection': { title: 'Connection', description: 'Your paperless-ngx instance' },
-  '/settings/api-keys': { title: 'API Keys', description: 'Connect AI providers' },
+  '/settings/general': {
+    title: t('nav.meta.general.title'),
+    description: t('nav.meta.general.description'),
+  },
+  '/settings/connection': {
+    title: t('nav.meta.connection.title'),
+    description: t('nav.meta.connection.description'),
+  },
+  '/settings/api-keys': {
+    title: t('nav.meta.apiKeys.title'),
+    description: t('nav.meta.apiKeys.description'),
+  },
   '/settings/processing': {
-    title: 'Processing',
-    description: 'Models & how documents are enriched',
+    title: t('nav.meta.processing.title'),
+    description: t('nav.meta.processing.description'),
   },
   '/settings/prompts': {
-    title: 'Prompts',
-    description: 'Customise what each model is asked',
+    title: t('nav.meta.prompts.title'),
+    description: t('nav.meta.prompts.description'),
     width: 'wide',
   },
-};
+});
 
 /** The GitHub mark, inlined (lucide dropped its brand icons). Sized by the menu button's svg styles. */
 function GithubIcon() {
@@ -89,6 +102,7 @@ function GithubIcon() {
 
 /** The connected app chrome: shadcn sidebar nav + page header. Wraps the routed pages. */
 export function DashboardLayout({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const connection = useConnection();
   // Drives the live "pending review" badge in the nav; cheap and always-on.
@@ -99,27 +113,28 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const logout = useLogout();
 
-  const meta = META[pathname] ?? META['/dashboard'];
+  const metaMap = buildMeta(t);
+  const meta = metaMap[pathname] ?? metaMap['/dashboard'];
   const width = meta.width ?? 'narrow';
   const conn = connection.data;
   const baseUrl = conn && conn.connected ? conn.baseUrl : null;
 
   const nav: NavItem[] = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/review', label: 'Review', icon: Inbox, badge: stats.data?.pendingReview },
-    { to: '/history', label: 'History', icon: History },
-    { to: '/tags', label: 'Tags', icon: Tags },
+    { to: '/dashboard', label: t('nav.labels.dashboard'), icon: LayoutDashboard },
+    { to: '/review', label: t('nav.labels.review'), icon: Inbox, badge: stats.data?.pendingReview },
+    { to: '/history', label: t('nav.labels.history'), icon: History },
+    { to: '/tags', label: t('nav.labels.tags'), icon: Tags },
     {
       to: '/settings',
-      label: 'Settings',
+      label: t('nav.labels.settings'),
       icon: SlidersHorizontal,
       defaultOpen: true,
       children: [
-        { to: '/settings/general', label: 'General' },
-        { to: '/settings/processing', label: 'Processing' },
-        { to: '/settings/prompts', label: 'Prompts' },
-        { to: '/settings/api-keys', label: 'API Keys' },
-        { to: '/settings/connection', label: 'Connection' },
+        { to: '/settings/general', label: t('nav.labels.general') },
+        { to: '/settings/processing', label: t('nav.labels.processing') },
+        { to: '/settings/prompts', label: t('nav.labels.prompts') },
+        { to: '/settings/api-keys', label: t('nav.labels.apiKeys') },
+        { to: '/settings/connection', label: t('nav.labels.connection') },
       ],
     },
   ];
@@ -186,7 +201,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <SidebarMenu>
             {baseUrl && (
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Open paperless in a new tab">
+                <SidebarMenuButton asChild tooltip={t('nav.footer.openPaperless')}>
                   <a href={baseUrl} target="_blank" rel="noreferrer">
                     {/* The status dot keeps its size but sits in an icon-sized box,
                         so the label lines up with the other footer items. */}
@@ -211,10 +226,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Support on Ko-fi">
+              <SidebarMenuButton asChild tooltip={t('nav.footer.supportKofi')}>
                 <a href="https://ko-fi.com/sabbaken" target="_blank" rel="noreferrer">
                   <Coffee />
-                  <span>Support on Ko-fi</span>
+                  <span>{t('nav.footer.supportKofi')}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -222,9 +237,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               {/* The only footer item that's a real <button> (the rest are links,
                   which get the pointer for free). The vendored SidebarMenuButton
                   doesn't set a cursor itself. */}
-              <SidebarMenuButton onClick={logout} tooltip="Sign out" className="cursor-pointer">
+              <SidebarMenuButton
+                onClick={logout}
+                tooltip={t('nav.footer.signOut')}
+                className="cursor-pointer"
+              >
                 <LogOut />
-                <span>Sign out</span>
+                <span>{t('nav.footer.signOut')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -268,6 +287,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
  * separate action that toggles the sub-list independently.
  */
 function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
+  const { t } = useTranslation();
   const Icon = item.icon;
   const children = item.children ?? [];
   const sectionActive =
@@ -312,7 +332,7 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
         </SidebarMenuButton>
         <CollapsibleTrigger asChild>
           <SidebarMenuAction
-            aria-label={`Toggle ${item.label}`}
+            aria-label={t('nav.toggle', { label: item.label })}
             className="cursor-pointer data-[state=open]:rotate-90"
           >
             <ChevronRight />

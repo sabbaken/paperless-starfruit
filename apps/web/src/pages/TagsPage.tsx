@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { CornerDownRight, Eye, EyeOff, Loader2, Pencil, Plus, Search, Tags } from 'lucide-react';
 import { TAG_COMMENT_MAX, type TagUpdate, type TagView } from '@paperless-starfruit/shared';
 import { useCreateTag, useTags, useUpdateTag } from '@/api/tags';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ function toTreeRows(tags: TagView[]): TagRow[] {
 }
 
 export function TagsPage() {
+  const { t } = useTranslation();
   const tags = useTags();
   const toggleHidden = useUpdateTag();
   const [query, setQuery] = useState('');
@@ -92,7 +94,7 @@ export function TagsPage() {
           <EmptyMedia variant="icon">
             <Tags />
           </EmptyMedia>
-          <EmptyTitle>Couldn&apos;t load tags</EmptyTitle>
+          <EmptyTitle>{t('tags.loadErrorTitle')}</EmptyTitle>
           <EmptyDescription>{tags.error.message}</EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -126,8 +128,8 @@ export function TagsPage() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            aria-label="Filter tags"
-            placeholder="Filter by name or hint…"
+            aria-label={t('tags.filterAriaLabel')}
+            placeholder={t('tags.filterPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-8"
@@ -135,7 +137,7 @@ export function TagsPage() {
         </div>
         <Button size="sm" variant="outline" onClick={() => setForm({ mode: 'create' })}>
           <Plus className="size-4" />
-          New tag
+          {t('tags.newTag')}
         </Button>
       </div>
 
@@ -145,10 +147,8 @@ export function TagsPage() {
             <EmptyMedia variant="icon">
               <Tags />
             </EmptyMedia>
-            <EmptyTitle>No tags yet</EmptyTitle>
-            <EmptyDescription>
-              Create your first tag. It appears in paperless immediately.
-            </EmptyDescription>
+            <EmptyTitle>{t('tags.emptyTitle')}</EmptyTitle>
+            <EmptyDescription>{t('tags.emptyDescription')}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -156,10 +156,10 @@ export function TagsPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="pl-4">Tag</TableHead>
-                <TableHead className="w-full">AI hint</TableHead>
-                <TableHead className="text-right">Docs</TableHead>
-                <TableHead aria-label="Actions" />
+                <TableHead className="pl-4">{t('tags.colTag')}</TableHead>
+                <TableHead className="w-full">{t('tags.colHint')}</TableHead>
+                <TableHead className="text-right">{t('tags.colDocs')}</TableHead>
+                <TableHead aria-label={t('tags.actionsAriaLabel')} />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -194,18 +194,15 @@ export function TagsPage() {
                         {tag.name}
                       </span>
                       {tag.isTrigger && (
-                        <Badge
-                          variant="secondary"
-                          title="Starfruit picks up documents carrying this tag; it can't be edited here."
-                        >
-                          Trigger
+                        <Badge variant="secondary" title={t('tags.triggerTitle')}>
+                          {t('tags.triggerBadge')}
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="w-full max-w-0 py-3">
                     <p className="truncate text-muted-foreground" title={tag.comment ?? undefined}>
-                      {tag.isTrigger ? 'Marks documents for processing' : (tag.comment ?? '—')}
+                      {tag.isTrigger ? t('tags.triggerHint') : (tag.comment ?? '—')}
                     </p>
                   </TableCell>
                   <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
@@ -219,14 +216,10 @@ export function TagsPage() {
                           variant="ghost"
                           aria-label={
                             tag.hidden
-                              ? `Show ${tag.name} to the AI`
-                              : `Hide ${tag.name} from the AI`
+                              ? t('tags.showToAi', { name: tag.name })
+                              : t('tags.hideFromAi', { name: tag.name })
                           }
-                          title={
-                            tag.hidden
-                              ? 'Hidden from the AI. Click to show it again'
-                              : 'Visible to the AI. Click to hide it'
-                          }
+                          title={tag.hidden ? t('tags.hiddenTitle') : t('tags.visibleTitle')}
                           disabled={toggleHidden.isPending && toggleHidden.variables?.id === tag.id}
                           onClick={() =>
                             toggleHidden.mutate({ id: tag.id, input: { hidden: !tag.hidden } })
@@ -237,7 +230,7 @@ export function TagsPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          aria-label={`Edit ${tag.name}`}
+                          aria-label={t('tags.editAria', { name: tag.name })}
                           onClick={() => setForm({ mode: 'edit', tag })}
                         >
                           <Pencil className="size-4" />
@@ -250,7 +243,7 @@ export function TagsPage() {
               {visible.length === 0 && (
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    No tags match “{query.trim()}”.
+                    {t('tags.noMatch', { query: query.trim() })}
                   </TableCell>
                 </TableRow>
               )}
@@ -263,7 +256,9 @@ export function TagsPage() {
         <DialogContent aria-describedby={undefined} className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {shown?.mode === 'edit' ? `Edit “${shown.tag.name}”` : 'New tag'}
+              {shown?.mode === 'edit'
+                ? t('tags.editTitle', { name: shown.tag.name })
+                : t('tags.newTag')}
             </DialogTitle>
           </DialogHeader>
           {shown && (
@@ -286,6 +281,7 @@ interface FormValues {
 }
 
 function TagForm({ tag, onDone }: { tag?: TagView; onDone: () => void }) {
+  const { t } = useTranslation();
   const editing = !!tag;
   // paperless may hold no (or a malformed) color; a native color input coerces
   // anything invalid to #000000, so only a valid hex counts as "current".
@@ -327,19 +323,19 @@ function TagForm({ tag, onDone }: { tag?: TagView; onDone: () => void }) {
       <form id="tag-form" onSubmit={onSave} className="space-y-4" noValidate>
         <div className="flex gap-3">
           <div className="flex-1 space-y-2">
-            <Label htmlFor="tag-name">Name</Label>
+            <Label htmlFor="tag-name">{t('tags.nameLabel')}</Label>
             <Input
               id="tag-name"
-              placeholder="Insurance"
+              placeholder={t('tags.namePlaceholder')}
               aria-invalid={!!formState.errors.name}
-              {...register('name', { required: 'Required' })}
+              {...register('name', { required: t('common.required') })}
             />
             {formState.errors.name && (
               <p className="text-sm text-destructive">{formState.errors.name.message}</p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tag-color">Color</Label>
+            <Label htmlFor="tag-color">{t('tags.colorLabel')}</Label>
             <input
               id="tag-color"
               type="color"
@@ -351,16 +347,16 @@ function TagForm({ tag, onDone }: { tag?: TagView; onDone: () => void }) {
 
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <Label htmlFor="tag-comment">AI hint</Label>
+            <Label htmlFor="tag-comment">{t('tags.colHint')}</Label>
             <span className="text-xs tabular-nums text-muted-foreground">
-              {comment.length}/{TAG_COMMENT_MAX}
+              {t('tags.charCount', { count: comment.length, max: TAG_COMMENT_MAX })}
             </span>
           </div>
           <Textarea
             id="tag-comment"
             rows={3}
             maxLength={TAG_COMMENT_MAX}
-            placeholder="e.g. Anything from an insurance company: policies, claims, renewal letters."
+            placeholder={t('tags.hintPlaceholder')}
             {...register('comment')}
           />
         </div>
@@ -370,11 +366,11 @@ function TagForm({ tag, onDone }: { tag?: TagView; onDone: () => void }) {
 
       <div className="mt-5 flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onDone} disabled={save.isPending}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button type="submit" form="tag-form" disabled={save.isPending}>
           {save.isPending && <Loader2 className="animate-spin" />}
-          {editing ? 'Save' : 'Create tag'}
+          {editing ? t('common.save') : t('tags.createTag')}
         </Button>
       </div>
     </>

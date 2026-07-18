@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowUpCircle, X } from 'lucide-react';
 import { useVersion } from '@/api/version';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 const DISMISSED_KEY = 'paperless-starfruit:dismissed-update';
 
@@ -12,6 +13,7 @@ const DISMISSED_KEY = 'paperless-starfruit:dismissed-update';
  */
 export function UpdateNotice() {
   const { data } = useVersion();
+  const { t } = useTranslation();
   const latest = data?.updateAvailable ? data.latest : null;
   const [dismissed, setDismissed] = useState<string | null>(readDismissed);
 
@@ -30,7 +32,7 @@ export function UpdateNotice() {
     <div className="flex items-start gap-2 rounded-md border border-brand/30 bg-brand/10 p-2 text-xs group-data-[collapsible=icon]:hidden">
       <ArrowUpCircle className="mt-0.5 size-4 shrink-0 text-brand" />
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground">Update available</p>
+        <p className="font-medium text-foreground">{t('app.updateAvailable')}</p>
         {data?.releaseUrl ? (
           <a
             href={data.releaseUrl}
@@ -38,7 +40,7 @@ export function UpdateNotice() {
             rel="noreferrer"
             className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            v{latest}: view release
+            {t('app.viewRelease', { version: latest })}
           </a>
         ) : (
           <p className="text-muted-foreground">v{latest}</p>
@@ -47,7 +49,7 @@ export function UpdateNotice() {
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Dismiss update notice"
+        aria-label={t('app.dismissUpdateNotice')}
         className="-mt-0.5 -mr-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground"
       >
         <X className="size-3.5" />

@@ -8,8 +8,10 @@ import {
   registerInputSchema,
   type LoginInput,
   type RegisterInput,
+  type TFunction,
 } from '@paperless-starfruit/shared';
 import { useAuthStatus, useLogin, useRegister } from '@/api/auth';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { getToken, subscribeToken } from '@/lib/auth-token';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -36,10 +38,11 @@ type AuthStatusQuery = ReturnType<typeof useAuthStatus>;
  * Reacts instantly to a 401 clearing the token mid-session.
  */
 export function ProtectedLayout() {
+  const { t } = useTranslation();
   const token = useSyncExternalStore(subscribeToken, getToken);
   const status = useAuthStatus();
 
-  const fallback = bootstrapFallback(status);
+  const fallback = bootstrapFallback(status, t);
   if (fallback) return fallback;
 
   const { initialized, authenticated } = status.data!;
@@ -54,10 +57,11 @@ type Mode = 'setup' | 'login';
 /** The /login and /register pages: render the card, or redirect if the route
  *  doesn't apply (already authenticated, signup closed, or setup not done). */
 export function AuthRoute({ mode }: { mode: Mode }) {
+  const { t } = useTranslation();
   const token = useSyncExternalStore(subscribeToken, getToken);
   const status = useAuthStatus();
 
-  const fallback = bootstrapFallback(status);
+  const fallback = bootstrapFallback(status, t);
   if (fallback) return fallback;
 
   const { initialized, authenticated } = status.data!;
@@ -79,14 +83,14 @@ export function AuthRoute({ mode }: { mode: Mode }) {
 }
 
 /** Spinner while status loads, or a retry on backend error; null once ready. */
-function bootstrapFallback(status: AuthStatusQuery): ReactNode | null {
+function bootstrapFallback(status: AuthStatusQuery, t: TFunction): ReactNode | null {
   if (status.isError) {
     return (
       <Shell>
         <div className="w-full max-w-sm space-y-4 text-center">
-          <p className="font-medium">Backend unreachable</p>
+          <p className="font-medium">{t('auth.backendUnreachable')}</p>
           <p className="text-sm text-muted-foreground">
-            {status.error instanceof Error ? status.error.message : 'unknown error'}
+            {status.error instanceof Error ? status.error.message : t('auth.unknownError')}
           </p>
           <Button
             variant="outline"
@@ -94,7 +98,7 @@ function bootstrapFallback(status: AuthStatusQuery): ReactNode | null {
             disabled={status.isFetching}
           >
             {status.isFetching && <Loader2 className="animate-spin" />}
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       </Shell>
@@ -103,7 +107,10 @@ function bootstrapFallback(status: AuthStatusQuery): ReactNode | null {
   if (status.isLoading || !status.data) {
     return (
       <Shell>
-        <Loader2 className="size-5 animate-spin text-muted-foreground" aria-label="Loading" />
+        <Loader2
+          className="size-5 animate-spin text-muted-foreground"
+          aria-label={t('auth.loading')}
+        />
       </Shell>
     );
   }
@@ -124,21 +131,24 @@ function Shell({ children }: { children: ReactNode }) {
 
 type Credentials = { username: string; password: string };
 
-const COPY: Record<Mode, { title: string; description: string; cta: string }> = {
+const buildCopy = (
+  t: TFunction,
+): Record<Mode, { title: string; description: string; cta: string }> => ({
   setup: {
-    title: 'Create your admin account',
-    description: 'This claims the instance. Registration closes once it exists.',
-    cta: 'Create account',
+    title: t('auth.setup.title'),
+    description: t('auth.setup.description'),
+    cta: t('auth.setup.cta'),
   },
   login: {
-    title: 'Sign in',
-    description: 'Enter your admin credentials to continue.',
-    cta: 'Sign in',
+    title: t('auth.login.title'),
+    description: t('auth.login.description'),
+    cta: t('auth.login.cta'),
   },
-};
+});
 
 function AuthCard({ mode }: { mode: Mode }) {
-  const copy = COPY[mode];
+  const { t } = useTranslation();
+  const copy = buildCopy(t)[mode];
   const [showPassword, setShowPassword] = useState(false);
 
   const register = useRegister();
@@ -167,7 +177,7 @@ function AuthCard({ mode }: { mode: Mode }) {
       <CardContent>
         <form id="auth-form" onSubmit={onSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t('auth.username')}</Label>
             <div className="relative">
               <User className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-muted-foreground" />
               <Input
@@ -186,7 +196,7 @@ function AuthCard({ mode }: { mode: Mode }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <div className="relative">
               <Lock className="pointer-events-none absolute inset-y-0 left-3 my-auto size-4 text-muted-foreground" />
               <Input
@@ -201,7 +211,7 @@ function AuthCard({ mode }: { mode: Mode }) {
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -211,7 +221,7 @@ function AuthCard({ mode }: { mode: Mode }) {
               <p className="text-sm text-destructive">{formState.errors.password.message}</p>
             ) : (
               mode === 'setup' && (
-                <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+                <p className="text-xs text-muted-foreground">{t('auth.passwordHint')}</p>
               )
             )}
           </div>
@@ -220,10 +230,10 @@ function AuthCard({ mode }: { mode: Mode }) {
             <Alert variant="destructive">
               <AlertCircle />
               <AlertTitle>
-                {mode === 'setup' ? "Couldn't create account" : "Couldn't sign in"}
+                {mode === 'setup' ? t('auth.createAccountError') : t('auth.signInError')}
               </AlertTitle>
               <AlertDescription>
-                {mutation.error instanceof Error ? mutation.error.message : 'Please try again.'}
+                {mutation.error instanceof Error ? mutation.error.message : t('auth.genericError')}
               </AlertDescription>
             </Alert>
           )}

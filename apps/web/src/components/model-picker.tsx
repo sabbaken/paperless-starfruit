@@ -19,8 +19,10 @@ import {
   type ModelInfo,
   type ProviderKind,
   type ProviderModels,
+  type TFunction,
 } from '@paperless-starfruit/shared';
 import { useAvailableModels } from '@/api/providers';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -130,9 +132,9 @@ function withOcrModels(g: DisplayGroup): DisplayGroup {
   return add.length ? { ...g, models: [...g.models, ...add] } : g;
 }
 
-function buildRows(groups: DisplayGroup[], ocr: boolean): ModelRow[] {
+function buildRows(groups: DisplayGroup[], ocr: boolean, t: TFunction): ModelRow[] {
   return groups.flatMap((g) => {
-    const company = PROVIDER_KIND_META[g.kind].label;
+    const company = t(`providerKinds.${g.kind}.label`);
     const account = g.name && g.name !== company ? g.name : null;
     return g.models.map((m) => ({
       key: `${g.id}:${m.id}`,
@@ -187,6 +189,7 @@ export function ModelPicker({
   onClose,
   onAddKey,
 }: ModelPickerProps) {
+  const { t } = useTranslation();
   const models = useAvailableModels();
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -194,9 +197,7 @@ export function ModelPicker({
   const [sort, setSort] = useState<Sort>({ key: 'provider', dir: 'asc' });
   // The OCR picker (visionOnly) costs more per page than plain text analysis.
   const ocr = !!visionOnly;
-  const perPageTooltip = ocr
-    ? 'Rough estimate: ~3,000 input + 900 output tokens per page (OCR). Varies with the document.'
-    : 'Rough estimate: ~1,300 input + 500 output tokens per page (analysis). Varies with the document.';
+  const perPageTooltip = ocr ? t('models.perPageTooltipOcr') : t('models.perPageTooltipAnalysis');
 
   const connectedApi = models.data?.api ?? [];
   const local = models.data?.local ?? [];
@@ -209,7 +210,7 @@ export function ModelPicker({
     .filter((kind) => !connectedKinds.has(kind) && catalog[kind].length > 0)
     .map((kind) => ({
       id: `locked-${kind}`,
-      name: PROVIDER_KIND_META[kind].label,
+      name: t(`providerKinds.${kind}.label`),
       kind,
       providerId: null,
       manual: false,
@@ -245,6 +246,7 @@ export function ModelPicker({
   const matched = buildRows(
     displayGroups.filter((g) => !g.manual),
     ocr,
+    t,
   )
     .filter((r) => !visionOnly || PROVIDER_KIND_META[r.kind].local || r.model.vision)
     .filter(
@@ -275,9 +277,7 @@ export function ModelPicker({
       <DialogContent className="flex h-[90vh] w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-6xl">
         <DialogHeader className="shrink-0 space-y-1 border-b px-6 py-4">
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            Pick a model. Locked rows need an API key. Add one to unlock them.
-          </DialogDescription>
+          <DialogDescription>{t('models.dialogDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex shrink-0 items-center gap-3 border-b px-6 py-3">
@@ -286,27 +286,27 @@ export function ModelPicker({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search models…"
+              placeholder={t('models.searchPlaceholder')}
               className="pl-8"
             />
           </div>
           <label
             className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap text-muted-foreground"
-            title="Also list providers you haven't added an API key for"
+            title={t('models.unavailableTitle')}
           >
             <Switch
               checked={includeLocked}
               disabled={nothingConnected}
               onCheckedChange={setShowLocked}
             />
-            Unavailable providers
+            {t('models.unavailableProviders')}
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap text-muted-foreground">
             <Switch checked={showAll} onCheckedChange={setShowAll} />
-            Show all versions
+            {t('models.showAllVersions')}
           </label>
           <Button variant="outline" size="sm" onClick={onAddKey}>
-            Add API key
+            {t('models.addApiKey')}
           </Button>
         </div>
 
@@ -315,7 +315,7 @@ export function ModelPicker({
             <Loader2 className="mx-auto mt-12 size-5 animate-spin text-muted-foreground" />
           ) : rows.length === 0 && manualGroups.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
-              {q ? 'No models match your search.' : 'No models available.'}
+              {q ? t('models.noMatch') : t('models.noModels')}
             </p>
           ) : (
             <div className="px-6 pb-6">
@@ -324,20 +324,25 @@ export function ModelPicker({
                   <thead>
                     <tr>
                       <Th sortKey="model" sort={sort} onSort={onSort}>
-                        Model
+                        {t('models.colModel')}
                       </Th>
                       <Th sortKey="provider" sort={sort} onSort={onSort} className="w-52">
-                        Provider
+                        {t('models.colProvider')}
                       </Th>
-                      <Th className="w-20">Vision</Th>
+                      <Th className="w-20">{t('models.colVision')}</Th>
                       {showAll && (
                         <>
                           <Th sortKey="input" sort={sort} onSort={onSort} className="w-28">
-                            Input <span className="font-normal text-muted-foreground/70">$/1M</span>
+                            {t('models.colInput')}{' '}
+                            <span className="font-normal text-muted-foreground/70">
+                              {t('models.perMillion')}
+                            </span>
                           </Th>
                           <Th sortKey="output" sort={sort} onSort={onSort} className="w-28">
-                            Output{' '}
-                            <span className="font-normal text-muted-foreground/70">$/1M</span>
+                            {t('models.colOutput')}{' '}
+                            <span className="font-normal text-muted-foreground/70">
+                              {t('models.perMillion')}
+                            </span>
                           </Th>
                         </>
                       )}
@@ -348,7 +353,10 @@ export function ModelPicker({
                         className="w-28"
                         title={perPageTooltip}
                       >
-                        Est. <span className="font-normal text-muted-foreground/70">/page</span>
+                        {t('models.colEst')}{' '}
+                        <span className="font-normal text-muted-foreground/70">
+                          {t('models.perPageUnit')}
+                        </span>
                       </Th>
                       <Th className="w-12" />
                     </tr>
@@ -410,7 +418,10 @@ export function ModelPicker({
                             </td>
                             <td className="px-3 py-2.5">
                               {r.model.vision ? (
-                                <Eye className="size-4 text-muted-foreground" aria-label="vision" />
+                                <Eye
+                                  className="size-4 text-muted-foreground"
+                                  aria-label={t('models.visionAria')}
+                                />
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
@@ -448,7 +459,7 @@ export function ModelPicker({
                         return r.locked ? (
                           <Tooltip key={r.key}>
                             <TooltipTrigger asChild>{row}</TooltipTrigger>
-                            <TooltipContent>Add an API key to unlock.</TooltipContent>
+                            <TooltipContent>{t('models.unlockTooltip')}</TooltipContent>
                           </Tooltip>
                         ) : (
                           row
@@ -460,7 +471,7 @@ export function ModelPicker({
               ) : (
                 q && (
                   <p className="py-12 text-center text-sm text-muted-foreground">
-                    No models match your search.
+                    {t('models.noMatch')}
                   </p>
                 )
               )}
@@ -541,14 +552,13 @@ function ManualModel({
   selected: { providerId: number | null; model: string | null };
   onSelect: (providerId: number, model: string) => void;
 }) {
+  const { t } = useTranslation();
   const [value, setValue] = useState(
     selected.providerId === providerId ? (selected.model ?? '') : '',
   );
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        Couldn’t list this endpoint’s models. Enter a model id manually.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('models.manualHint')}</p>
       <div className="flex gap-2">
         <Input
           className="font-mono"
@@ -561,7 +571,7 @@ function ManualModel({
           disabled={!value.trim()}
           onClick={() => onSelect(providerId, value.trim())}
         >
-          Use
+          {t('models.use')}
         </Button>
       </div>
     </div>

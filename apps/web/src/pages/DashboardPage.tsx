@@ -18,6 +18,7 @@ import type { JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
 import { useClearQueue, useRetryJob } from '@/api/jobs';
 import { useSettings, useUpdateSettings } from '@/api/settings';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ const STATUS_TONE: Record<JobSummary['status'], string> = {
 };
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const stats = useStats({ refetchInterval: 5000 });
   const settings = useSettings();
@@ -52,18 +54,18 @@ export function DashboardPage() {
   const togglePaused = () => {
     const next = !paused;
     void toast.promise(updateSettings.mutateAsync({ paused: next }), {
-      loading: 'Saving…',
-      success: next ? 'Processing paused' : 'Processing resumed',
-      error: (e) => (e instanceof Error ? e.message : 'Save failed'),
+      loading: t('common.saving'),
+      success: next ? t('dashboard.processingPaused') : t('dashboard.processingResumed'),
+      error: (e) => (e instanceof Error ? e.message : t('common.saveFailed')),
     });
   };
 
   const handleClearQueue = () => {
     setConfirmingClear(false);
     void toast.promise(clearQueue.mutateAsync(), {
-      loading: 'Clearing…',
-      success: 'Queue cleared',
-      error: (e) => (e instanceof Error ? e.message : 'Failed to clear queue'),
+      loading: t('dashboard.clearing'),
+      success: t('dashboard.queueCleared'),
+      error: (e) => (e instanceof Error ? e.message : t('dashboard.clearQueueFailed')),
     });
   };
 
@@ -84,7 +86,7 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-2">
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              Document pipeline
+              {t('dashboard.pipeline')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -96,7 +98,7 @@ export function DashboardPage() {
               onClick={togglePaused}
             >
               {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-              {paused ? 'Resume' : 'Pause'}
+              {paused ? t('dashboard.resume') : t('dashboard.pause')}
             </Button>
             {confirmingClear ? (
               <>
@@ -107,7 +109,7 @@ export function DashboardPage() {
                   disabled={clearQueue.isPending}
                   onClick={handleClearQueue}
                 >
-                  Confirm clear
+                  {t('dashboard.confirmClear')}
                 </Button>
                 <Button
                   size="sm"
@@ -115,7 +117,7 @@ export function DashboardPage() {
                   className="h-7 px-2.5"
                   onClick={() => setConfirmingClear(false)}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </>
             ) : (
@@ -127,7 +129,7 @@ export function DashboardPage() {
                 onClick={() => setConfirmingClear(true)}
               >
                 <Trash2 className="size-3.5" />
-                Clear queue
+                {t('dashboard.clearQueue')}
               </Button>
             )}
           </div>
@@ -136,16 +138,16 @@ export function DashboardPage() {
         <div className="mt-4 grid grid-cols-2 gap-x-2 gap-y-5 sm:flex sm:items-stretch">
           <Stage
             icon={ListTodo}
-            label="In queue"
+            label={t('dashboard.inQueue')}
             value={active}
-            hint={`${queue.running} running`}
+            hint={t('dashboard.runningHint', { count: queue.running })}
           />
           <StageArrow />
           <Stage
             icon={Inbox}
-            label="Awaiting review"
+            label={t('dashboard.awaitingReview')}
             value={pendingReview}
-            hint={pendingReview === 0 ? 'nothing to review' : undefined}
+            hint={pendingReview === 0 ? t('dashboard.nothingToReview') : undefined}
             action={
               pendingReview > 0 ? (
                 <Button
@@ -154,7 +156,7 @@ export function DashboardPage() {
                   className="h-7 px-2.5"
                   onClick={() => navigate('/review')}
                 >
-                  Review
+                  {t('dashboard.review')}
                 </Button>
               ) : undefined
             }
@@ -162,18 +164,18 @@ export function DashboardPage() {
           <StageArrow />
           <Stage
             icon={CheckCircle2}
-            label="Done"
+            label={t('common.done')}
             value={queue.done}
             tone={queue.done > 0 ? 'success' : undefined}
-            hint={`${throughput} today`}
+            hint={t('dashboard.todayHint', { count: throughput })}
           />
           <div className="hidden self-stretch border-l sm:mx-4 sm:block" aria-hidden />
           <Stage
             icon={TriangleAlert}
-            label="Failed"
+            label={t('dashboard.failed')}
             value={queue.failed}
             tone={queue.failed > 0 ? 'danger' : undefined}
-            hint={queue.failed === 0 ? 'no failures' : undefined}
+            hint={queue.failed === 0 ? t('dashboard.noFailures') : undefined}
             action={
               failedDocIds.length > 0 ? (
                 <Button
@@ -188,7 +190,7 @@ export function DashboardPage() {
                   ) : (
                     <RotateCw className="size-3.5" />
                   )}
-                  Retry all
+                  {t('dashboard.retryAll')}
                 </Button>
               ) : undefined
             }
@@ -209,10 +211,10 @@ export function DashboardPage() {
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
-                {queue.done} of {finished} succeeded
+                {t('dashboard.succeeded', { done: queue.done, finished })}
               </span>
               <span className={queue.failed > 0 ? 'text-destructive' : 'text-muted-foreground'}>
-                {Math.round(errorRate * 100)}% error rate
+                {t('dashboard.errorRate', { pct: Math.round(errorRate * 100) })}
               </span>
             </div>
           </div>
@@ -220,35 +222,35 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Metric label="Processed today" value={throughput} />
-        <Metric label="Tokens used" value={tokenSpend.toLocaleString()} />
+        <Metric label={t('dashboard.processedToday')} value={throughput} />
+        <Metric label={t('dashboard.tokensUsed')} value={tokenSpend.toLocaleString()} />
         <Metric
-          label="Avg tokens per doc"
+          label={t('dashboard.avgTokensPerDoc')}
           value={queue.done > 0 ? Math.round(tokenSpend / queue.done).toLocaleString() : '—'}
         />
       </div>
 
-      <PageSection title="Recent activity">
+      <PageSection title={t('dashboard.recentActivity')}>
         {retry.error && (
           <p className="mb-2 text-sm text-destructive">
-            {retry.error instanceof Error ? retry.error.message : 'Retry failed'}
+            {retry.error instanceof Error ? retry.error.message : t('dashboard.retryFailed')}
           </p>
         )}
         {recentJobs.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No jobs yet. Tag a document in paperless with{' '}
-            <code className="font-mono">psf-process</code> to get started.
+            {t('dashboard.recentEmptyPrefix')} <code className="font-mono">psf-process</code>
+            {t('dashboard.recentEmptySuffix')}
           </p>
         ) : (
           <div className="overflow-hidden rounded-lg border bg-card">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-4">Status</TableHead>
-                  <TableHead>Document</TableHead>
-                  <TableHead className="w-full">Error</TableHead>
-                  <TableHead className="text-right">Tokens</TableHead>
-                  <TableHead aria-label="Actions" />
+                  <TableHead className="pl-4">{t('dashboard.statusHeader')}</TableHead>
+                  <TableHead>{t('dashboard.documentHeader')}</TableHead>
+                  <TableHead className="w-full">{t('dashboard.errorHeader')}</TableHead>
+                  <TableHead className="text-right">{t('dashboard.tokensHeader')}</TableHead>
+                  <TableHead aria-label={t('dashboard.actionsLabel')} />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -284,7 +286,7 @@ export function DashboardPage() {
                           ) : (
                             <RotateCw className="size-3.5" />
                           )}
-                          Retry
+                          {t('common.retry')}
                         </Button>
                       )}
                     </TableCell>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { ConnectionPage } from '@/pages/ConnectionPage';
 
 /**
@@ -12,12 +13,13 @@ import { ConnectionPage } from '@/pages/ConnectionPage';
  */
 export function RootLayout({ children }: { children: ReactNode }) {
   const status = useConnection();
+  const { t } = useTranslation();
 
   if (status.isError) {
     return (
       <Centered>
         <Unreachable
-          message={status.error instanceof Error ? status.error.message : 'unknown error'}
+          message={status.error instanceof Error ? status.error.message : t('app.unknownError')}
           onRetry={() => void status.refetch()}
           retrying={status.isFetching}
         />
@@ -28,7 +30,10 @@ export function RootLayout({ children }: { children: ReactNode }) {
   if (status.isLoading || !status.data) {
     return (
       <Centered>
-        <Loader2 className="size-5 animate-spin text-muted-foreground" aria-label="Loading" />
+        <Loader2
+          className="size-5 animate-spin text-muted-foreground"
+          aria-label={t('app.loadingLabel')}
+        />
       </Centered>
     );
   }
@@ -65,15 +70,16 @@ function Unreachable({
   onRetry: () => void;
   retrying: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="w-full max-w-sm space-y-4 text-center">
       <div className="space-y-1.5">
-        <p className="font-medium">Backend unreachable</p>
+        <p className="font-medium">{t('app.backendUnreachable')}</p>
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
       <Button variant="outline" onClick={onRetry} disabled={retrying}>
         {retrying && <Loader2 className="animate-spin" />}
-        {retrying ? 'Retrying…' : 'Retry'}
+        {retrying ? t('common.retrying') : t('common.retry')}
       </Button>
     </div>
   );

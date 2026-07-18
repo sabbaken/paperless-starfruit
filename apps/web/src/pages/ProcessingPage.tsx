@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Brain, CheckCircle2, Inbox, Loader2, type LucideIcon, ScanText, Zap } from 'lucide-react';
 import type { ProviderConfig, Settings, SettingsUpdate } from '@paperless-starfruit/shared';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { useProviders } from '@/api/providers';
 import { useSettings, useUpdateSettings } from '@/api/settings';
 import { ModelPicker } from '@/components/model-picker';
@@ -55,6 +56,7 @@ function PipelineStepper({
   providers: ProviderConfig[];
   onGoToProviders: () => void;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<Settings>(settings);
   const [picker, setPicker] = useState<PickerTarget | null>(null);
   // Read live from the prop (not local form state) so picking an OCR model
@@ -79,7 +81,7 @@ function PipelineStepper({
 
   const providerName = (id: number | null) => providers.find((p) => p.id === id)?.name ?? null;
   const describe = (id: number | null, model: string | null) =>
-    model ? `${providerName(id) ?? 'Unknown'} · ${model}` : null;
+    model ? `${providerName(id) ?? t('processing.unknownProvider')} · ${model}` : null;
 
   const onSelectModel = (providerId: number, model: string) => {
     void toastSave(
@@ -98,13 +100,11 @@ function PipelineStepper({
       <Stage icon={ScanText}>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
-            <p className="text-sm font-medium">1. OCR</p>
-            <p className="text-xs text-muted-foreground">
-              Re-read scanned pages with a vision model
-            </p>
+            <p className="text-sm font-medium">{t('processing.ocr.title')}</p>
+            <p className="text-xs text-muted-foreground">{t('processing.ocr.subtitle')}</p>
           </div>
           <Switch
-            aria-label="Run OCR"
+            aria-label={t('processing.ocr.runAria')}
             checked={form.ocrEnabled}
             disabled={!ocrConfigured}
             onCheckedChange={(v) => {
@@ -117,14 +117,14 @@ function PipelineStepper({
         {ocrConfigured && form.ocrEnabled ? (
           <div className="divide-y border-t">
             <SelectRow
-              label="Model"
+              label={t('processing.model')}
               value={describe(settings.ocrProviderId, settings.ocrModel)}
               onClick={() => setPicker('ocr')}
             />
             <div className="py-3">
               <MaxPagesField
-                label="Skip OCR above"
-                hint="Larger files reuse paperless's own text; extraction sees only their first and last pages"
+                label={t('processing.ocr.skipAbove')}
+                hint={t('processing.ocr.skipAboveHint')}
                 value={form.ocrMaxPages}
                 onChange={(v) => {
                   setForm((f) => ({ ...f, ocrMaxPages: v }));
@@ -136,14 +136,16 @@ function PipelineStepper({
         ) : !ocrConfigured ? (
           // Keep the model row reachable. It's the only way to configure OCR.
           <div className="border-t">
-            <SelectRow label="Model" value={null} onClick={() => setPicker('ocr')} />
-            <p className="pb-3 text-xs text-muted-foreground">
-              Pick an OCR model to enable OCR. Until then paperless's own text is used.
-            </p>
+            <SelectRow
+              label={t('processing.model')}
+              value={null}
+              onClick={() => setPicker('ocr')}
+            />
+            <p className="pb-3 text-xs text-muted-foreground">{t('processing.ocr.pickToEnable')}</p>
           </div>
         ) : (
           <p className="border-t py-3 text-xs text-muted-foreground">
-            Using paperless's built-in text
+            {t('processing.ocr.usingBuiltIn')}
           </p>
         )}
       </Stage>
@@ -152,13 +154,13 @@ function PipelineStepper({
       <Stage icon={Brain}>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
-            <p className="text-sm font-medium">2. Extraction</p>
-            <p className="text-xs text-muted-foreground">Title, tags, correspondent and date</p>
+            <p className="text-sm font-medium">{t('processing.extraction.title')}</p>
+            <p className="text-xs text-muted-foreground">{t('processing.extraction.subtitle')}</p>
           </div>
           {/* Unlike OCR the switch is never disabled: turning extraction OFF is
               exactly what an OCR-only user with no LLM key configured needs. */}
           <Switch
-            aria-label="Run extraction"
+            aria-label={t('processing.extraction.runAria')}
             checked={form.extractionEnabled}
             onCheckedChange={(v) => {
               setForm((f) => ({ ...f, extractionEnabled: v }));
@@ -170,13 +172,13 @@ function PipelineStepper({
         {form.extractionEnabled && llmConfigured ? (
           <div className="divide-y border-t">
             <SelectRow
-              label="Model"
+              label={t('processing.model')}
               value={describe(settings.llmProviderId, settings.llmModel)}
               onClick={() => setPicker('llm')}
             />
             <div className="py-3">
               <SwitchRow
-                label="Create new tags"
+                label={t('processing.extraction.createNewTags')}
                 checked={form.createNewTags}
                 onCheckedChange={(v) => {
                   setForm((f) => ({ ...f, createNewTags: v }));
@@ -186,7 +188,7 @@ function PipelineStepper({
             </div>
             <div className="py-3">
               <SwitchRow
-                label="Create new correspondents"
+                label={t('processing.extraction.createNewCorrespondents')}
                 checked={form.createNewCorrespondents}
                 onCheckedChange={(v) => {
                   setForm((f) => ({ ...f, createNewCorrespondents: v }));
@@ -196,8 +198,8 @@ function PipelineStepper({
             </div>
             <div className="py-3">
               <MaxPagesField
-                label="Skip extraction above"
-                hint="Larger files are skipped entirely"
+                label={t('processing.extraction.skipAbove')}
+                hint={t('processing.extraction.skipAboveHint')}
                 value={form.extractMaxPages}
                 onChange={(v) => {
                   setForm((f) => ({ ...f, extractMaxPages: v }));
@@ -209,21 +211,25 @@ function PipelineStepper({
         ) : form.extractionEnabled ? (
           // Keep the model row reachable. It's the only way to configure extraction.
           <div className="border-t">
-            <SelectRow label="Model" value={null} onClick={() => setPicker('llm')} />
+            <SelectRow
+              label={t('processing.model')}
+              value={null}
+              onClick={() => setPicker('llm')}
+            />
             <p className="pb-3 text-xs text-muted-foreground">
-              Pick a language model to run extraction.
+              {t('processing.extraction.pickModel')}
             </p>
           </div>
         ) : (
           <div className="border-t py-3">
             <p className="text-xs text-muted-foreground">
-              Documents keep their existing metadata. Only OCR runs.
+              {t('processing.extraction.offMetadata')}
             </p>
             {(!ocrConfigured || !form.ocrEnabled) && (
               <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
                 {!ocrConfigured
-                  ? "No OCR model is configured either, so documents can't be processed. Pick one in the OCR step or re-enable extraction."
-                  : "OCR is off too, so documents can't be processed. Enable at least one step."}
+                  ? t('processing.extraction.warnNoOcrModel')
+                  : t('processing.extraction.warnOcrOff')}
               </p>
             )}
           </div>
@@ -234,21 +240,21 @@ function PipelineStepper({
       <Stage icon={CheckCircle2} last>
         <div className="flex items-center justify-between gap-3 py-3">
           <div>
-            <p className="text-sm font-medium">3. Apply</p>
-            <p className="text-xs text-muted-foreground">What happens with the suggestions</p>
+            <p className="text-sm font-medium">{t('processing.apply.title')}</p>
+            <p className="text-xs text-muted-foreground">{t('processing.apply.subtitle')}</p>
           </div>
         </div>
 
         {form.extractionEnabled ? (
           <div
             role="radiogroup"
-            aria-label="Apply mode"
+            aria-label={t('processing.apply.modeAria')}
             className="grid grid-cols-2 gap-2 border-t py-3"
           >
             <ApplyOption
               icon={Inbox}
-              title="Queue for review"
-              description="You approve each document before paperless is touched"
+              title={t('processing.apply.review.title')}
+              description={t('processing.apply.review.description')}
               selected={!form.autoApply}
               onSelect={() => {
                 setForm((f) => ({ ...f, autoApply: false }));
@@ -257,8 +263,8 @@ function PipelineStepper({
             />
             <ApplyOption
               icon={Zap}
-              title="Apply automatically"
-              description="Suggestions land in paperless immediately"
+              title={t('processing.apply.auto.title')}
+              description={t('processing.apply.auto.description')}
               selected={form.autoApply}
               onSelect={() => {
                 setForm((f) => ({ ...f, autoApply: true }));
@@ -268,15 +274,16 @@ function PipelineStepper({
           </div>
         ) : (
           <p className="border-t py-3 text-xs text-muted-foreground">
-            Extraction is off. There are no suggestions to apply. OCR text is written straight to
-            the document.
+            {t('processing.apply.extractionOff')}
           </p>
         )}
       </Stage>
 
       {picker && (
         <ModelPicker
-          title={picker === 'ocr' ? 'OCR model' : 'Language model'}
+          title={
+            picker === 'ocr' ? t('processing.picker.ocrTitle') : t('processing.picker.llmTitle')
+          }
           visionOnly={picker === 'ocr'}
           selected={
             picker === 'ocr'
@@ -369,6 +376,7 @@ function ApplyOption({
 }
 
 function GeneralForm({ initial }: { initial: Settings }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<Settings>(initial);
   const [blacklistText, setBlacklistText] = useState(initial.correspondentBlacklist.join('\n'));
 
@@ -394,13 +402,13 @@ function GeneralForm({ initial }: { initial: Settings }) {
 
   return (
     <PageSection
-      title="General"
-      description="Polling, output language and correspondent exclusions."
+      title={t('processing.general.title')}
+      description={t('processing.general.description')}
     >
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="pollInterval">Poll interval (seconds)</Label>
+            <Label htmlFor="pollInterval">{t('processing.general.pollInterval')}</Label>
             <Input
               id="pollInterval"
               type="number"
@@ -416,7 +424,7 @@ function GeneralForm({ initial }: { initial: Settings }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="language">Output language</Label>
+            <Label htmlFor="language">{t('processing.general.outputLanguage')}</Label>
             <Input
               id="language"
               placeholder="auto"
@@ -430,10 +438,10 @@ function GeneralForm({ initial }: { initial: Settings }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="blacklist">Correspondent blacklist</Label>
+          <Label htmlFor="blacklist">{t('processing.general.correspondentBlacklist')}</Label>
           <Textarea
             id="blacklist"
-            placeholder={'One name per line\nNever assigned or created as a correspondent'}
+            placeholder={t('processing.general.blacklistPlaceholder')}
             value={blacklistText}
             onChange={(e) => {
               setBlacklistText(e.target.value);
@@ -460,6 +468,7 @@ function MaxPagesField({
   disabled?: boolean;
   onChange: (value: number | null) => void;
 }) {
+  const { t } = useTranslation();
   const id = useId();
   return (
     <div className="flex items-start justify-between gap-4">
@@ -475,13 +484,13 @@ function MaxPagesField({
           type="number"
           min={1}
           inputMode="numeric"
-          placeholder="No limit"
+          placeholder={t('processing.maxPages.noLimit')}
           disabled={disabled}
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
           className="w-28"
         />
-        <span className="text-xs text-muted-foreground">pages</span>
+        <span className="text-xs text-muted-foreground">{t('processing.maxPages.pages')}</span>
       </div>
     </div>
   );

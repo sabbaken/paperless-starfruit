@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 export function ReviewPage() {
   const items = useReviewList('pending');
@@ -58,6 +59,7 @@ function ReviewList({
   extractionEnabled: boolean;
   onOpen: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const bulk = useBulkApproveReview();
@@ -79,18 +81,15 @@ function ReviewList({
             <EmptyMedia variant="icon">
               <Inbox />
             </EmptyMedia>
-            <EmptyTitle>Nothing to review</EmptyTitle>
+            <EmptyTitle>{t('review.emptyTitle')}</EmptyTitle>
             <EmptyDescription>
               {extractionEnabled ? (
                 <>
-                  When a document tagged <code className="font-mono">psf-process</code> is
-                  processed, its AI suggestions land here for your approval.
+                  {t('review.emptyProcessedBefore')} <code className="font-mono">psf-process</code>{' '}
+                  {t('review.emptyProcessedAfter')}
                 </>
               ) : (
-                <>
-                  Extraction is turned off. Documents are only OCR&apos;d, so no suggestions are
-                  queued. Re-enable it in Settings → Processing.
-                </>
+                <>{t('review.emptyExtractionOff')}</>
               )}
             </EmptyDescription>
           </EmptyHeader>
@@ -104,11 +103,13 @@ function ReviewList({
   return (
     <div className="space-y-4">
       <div className="flex h-8 items-center justify-between">
-        <p className="text-sm text-muted-foreground">{items.length} awaiting review</p>
+        <p className="text-sm text-muted-foreground">
+          {t('review.awaiting', { count: items.length })}
+        </p>
         {selected.size > 0 && (
           <div className="flex items-center gap-2">
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-              Clear
+              {t('review.clear')}
             </Button>
             <Button
               size="sm"
@@ -123,7 +124,7 @@ function ReviewList({
               disabled={bulk.isPending}
             >
               {bulk.isPending && <Loader2 className="animate-spin" />}
-              Approve {selected.size} selected
+              {t('review.approveSelected', { count: selected.size })}
             </Button>
           </div>
         )}
@@ -131,12 +132,12 @@ function ReviewList({
 
       {bulk.error && (
         <p className="text-sm text-destructive">
-          {bulk.error instanceof Error ? bulk.error.message : 'Bulk approve failed'}
+          {bulk.error instanceof Error ? bulk.error.message : t('review.bulkApproveFailed')}
         </p>
       )}
       {failures.length > 0 && (
         <p className="text-sm text-destructive">
-          {failures.length} of {bulk.data!.length} could not be approved
+          {t('review.someFailed', { failed: failures.length, total: bulk.data!.length })}
           {failures[0].error ? `: ${failures[0].error}` : ''}
         </p>
       )}
@@ -147,7 +148,7 @@ function ReviewList({
             <Checkbox
               checked={selected.has(item.id)}
               onCheckedChange={() => toggle(item.id)}
-              aria-label={`Select document ${item.documentId}`}
+              aria-label={t('review.selectDocument', { documentId: item.documentId })}
             />
             <button
               type="button"
@@ -159,13 +160,16 @@ function ReviewList({
                 <span className="truncate font-medium">{item.suggestions.title}</span>
               </div>
               <p className="truncate text-xs text-muted-foreground">
-                was “{item.suggestions.current.title}” · doc #{item.documentId} ·{' '}
-                {item.suggestions.tags.length} tag(s)
+                {t('review.itemMeta', {
+                  title: item.suggestions.current.title,
+                  documentId: item.documentId,
+                  count: item.suggestions.tags.length,
+                })}
                 {item.suggestions.date ? ` · ${item.suggestions.date}` : ''}
               </p>
             </button>
             <Button size="sm" variant="outline" onClick={() => onOpen(item.id)}>
-              Review
+              {t('review.review')}
             </Button>
           </li>
         ))}
@@ -184,11 +188,12 @@ function ReviewDetailView({ id, onClose }: { id: number; onClose: () => void }) 
 }
 
 function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () => void }) {
+  const { t } = useTranslation();
   const s = detail.suggestions;
   const base = usePaperlessBaseUrl();
 
   const [title, setTitle] = useState(s.title);
-  const [tags, setTags] = useState<Set<string>>(new Set(s.tags.map((t) => t.name)));
+  const [tags, setTags] = useState<Set<string>>(new Set(s.tags.map((tag) => tag.name)));
   const [correspondent, setCorrespondent] = useState(
     s.correspondent?.name ?? s.current.correspondentName ?? '',
   );
@@ -225,7 +230,7 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
     <div className="space-y-4">
       <Button variant="ghost" size="sm" onClick={onClose} className="-ml-2 text-muted-foreground">
         <ArrowLeft className="size-4" />
-        Back to queue
+        {t('review.backToQueue')}
       </Button>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -237,20 +242,20 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
                   href={paperlessDocumentUrl(base, detail.documentId)}
                   target="_blank"
                   rel="noreferrer"
-                  title="Open in paperless"
+                  title={t('review.openInPaperless')}
                   className="inline-flex items-center gap-1 underline-offset-2 hover:underline"
                 >
-                  Document #{detail.documentId}
+                  {t('review.documentNumber', { documentId: detail.documentId })}
                   <ExternalLink className="size-3.5 text-muted-foreground" />
                 </a>
               ) : (
-                <>Document #{detail.documentId}</>
+                <>{t('review.documentNumber', { documentId: detail.documentId })}</>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <pre className="max-h-[26rem] overflow-auto rounded-md bg-muted/40 p-3 text-xs whitespace-pre-wrap text-muted-foreground">
-              {detail.documentContent ?? 'No text preview available.'}
+              {detail.documentContent ?? t('review.noTextPreview')}
             </pre>
           </CardContent>
         </Card>
@@ -259,27 +264,33 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
               <Sparkles className="size-4 text-muted-foreground" />
-              AI suggestions
+              {t('review.aiSuggestions')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <Field label="Title" current={s.current.title} changed={s.current.title !== title}>
+            <Field
+              label={t('review.fieldTitle')}
+              current={s.current.title}
+              changed={s.current.title !== title}
+            >
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
             </Field>
 
             <div className="space-y-2">
-              <Label>Tags</Label>
+              <Label>{t('review.tags')}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {s.tags.length === 0 && (
-                  <span className="text-sm text-muted-foreground">No tags suggested.</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t('review.noTagsSuggested')}
+                  </span>
                 )}
-                {s.tags.map((t) => {
-                  const on = tags.has(t.name);
+                {s.tags.map((tag) => {
+                  const on = tags.has(tag.name);
                   return (
                     <button
-                      key={t.name}
+                      key={tag.name}
                       type="button"
-                      onClick={() => toggleTag(t.name)}
+                      onClick={() => toggleTag(tag.name)}
                       className={cn(
                         'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
                         on
@@ -288,33 +299,35 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
                       )}
                     >
                       {on ? <Check className="size-3" /> : <X className="size-3" />}
-                      {t.name}
-                      {t.isNew && <span className="text-[10px] text-muted-foreground">new</span>}
+                      {tag.name}
+                      {tag.isNew && (
+                        <span className="text-[10px] text-muted-foreground">{t('review.new')}</span>
+                      )}
                     </button>
                   );
                 })}
               </div>
               {s.current.tagNames.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Current: {s.current.tagNames.join(', ')} (kept)
+                  {t('review.currentKept', { tags: s.current.tagNames.join(', ') })}
                 </p>
               )}
             </div>
 
             <Field
-              label="Correspondent"
+              label={t('review.fieldCorrespondent')}
               current={s.current.correspondentName}
               changed={s.current.correspondentName !== (correspondent || null)}
             >
               <Input
                 value={correspondent}
-                placeholder="(none)"
+                placeholder={t('review.nonePlaceholder')}
                 onChange={(e) => setCorrespondent(e.target.value)}
               />
             </Field>
 
             <Field
-              label="Date"
+              label={t('review.fieldDate')}
               current={s.current.date}
               changed={s.current.date !== (date || null)}
             >
@@ -328,18 +341,18 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
         <p className="text-sm text-destructive">
           {(approve.error ?? reject.error) instanceof Error
             ? (approve.error ?? reject.error)!.message
-            : 'Action failed'}
+            : t('review.actionFailed')}
         </p>
       )}
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onReject} disabled={busy}>
           {reject.isPending && <Loader2 className="animate-spin" />}
-          Reject
+          {t('review.reject')}
         </Button>
         <Button onClick={onApprove} disabled={busy || !title.trim()}>
           {approve.isPending && <Loader2 className="animate-spin" />}
-          Approve & apply
+          {t('review.approveApply')}
         </Button>
       </div>
     </div>

@@ -22,6 +22,7 @@ import {
   useUpdatePrompt,
 } from '@/api/prompts';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
+import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { toastSave } from '@/lib/toast';
@@ -66,9 +67,13 @@ function PromptList({
   selected: PromptKey;
   onSelect: (key: PromptKey) => void;
 }) {
+  const { t } = useTranslation();
   return (
     // Horizontal pair on small screens, a quiet vertical rail on desktop. No card.
-    <nav aria-label="Prompts" className="flex gap-1 lg:flex-col lg:gap-0.5 lg:pt-1">
+    <nav
+      aria-label={t('prompts.navAriaLabel')}
+      className="flex gap-1 lg:flex-col lg:gap-0.5 lg:pt-1"
+    >
       {list.map((p) => {
         const Icon = ICONS[p.key];
         const isActive = p.key === selected;
@@ -96,6 +101,7 @@ function PromptList({
 }
 
 function PromptEditor({ prompt }: { prompt: PromptConfig }) {
+  const { t } = useTranslation();
   const [body, setBody] = useState(prompt.body);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -173,10 +179,8 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
       {/* No section header: the selected prompt is already named in the rail. */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Variables</Label>
-          <p className="text-xs text-muted-foreground">
-            Click to insert at the cursor. They’re replaced with each document’s values at run time.
-          </p>
+          <Label>{t('prompts.variables')}</Label>
+          <p className="text-xs text-muted-foreground">{t('prompts.variablesHint')}</p>
           <div className="flex flex-wrap gap-2">
             {prompt.variables.map((v) => (
               <Button
@@ -195,7 +199,7 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="prompt-body">Prompt</Label>
+          <Label htmlFor="prompt-body">{t('prompts.prompt')}</Label>
           <HighlightedTextarea
             id="prompt-body"
             ref={textareaRef}
@@ -203,7 +207,7 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
             validVars={validVars}
             onChange={(e) => onEdit(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">Changes are saved automatically.</p>
+          <p className="text-xs text-muted-foreground">{t('prompts.autosaveHint')}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -211,10 +215,10 @@ function PromptEditor({ prompt }: { prompt: PromptConfig }) {
             variant="outline"
             onClick={onReset}
             disabled={!canReset || reset.isPending}
-            title="Replace this prompt with the built-in default"
+            title={t('prompts.resetTitle')}
           >
             <RotateCcw className="size-4" />
-            Reset to default
+            {t('prompts.resetToDefault')}
           </Button>
         </div>
       </div>
@@ -327,6 +331,7 @@ const HighlightedTextarea = forwardRef<
 HighlightedTextarea.displayName = 'HighlightedTextarea';
 
 function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) {
+  const { t } = useTranslation();
   const docs = useTestDocuments(true);
   const test = useTestPrompt();
   const [docId, setDocId] = useState<number | ''>('');
@@ -342,33 +347,27 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
   };
 
   return (
-    <PageSection
-      title="Test on a document"
-      description="Runs the current prompt (including unsaved edits) against a real document using your selected model."
-    >
+    <PageSection title={t('prompts.testTitle')} description={t('prompts.testDescription')}>
       <div className="space-y-4">
         {docs.isError ? (
-          <p className="text-sm text-muted-foreground">
-            Connect your paperless instance and select a model in Settings → Processing to test
-            prompts.
-          </p>
+          <p className="text-sm text-muted-foreground">{t('prompts.testUnavailable')}</p>
         ) : (
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-56 flex-1 space-y-2">
-              <Label htmlFor="test-doc">Document</Label>
+              <Label htmlFor="test-doc">{t('prompts.document')}</Label>
               <Select
                 id="test-doc"
                 value={docId === '' ? '' : String(docId)}
                 disabled={docs.isLoading || !docs.data?.length}
                 onChange={(e) => setDocId(e.target.value ? Number(e.target.value) : '')}
               >
-                {docs.isLoading && <option value="">Loading…</option>}
+                {docs.isLoading && <option value="">{t('common.loading')}</option>}
                 {!docs.isLoading && !docs.data?.length && (
-                  <option value="">No documents found</option>
+                  <option value="">{t('prompts.noDocuments')}</option>
                 )}
                 {docs.data?.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.title || `Document #${d.id}`}
+                    {d.title || t('prompts.documentFallback', { id: d.id })}
                   </option>
                 ))}
               </Select>
@@ -379,14 +378,14 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
               ) : (
                 <FlaskConical className="size-4" />
               )}
-              Run test
+              {t('prompts.runTest')}
             </Button>
           </div>
         )}
 
         {test.isError && (
           <p className="text-sm text-destructive">
-            {test.error instanceof Error ? test.error.message : 'Test failed.'}
+            {test.error instanceof Error ? test.error.message : t('prompts.testFailed')}
           </p>
         )}
 
@@ -397,34 +396,42 @@ function TestPanel({ promptKey, body }: { promptKey: PromptKey; body: string }) 
 }
 
 function TestResult({ result, promptKey }: { result: PromptTestResult; promptKey: PromptKey }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4 rounded-md border bg-muted/30 p-4">
       <div className="flex items-center gap-2">
         <Sparkles className="size-4 text-brand" />
-        <span className="text-sm font-medium">Result</span>
+        <span className="text-sm font-medium">{t('prompts.result')}</span>
         <Badge variant="secondary" className="ml-auto">
-          {result.tokens != null ? `${result.tokens.toLocaleString()} tokens` : 'page-billed'}
+          {result.tokens != null
+            ? t('prompts.tokens', { tokens: result.tokens.toLocaleString() })
+            : t('prompts.pageBilled')}
         </Badge>
       </div>
 
       {promptKey === PROMPT_KEY.EXTRACTION && result.extraction ? (
         <dl className="grid grid-cols-[7rem_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
-          <Field label="Title" value={result.extraction.title} />
+          <Field label={t('prompts.fieldTitle')} value={result.extraction.title} />
           <Field
-            label="Tags"
+            label={t('prompts.fieldTags')}
             value={result.extraction.tags.length ? result.extraction.tags.join(', ') : '—'}
           />
-          <Field label="Correspondent" value={result.extraction.correspondent ?? '—'} />
-          <Field label="Date" value={result.extraction.date ?? '—'} />
+          <Field
+            label={t('prompts.fieldCorrespondent')}
+            value={result.extraction.correspondent ?? '—'}
+          />
+          <Field label={t('prompts.fieldDate')} value={result.extraction.date ?? '—'} />
         </dl>
       ) : (
         <pre className="max-h-80 overflow-auto rounded-md bg-background p-3 text-xs whitespace-pre-wrap">
-          {result.text || '(no text returned)'}
+          {result.text || t('prompts.noTextReturned')}
         </pre>
       )}
 
       <details className="text-xs">
-        <summary className="cursor-pointer text-muted-foreground select-none">Prompt sent</summary>
+        <summary className="cursor-pointer text-muted-foreground select-none">
+          {t('prompts.promptSent')}
+        </summary>
         <pre className="mt-2 max-h-72 overflow-auto rounded-md bg-background p-3 whitespace-pre-wrap">
           {result.rendered}
         </pre>

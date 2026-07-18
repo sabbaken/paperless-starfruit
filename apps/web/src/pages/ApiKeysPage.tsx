@@ -39,10 +39,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/i18n/I18nProvider';
 
 type FormState = { mode: 'create'; kind: ProviderKind } | { mode: 'edit'; cred: ProviderConfig };
 
 export function ApiKeysPage() {
+  const { t } = useTranslation();
   const providers = useProviders();
   const [form, setForm] = useState<FormState | null>(null);
   // Keep the last form around so the dialog body stays rendered through the
@@ -68,9 +70,7 @@ export function ApiKeysPage() {
           their own Add/Edit actions; local endpoints are open-ended, so their
           "add" lives up here. */}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Keys are encrypted at rest and never returned to the browser.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('apiKeys.encryptedNote')}</p>
         <Button
           size="sm"
           variant="outline"
@@ -78,28 +78,29 @@ export function ApiKeysPage() {
           onClick={() => setForm({ mode: 'create', kind: PROVIDER_KIND.OPENAI_COMPATIBLE })}
         >
           <Plus className="size-4" />
-          Add local endpoint
+          {t('apiKeys.addLocalEndpoint')}
         </Button>
       </div>
 
       <ul className="divide-y">
         {CLOUD_PROVIDER_KINDS.map((kind) => {
           const cred = cloudByKind.get(kind);
-          const meta = PROVIDER_KIND_META[kind];
           return (
             <li key={kind} className="flex items-center gap-3 py-3">
               <ProviderLogo kind={kind} className="shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{meta.label}</span>
+                  <span className="font-medium">{t(`providerKinds.${kind}.label`)}</span>
                   {cred && (
                     <Badge variant="secondary" className="gap-1">
                       <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-500" />
-                      Connected
+                      {t('apiKeys.connected')}
                     </Badge>
                   )}
                 </div>
-                <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {t(`providerKinds.${kind}.description`)}
+                </p>
               </div>
               {cred ? (
                 <RowActions onEdit={() => setForm({ mode: 'edit', cred })} providerId={cred.id} />
@@ -110,7 +111,7 @@ export function ApiKeysPage() {
                   onClick={() => setForm({ mode: 'create', kind })}
                 >
                   <Plus className="size-4" />
-                  Add key
+                  {t('apiKeys.addKey')}
                 </Button>
               )}
             </li>
@@ -133,12 +134,10 @@ export function ApiKeysPage() {
           <DialogHeader>
             <DialogTitle>
               {shown && shownKind
-                ? `${shown.mode === 'edit' ? 'Edit' : 'Add'} ${PROVIDER_KIND_META[shownKind].label}`
+                ? `${shown.mode === 'edit' ? t('common.edit') : t('common.add')} ${t(`providerKinds.${shownKind}.label`)}`
                 : ''}
             </DialogTitle>
-            <DialogDescription>
-              Keys are encrypted at rest and never returned to the browser.
-            </DialogDescription>
+            <DialogDescription>{t('apiKeys.encryptedNote')}</DialogDescription>
           </DialogHeader>
           {shown && shownKind && (
             <CredentialForm
@@ -155,6 +154,7 @@ export function ApiKeysPage() {
 }
 
 function RowActions({ onEdit, providerId }: { onEdit: () => void; providerId: number }) {
+  const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
   const remove = useDeleteProvider();
 
@@ -168,23 +168,23 @@ function RowActions({ onEdit, providerId }: { onEdit: () => void; providerId: nu
           disabled={remove.isPending}
         >
           {remove.isPending && <Loader2 className="animate-spin" />}
-          Remove
+          {t('common.remove')}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
-          Cancel
+          {t('common.cancel')}
         </Button>
       </div>
     );
   }
   return (
     <div className="flex items-center gap-1">
-      <Button size="icon" variant="ghost" aria-label="Edit" onClick={onEdit}>
+      <Button size="icon" variant="ghost" aria-label={t('common.edit')} onClick={onEdit}>
         <Pencil className="size-4" />
       </Button>
       <Button
         size="icon"
         variant="ghost"
-        aria-label="Remove"
+        aria-label={t('common.remove')}
         className="text-muted-foreground hover:text-destructive"
         onClick={() => setConfirming(true)}
       >
@@ -209,6 +209,7 @@ function CredentialForm({
   cred?: ProviderConfig;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const editing = !!cred;
   const meta = PROVIDER_KIND_META[kind];
   const [showKey, setShowKey] = useState(false);
@@ -255,12 +256,12 @@ function CredentialForm({
       <form id="credential-form" onSubmit={onSave} className="space-y-4" noValidate>
         {meta.local && (
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t('apiKeys.name')}</Label>
             <Input
               id="name"
-              placeholder="Ollama (laptop)"
+              placeholder={t('apiKeys.namePlaceholder')}
               aria-invalid={!!formState.errors.name}
-              {...register('name', { required: meta.local ? 'Required' : false })}
+              {...register('name', { required: meta.local ? t('common.required') : false })}
             />
           </div>
         )}
@@ -268,19 +269,19 @@ function CredentialForm({
         {(meta.needsBaseUrl || meta.local) && (
           <div className="space-y-2">
             <Label htmlFor="baseUrl">
-              Base URL{' '}
+              {t('apiKeys.baseUrl')}{' '}
               <span className="font-normal text-muted-foreground">
-                {meta.needsBaseUrl ? '(required)' : '(optional)'}
+                {meta.needsBaseUrl ? t('apiKeys.requiredHint') : t('apiKeys.optionalHint')}
               </span>
             </Label>
             <Input
               id="baseUrl"
-              placeholder="http://localhost:11434/v1"
+              placeholder={t('apiKeys.baseUrlPlaceholder')}
               autoComplete="off"
               spellCheck={false}
               aria-invalid={!!formState.errors.baseUrl}
               {...register('baseUrl', {
-                validate: (v) => !meta.needsBaseUrl || v.trim().length > 0 || 'Required',
+                validate: (v) => !meta.needsBaseUrl || v.trim().length > 0 || t('common.required'),
               })}
             />
           </div>
@@ -288,9 +289,9 @@ function CredentialForm({
 
         <div className="space-y-2">
           <Label htmlFor="apiKey">
-            API key{' '}
+            {t('apiKeys.apiKey')}{' '}
             {!meta.keyRequired && (
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              <span className="font-normal text-muted-foreground">{t('apiKeys.optionalHint')}</span>
             )}
           </Label>
           <div className="relative">
@@ -298,19 +299,24 @@ function CredentialForm({
               id="apiKey"
               type={showKey ? 'text' : 'password'}
               className="pr-9"
-              placeholder={editing ? 'leave blank to keep current key' : `${meta.label} API key`}
+              placeholder={
+                editing
+                  ? t('apiKeys.apiKeyEditPlaceholder')
+                  : t('apiKeys.apiKeyPlaceholder', { provider: t(`providerKinds.${kind}.label`) })
+              }
               autoComplete="off"
               spellCheck={false}
               aria-invalid={!!formState.errors.apiKey}
               {...register('apiKey', {
-                validate: (v) => !meta.keyRequired || editing || v.trim().length > 0 || 'Required',
+                validate: (v) =>
+                  !meta.keyRequired || editing || v.trim().length > 0 || t('common.required'),
               })}
             />
             <button
               type="button"
               tabIndex={-1}
               onClick={() => setShowKey((s) => !s)}
-              aria-label={showKey ? 'Hide key' : 'Show key'}
+              aria-label={showKey ? t('apiKeys.hideKey') : t('apiKeys.showKey')}
               className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
             >
               {showKey ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
@@ -328,15 +334,15 @@ function CredentialForm({
 
       <div className="mt-5 flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onDone} disabled={busy}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button type="button" variant="outline" onClick={onTest} disabled={busy}>
           {test.isPending && <Loader2 className="animate-spin" />}
-          Test
+          {t('common.test')}
         </Button>
         <Button type="submit" form="credential-form" disabled={busy}>
           {save.isPending && <Loader2 className="animate-spin" />}
-          {editing ? 'Save' : 'Add key'}
+          {editing ? t('common.save') : t('apiKeys.addKey')}
         </Button>
       </div>
     </>
@@ -354,6 +360,7 @@ function TestLine({
   error: Error | null;
   saveError: Error | null;
 }) {
+  const { t } = useTranslation();
   let tone: 'probing' | 'ok' | 'fault' | null = null;
   let text = '';
   if (saveError) {
@@ -361,16 +368,19 @@ function TestLine({
     text = saveError.message;
   } else if (pending) {
     tone = 'probing';
-    text = 'Contacting provider…';
+    text = t('apiKeys.contactingProvider');
   } else if (error) {
     tone = 'fault';
     text = error.message;
   } else if (result?.ok) {
     tone = 'ok';
-    text = `Reachable${result.latencyMs != null ? ` · ${result.latencyMs} ms` : ''}`;
+    text =
+      result.latencyMs != null
+        ? t('apiKeys.reachableWithLatency', { latency: result.latencyMs })
+        : t('apiKeys.reachable');
   } else if (result && !result.ok) {
     tone = 'fault';
-    text = result.error ?? 'Test failed.';
+    text = result.error ?? t('apiKeys.testFailed');
   }
   if (!tone) return null;
 
