@@ -164,12 +164,17 @@ describe('ProviderService.listAvailableModels', () => {
   it('discovers a local endpoint’s models live', async () => {
     const { service } = makeService();
     service.create(local);
+    // A fresh Response per call: listAvailableModels probes the gateway catalog
+    // before the local /models endpoint, and a single shared Response's body
+    // would already be drained by the time the local probe reads it.
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ data: [{ id: 'llama3.1' }, { id: 'qwen2.5' }] }), {
-          status: 200,
-        }),
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ data: [{ id: 'llama3.1' }, { id: 'qwen2.5' }] }), {
+            status: 200,
+          }),
+        ),
       ),
     );
     const { api, local: localList } = await service.listAvailableModels();
