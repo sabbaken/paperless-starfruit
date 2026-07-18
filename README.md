@@ -7,6 +7,7 @@ better OCR and automatic titles, tags, correspondents and dates, configured enti
 
 [![CI status](https://github.com/sabbaken/paperless-starfruit/actions/workflows/ci.yml/badge.svg)](https://github.com/sabbaken/paperless-starfruit/actions/workflows/ci.yml)
 [![Docker image status](https://github.com/sabbaken/paperless-starfruit/actions/workflows/api-publish.yml/badge.svg)](https://github.com/sabbaken/paperless-starfruit/actions/workflows/api-publish.yml)
+[![License: AGPL-3.0](https://img.shields.io/github/license/sabbaken/paperless-starfruit)](./LICENSE)
 
 <table>
   <tr>
