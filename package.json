@@ -2,6 +2,7 @@
   "name": "paperless-starfruit",
   "version": "1.3.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.11.0",
   "engines": {
     "node": ">=22"

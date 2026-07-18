@@ -1,6 +1,7 @@
 {
   "name": "@paperless-starfruit/api",
   "private": true,
+  "license": "AGPL-3.0-only",
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
