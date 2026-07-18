@@ -150,15 +150,20 @@ export function PaperlessConnectionForm({
             <Input
               id="baseUrl"
               className="pl-9"
-              placeholder="https://paperless.home.lan"
+              placeholder="paperless.home.lan or 192.168.1.10:8000"
               autoComplete="off"
               spellCheck={false}
               aria-invalid={!!formState.errors.baseUrl}
               {...register('baseUrl')}
             />
           </div>
-          {formState.errors.baseUrl && (
+          {formState.errors.baseUrl ? (
             <p className="text-sm text-destructive">{formState.errors.baseUrl.message}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              A hostname or an IP&nbsp;+&nbsp;port both work — http:// is assumed if you omit the
+              scheme.
+            </p>
           )}
         </div>
 

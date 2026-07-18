@@ -94,9 +94,28 @@ export const providerTestResultSchema = z.object({
 });
 export type ProviderTestResult = z.infer<typeof providerTestResultSchema>;
 
+/**
+ * A paperless-ngx base URL. Fully-local setups often have no domain — just an
+ * IP + port (e.g. `192.168.1.10:8000`) — so a scheme-less host is accepted and
+ * defaulted to `http://` before URL validation (a local paperless is plain HTTP).
+ */
+const paperlessBaseUrl = z.preprocess(
+  (v) => {
+    if (typeof v !== 'string') return v;
+    const trimmed = v.trim();
+    if (trimmed === '') return trimmed;
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+  },
+  z
+    .string()
+    .url({
+      message: 'Enter a URL or an address, e.g. https://paperless.home.lan or 192.168.1.10:8000',
+    }),
+);
+
 /** Connection to the paperless-ngx instance. */
 export const paperlessConnectionSchema = z.object({
-  baseUrl: z.string().url(),
+  baseUrl: paperlessBaseUrl,
   // Optional override. Left blank, the API version is auto-detected from the
   // server's `X-Api-Version` on connect (paperless rejects an unsupported pin
   // with 406), then stored and pinned for subsequent requests.
