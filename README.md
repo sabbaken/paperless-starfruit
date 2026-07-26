@@ -6,6 +6,7 @@ better OCR and automatic titles, tags, correspondents and dates, configured enti
 **[Website](https://paperless-starfruit.vercel.app/)** · **[Docs](https://paperless-starfruit.vercel.app/docs/)** · **[Install](https://paperless-starfruit.vercel.app/docs/installation/)**
 
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/sabbaken)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/sabbaken)
 
 [![CI status](https://github.com/sabbaken/paperless-starfruit/actions/workflows/ci.yml/badge.svg)](https://github.com/sabbaken/paperless-starfruit/actions/workflows/ci.yml)
 [![Docker image status](https://github.com/sabbaken/paperless-starfruit/actions/workflows/api-publish.yml/badge.svg)](https://github.com/sabbaken/paperless-starfruit/actions/workflows/api-publish.yml)
