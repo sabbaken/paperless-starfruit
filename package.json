@@ -1,6 +1,6 @@
 {
   "name": "paperless-starfruit",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.11.0",
