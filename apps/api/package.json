@@ -28,7 +28,7 @@
     "@paperless-starfruit/shared": "workspace:*",
     "ai": "^6.0.238",
     "better-sqlite3": "^11.10.0",
-    "drizzle-orm": "^0.38.4",
+    "drizzle-orm": "^0.45.2",
     "pdf-lib": "^1.17.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -40,7 +40,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.1",
-    "drizzle-kit": "^0.30.6",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.23.1",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
