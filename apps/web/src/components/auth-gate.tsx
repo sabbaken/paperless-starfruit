@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';

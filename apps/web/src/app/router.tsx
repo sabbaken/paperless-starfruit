@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router';
 import { AuthRoute, ProtectedLayout } from '@/components/auth-gate';
 import { RootLayout } from '@/layouts/RootLayout';
 import { DashboardLayout } from '@/layouts/DashboardLayout';

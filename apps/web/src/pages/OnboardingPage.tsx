@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router';
 import { Brain, Loader2, ScanText } from 'lucide-react';
 import {
   DEFAULT_TRIGGER_TAG,

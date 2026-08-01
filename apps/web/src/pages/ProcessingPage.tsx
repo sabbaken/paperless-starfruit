@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Brain, CheckCircle2, Inbox, Loader2, type LucideIcon, ScanText, Zap } from 'lucide-react';
 import type { ProviderConfig, Settings, SettingsUpdate } from '@paperless-starfruit/shared';
 import { useTranslation } from '@/i18n/I18nProvider';
