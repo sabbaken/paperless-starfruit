@@ -64,6 +64,12 @@ their first and last pages; models that can't take files run on text alone.
   (PATCH/upload are CPU-heavy on paperless).
 - **Output language**: the language the model writes metadata in. `auto` uses the
   document's own language.
+- **Max attachment size (MB)**: originals bigger than this are never sent to a model —
+  neither for OCR nor as extraction's visual evidence — and are processed from their text
+  alone. Page counts are a poor stand-in for file size (twenty pages of 600-dpi colour is
+  routinely 100+ MB), and paperless reports no page count at all for image originals, so
+  this is the gate that catches them. The default matches the inline-file limit the
+  providers enforce anyway, so it rarely needs changing. Blank means no limit.
 - **Correspondent blacklist**: one name per line; these are never assigned or created as a
   correspondent.
 
@@ -79,5 +85,6 @@ their first and last pages; models that can't take files run on text alone.
 | Skip extraction above     | `100` pages                 |
 | Run OCR                   | on (once a model is picked) |
 | Skip OCR above            | `20` pages                  |
+| Max attachment size       | `32` MB                     |
 | Output language           | `auto`                      |
 | Max attempts per job      | `3`                         |

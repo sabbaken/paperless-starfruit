@@ -397,6 +397,8 @@ function GeneralForm({ initial }: { initial: Settings }) {
     if (Number.isFinite(form.pollIntervalSec) && form.pollIntervalSec >= 15) {
       patch.pollIntervalSec = form.pollIntervalSec;
     }
+    const attach = sendableLimit(form.attachMaxMb);
+    if (attach !== undefined) patch.attachMaxMb = attach;
     commit(patch);
   }, 600);
 
@@ -435,6 +437,27 @@ function GeneralForm({ initial }: { initial: Settings }) {
               }}
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="attachMaxMb">{t('processing.general.attachMaxMb')}</Label>
+          <Input
+            id="attachMaxMb"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            className="w-40"
+            placeholder={t('processing.maxPages.noLimit')}
+            value={form.attachMaxMb ?? ''}
+            onChange={(e) => {
+              setForm((f) => ({
+                ...f,
+                attachMaxMb: e.target.value === '' ? null : Number(e.target.value),
+              }));
+              commitText();
+            }}
+          />
+          <p className="text-xs text-muted-foreground">{t('processing.general.attachMaxMbHint')}</p>
         </div>
 
         <div className="space-y-2">

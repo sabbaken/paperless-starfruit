@@ -63,7 +63,9 @@ describe('OcrService: vision-LLM OCR', () => {
     // extraction call re-reads), instruction text after it.
     const parts = generateTextMock.mock.calls[0][0].messages[0].content;
     expect(parts[0]).toMatchObject({ type: 'file', mediaType: 'application/pdf' });
-    expect(parts[0].data).toBeInstanceOf(Buffer);
+    // Base64, never a Buffer: handing the SDK raw bytes makes it build the
+    // encoding as a char-by-char string rope (~32x the file in live heap).
+    expect(parts[0].data).toBe(Buffer.from('%PDF-1.4').toString('base64'));
     expect(parts[0].providerOptions).toEqual({
       anthropic: { cacheControl: { type: 'ephemeral' } },
     });
@@ -94,7 +96,7 @@ describe('OcrService: vision-LLM OCR', () => {
 
     const parts = generateTextMock.mock.calls[0][0].messages[0].content;
     expect(parts[0]).toMatchObject({ type: 'image', mediaType: 'image/png' });
-    expect(parts[0].image).toBeInstanceOf(Buffer);
+    expect(parts[0].image).toBe(Buffer.from('PNGDATA').toString('base64'));
   });
 
   it('defaults an unknown/opaque content type to PDF', async () => {

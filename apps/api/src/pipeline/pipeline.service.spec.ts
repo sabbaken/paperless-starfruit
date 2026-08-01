@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS: Settings = {
   language: 'auto',
   ocrEnabled: false,
   ocrMaxPages: null,
+  attachMaxMb: null,
   correspondentBlacklist: [],
   llmProviderId: 9,
   llmModel: 'claude-haiku-4-5',
@@ -440,7 +441,7 @@ describe('PipelineService.process: page limits', () => {
     // The OCR limit doubles as the attach threshold: over it, the model sees
     // only the original's first and last pages (plus the full text above).
     expect(args.fileParts).toHaveLength(1);
-    const attached = await PDFDocument.load(args.fileParts[0].data as Buffer);
+    const attached = await PDFDocument.load(args.fileParts[0].data as string);
     expect(attached.getPageCount()).toBe(2);
     // No OCR ran, so the metadata PATCH carries no content write-back.
     const [, patch] = client.patchDocument.mock.calls[0];
@@ -571,6 +572,57 @@ describe('PipelineService.process: OCR (M5)', () => {
       ocrText: '   ',
     });
     await expect(pipeline.process(JOB)).rejects.toThrow(/blank or unreadable/i);
+  });
+
+  it('skips OCR and the attachment when the original is over the byte limit', async () => {
+    const { pipeline, ocr, client, llm } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'paperless tesseract text' },
+      settings: { ...OCR_ON, attachMaxMb: 2 },
+    });
+    client.downloadOriginal.mockResolvedValue({
+      data: Buffer.alloc(3 * 1024 * 1024),
+      contentType: 'application/pdf',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    // Page counts can't see bytes (and are null for image originals), so this
+    // is the first point the size is knowable: no OCR call, no attachment.
+    expect(ocr.ocr).not.toHaveBeenCalled();
+    expect(result.decision).toBe('review-queued');
+    const [args] = llm.generateStructured.mock.calls[0];
+    expect(args.fileParts).toBeUndefined();
+    expect(args.prompt).toContain('paperless tesseract text');
+  });
+
+  it('fails (not defers) when the original is oversized and paperless has no text', async () => {
+    const { pipeline, client } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: '   ' },
+      settings: { ...OCR_ON, attachMaxMb: 2 },
+    });
+    client.downloadOriginal.mockResolvedValue({
+      data: Buffer.alloc(3 * 1024 * 1024),
+      contentType: 'application/pdf',
+    });
+
+    // Deferring would re-download the oversized file on every poll forever.
+    await expect(pipeline.process(JOB)).rejects.toThrow(/over the 2 MB attachment limit/i);
+  });
+
+  it('drops the attachment on the no-OCR path too, extracting from text alone', async () => {
+    const { pipeline, client, llm } = makePipeline({
+      doc: { tags: [TRIGGER_TAG], content: 'paperless tesseract text' },
+      settings: { ocrEnabled: false, attachMaxMb: 2 },
+    });
+    client.downloadOriginal.mockResolvedValue({
+      data: Buffer.alloc(3 * 1024 * 1024),
+      contentType: 'application/pdf',
+    });
+
+    const result = await pipeline.process(JOB);
+
+    expect(result.decision).toBe('review-queued');
+    expect(llm.generateStructured.mock.calls[0][0].fileParts).toBeUndefined();
   });
 
   it('skips OCR (uses paperless text) when OCR is on but no OCR model is selected', async () => {

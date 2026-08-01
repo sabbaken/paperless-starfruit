@@ -26,6 +26,25 @@ export const ANTHROPIC_CACHE_CONTROL = {
   anthropic: { cacheControl: { type: 'ephemeral' } },
 } as const;
 
+/**
+ * Base64 for an AI SDK file/image part. The SDK accepts a raw `Uint8Array`, but
+ * `@ai-sdk/provider-utils`' `convertUint8ArrayToBase64` appends one
+ * `String.fromCodePoint` per byte, and V8 keeps every intermediate ConsString
+ * node reachable until the closing `btoa`: ~32 bytes of LIVE heap per byte of
+ * file, which a full mark-compact cannot reclaim. One ~130 MB original was
+ * enough to exhaust the default 4 GB heap (issue #3). Node's own encoder
+ * returns an external string and costs no heap at all, and `convertToBase64`
+ * passes non-`Uint8Array` values through untouched, so the request body is
+ * byte-identical either way.
+ *
+ * Both call sites — OCR and extraction — must go through this: the document
+ * block is a shared prefix for the Anthropic prompt cache, so the two requests
+ * have to encode it the same way or the cache stops hitting.
+ */
+export function encodeAttachment(data: Buffer): string {
+  return data.toString('base64');
+}
+
 /** The original document bytes pulled from paperless, plus its declared type. */
 export interface OcrInput {
   data: Buffer;

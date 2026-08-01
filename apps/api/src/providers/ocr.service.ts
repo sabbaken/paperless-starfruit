@@ -6,6 +6,7 @@ import { normaliseUsage } from './llm.service';
 import {
   ANTHROPIC_CACHE_CONTROL,
   PDF_FILE_PART_KINDS,
+  encodeAttachment,
   isImageMediaType,
   normaliseMediaType,
   type OcrInput,
@@ -73,11 +74,12 @@ export class OcrService {
     // entry that the extraction call re-reads at ~10% cost; set only when the
     // caller knows that call shares this one's credential + model (see ocr.types).
     const cachePart = opts.cacheDocument ? { providerOptions: ANTHROPIC_CACHE_CONTROL } : {};
+    const encoded = encodeAttachment(input.data);
     const docPart = isImage
-      ? { type: 'image', image: input.data, mediaType, ...cachePart }
+      ? { type: 'image', image: encoded, mediaType, ...cachePart }
       : {
           type: 'file',
-          data: input.data,
+          data: encoded,
           mediaType,
           filename: filenameFor(mediaType),
           ...cachePart,

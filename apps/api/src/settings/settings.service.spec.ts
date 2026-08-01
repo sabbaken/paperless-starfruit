@@ -17,6 +17,7 @@ describe('SettingsService', () => {
       language: 'auto',
       ocrEnabled: true,
       ocrMaxPages: 20,
+      attachMaxMb: 32,
       correspondentBlacklist: [],
       llmProviderId: null,
       llmModel: null,

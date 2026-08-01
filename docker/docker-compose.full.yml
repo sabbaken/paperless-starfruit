@@ -71,6 +71,11 @@ services:
       - '7827:3000'
     volumes:
       - starfruit_data:/data
+    # Node sizes its V8 heap from the container's memory limit (roughly half of
+    # it) and is cgroup-aware, so setting a limit here is what keeps the heap
+    # bounded. Without one it reads the HOST's RAM instead and lets itself grow
+    # to ~4 GB. Processing is one document at a time, so this is ample.
+    mem_limit: 2g
     environment:
       DATABASE_PATH: /data/app.db
       # Encrypts stored credentials and signs admin sessions. Keep it stable:

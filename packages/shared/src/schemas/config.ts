@@ -106,11 +106,9 @@ const paperlessBaseUrl = z.preprocess(
     if (trimmed === '') return trimmed;
     return /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
   },
-  z
-    .string()
-    .url({
-      message: 'Enter a URL or an address, e.g. https://paperless.home.lan or 192.168.1.10:8000',
-    }),
+  z.string().url({
+    message: 'Enter a URL or an address, e.g. https://paperless.home.lan or 192.168.1.10:8000',
+  }),
 );
 
 /** Connection to the paperless-ngx instance. */
@@ -170,6 +168,16 @@ export const settingsSchema = z.object({
    * original. `null` = no limit.
    */
   ocrMaxPages: z.number().int().positive().nullable().default(20),
+  /**
+   * Largest original we will send to a model, in MB. The page limits above
+   * can't see file size — 20 pages of 600-dpi colour is routinely 100+ MB, and
+   * paperless reports no `page_count` at all for image originals and older
+   * imports, which switches both page gates off. An oversized document still
+   * gets processed, just from text alone. The default sits at the inline-file
+   * ceiling every supported provider enforces anyway, so it should never need
+   * changing. `null` = no limit.
+   */
+  attachMaxMb: z.number().int().positive().nullable().default(32),
   correspondentBlacklist: z.array(z.string()).default([]),
   /** The credential + model the extraction pipeline runs on; null until chosen. */
   llmProviderId: z.number().int().nullable().default(null),

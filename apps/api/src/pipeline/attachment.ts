@@ -4,6 +4,7 @@ import { defaultCaps } from '../providers/model.factory';
 import {
   ANTHROPIC_CACHE_CONTROL,
   PDF_FILE_PART_KINDS,
+  encodeAttachment,
   isImageMediaType,
   normaliseMediaType,
 } from '../providers/ocr.types';
@@ -42,8 +43,8 @@ export function visualMode(opts: {
  *
  * Returns null when this provider/file combination can't take the attachment
  * (non-image file on a kind without PDF file-part support, exotic media type,
- * or a PDF that pdf-lib can't parse); extraction then runs text-only, exactly
- * as before.
+ * a PDF that pdf-lib can't parse, or a file over `maxBytes`); extraction then
+ * runs text-only, exactly as before.
  */
 export async function buildExtractionFilePart(opts: {
   data: Buffer;
@@ -51,19 +52,31 @@ export async function buildExtractionFilePart(opts: {
   kind: ProviderKind;
   mode: Exclude<VisualMode, 'none'>;
   cacheDocument?: boolean;
+  /**
+   * Largest attachment we're willing to inline (`settings.attachMaxMb`). The
+   * page gates can't see bytes — 20 pages of 600-dpi colour is routinely 100+
+   * MB, and `page_count` is null for image originals and older imports, which
+   * switches both page gates off. Null = no byte limit.
+   */
+  maxBytes?: number | null;
 }): Promise<Record<string, unknown> | null> {
   const mediaType = normaliseMediaType(opts.contentType);
   const cachePart = opts.cacheDocument ? { providerOptions: ANTHROPIC_CACHE_CONTROL } : {};
+  const overLimit = (data: Buffer) => opts.maxBytes != null && data.byteLength > opts.maxBytes;
   if (isImageMediaType(mediaType)) {
     // Single image original: there is nothing to trim.
-    return { type: 'image', image: opts.data, mediaType, ...cachePart };
+    if (overLimit(opts.data)) return null;
+    return { type: 'image', image: encodeAttachment(opts.data), mediaType, ...cachePart };
   }
   if (mediaType !== 'application/pdf' || !PDF_FILE_PART_KINDS.has(opts.kind)) return null;
   const data = opts.mode === 'trimmed' ? await firstAndLastPages(opts.data) : opts.data;
-  if (!data) return null;
+  // Measure AFTER trimming: two pages lifted out of a huge scan are usually
+  // well under the limit, and letting those through is the whole point of
+  // trimming. Only the bytes we actually send have to fit.
+  if (!data || overLimit(data)) return null;
   return {
     type: 'file',
-    data,
+    data: encodeAttachment(data),
     mediaType,
     filename: 'document.pdf',
     ...cachePart,

@@ -76,6 +76,7 @@ function toSettings(row: SettingsRow): Settings {
     language: row.language,
     ocrEnabled: row.ocrEnabled,
     ocrMaxPages: row.ocrMaxPages ?? null,
+    attachMaxMb: row.attachMaxMb ?? null,
     correspondentBlacklist: row.correspondentBlacklist,
     llmProviderId: row.llmProviderId ?? null,
     llmModel: row.llmModel ?? null,

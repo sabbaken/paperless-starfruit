@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import {
   JOB_STATUS,
   REVIEW_STATUS,
@@ -18,29 +18,48 @@ export class StatsService {
   constructor(@Inject(DB) private readonly db: Db) {}
 
   get(): Stats {
-    const jobs = this.db.select().from(job).all();
+    // Counted in SQL, not by materialising the table: the dashboard polls this
+    // every few seconds from every page, and better-sqlite3 is synchronous, so
+    // reading every job row would block the event loop for as long as it takes.
     const queue = { queued: 0, running: 0, done: 0, failed: 0 };
     let tokenSpend = 0;
+    const byStatus = this.db
+      .select({
+        status: job.status,
+        count: sql<number>`count(*)`.mapWith(Number),
+        spend: sql<number>`coalesce(sum(${job.cost}), 0)`.mapWith(Number),
+      })
+      .from(job)
+      .groupBy(job.status)
+      .all();
+    for (const row of byStatus) {
+      if (row.status in queue) queue[row.status as keyof typeof queue] = row.count;
+      tokenSpend += row.spend;
+    }
+
     // Throughput = jobs completed in the last 24h, an at-a-glance "is it working?"
     // gauge that doesn't grow unbounded the way the lifetime `done` count does.
-    const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    let throughput = 0;
-    for (const j of jobs) {
-      if (j.status in queue) queue[j.status as keyof typeof queue] += 1;
-      tokenSpend += j.cost ?? 0;
-      if (j.status === JOB_STATUS.DONE && j.updatedAt.getTime() >= dayAgo) throughput += 1;
-    }
+    // Pass a Date: the column is drizzle's `timestamp` mode, so it binds as unix
+    // seconds — a raw millisecond number would silently match nothing.
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const throughput =
+      this.db
+        .select({ count: sql<number>`count(*)`.mapWith(Number) })
+        .from(job)
+        .where(and(eq(job.status, JOB_STATUS.DONE), gte(job.updatedAt, dayAgo)))
+        .all()[0]?.count ?? 0;
 
     // Error rate over *finished* jobs only (done + failed); queued/running aren't
     // outcomes yet. 0 when nothing has finished, so the card never shows NaN.
     const finished = queue.done + queue.failed;
     const errorRate = finished > 0 ? queue.failed / finished : 0;
 
-    const pendingReview = this.db
-      .select({ id: reviewItem.id })
-      .from(reviewItem)
-      .where(eq(reviewItem.status, REVIEW_STATUS.PENDING))
-      .all().length;
+    const pendingReview =
+      this.db
+        .select({ count: sql<number>`count(*)`.mapWith(Number) })
+        .from(reviewItem)
+        .where(eq(reviewItem.status, REVIEW_STATUS.PENDING))
+        .all()[0]?.count ?? 0;
 
     const recentJobs = this.db
       .select()

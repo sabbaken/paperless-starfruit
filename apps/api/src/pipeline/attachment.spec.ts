@@ -39,7 +39,9 @@ describe('buildExtractionFilePart', () => {
       cacheDocument: true,
     });
     expect(part).toMatchObject({ type: 'image', mediaType: 'image/png' });
-    expect(part?.image).toBe(data);
+    // Base64, never a Buffer: handing the SDK raw bytes makes it build the
+    // encoding as a char-by-char string rope (~32x the file in live heap).
+    expect(part?.image).toBe(data.toString('base64'));
     expect(part?.providerOptions).toEqual(CACHE_MARKER);
   });
 
@@ -57,7 +59,7 @@ describe('buildExtractionFilePart', () => {
       mediaType: 'application/pdf',
       filename: 'document.pdf',
     });
-    expect(part?.data).toBe(data);
+    expect(part?.data).toBe(data.toString('base64'));
     expect(part?.providerOptions).toEqual(CACHE_MARKER);
   });
 
@@ -86,7 +88,7 @@ describe('buildExtractionFilePart', () => {
       kind: 'anthropic',
       mode: 'trimmed',
     });
-    const trimmed = await PDFDocument.load(part?.data as Buffer);
+    const trimmed = await PDFDocument.load(part?.data as string);
     expect(trimmed.getPageCount()).toBe(2);
     // Page widths identify which source pages survived (100·n per page).
     expect(trimmed.getPage(0).getWidth()).toBe(100);
@@ -100,7 +102,7 @@ describe('buildExtractionFilePart', () => {
       kind: 'anthropic',
       mode: 'trimmed',
     });
-    const trimmed = await PDFDocument.load(part?.data as Buffer);
+    const trimmed = await PDFDocument.load(part?.data as string);
     expect(trimmed.getPageCount()).toBe(2);
   });
 
@@ -122,6 +124,39 @@ describe('buildExtractionFilePart', () => {
       mode: 'trimmed',
     });
     expect(part).toBeNull();
+  });
+
+  it('returns null for an original over the byte limit, image or PDF', async () => {
+    const image = await buildExtractionFilePart({
+      data: Buffer.alloc(2048),
+      contentType: 'image/png',
+      kind: 'anthropic',
+      mode: 'full',
+      maxBytes: 1024,
+    });
+    expect(image).toBeNull();
+
+    const pdf = await buildExtractionFilePart({
+      data: await pdfWithPages(1),
+      contentType: 'application/pdf',
+      kind: 'anthropic',
+      mode: 'full',
+      maxBytes: 1,
+    });
+    expect(pdf).toBeNull();
+  });
+
+  it('measures the byte limit after trimming, so a trimmed extract still gets through', async () => {
+    const data = await pdfWithPages(40);
+    const part = await buildExtractionFilePart({
+      data,
+      contentType: 'application/pdf',
+      kind: 'anthropic',
+      mode: 'trimmed',
+      // Under the whole file, comfortably over its first+last pages.
+      maxBytes: data.byteLength - 1,
+    });
+    expect(part).toMatchObject({ type: 'file' });
   });
 
   it('returns null for media types extraction cannot attach (e.g. office documents)', async () => {

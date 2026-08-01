@@ -78,6 +78,13 @@ export class PipelineService {
     const client = this.connection.getClient();
     if (!client) throw new Error('No paperless connection is configured.');
 
+    // Worker concurrency is 1, so any cached OCR for another document belongs to
+    // a job that already settled (or died mid-flight). Drop it: without this the
+    // cache keeps every terminally-failed document's text until restart.
+    for (const id of this.ocrCache.keys()) {
+      if (id !== job.documentId) this.ocrCache.delete(id);
+    }
+
     const settings = this.settings.get();
     // `null` = extraction is off (OCR-only mode); no LLM model is required then.
     const provider = settings.extractionEnabled
@@ -129,7 +136,17 @@ export class PipelineService {
         `job ${job.id} (doc ${job.documentId}): OCR is on but no OCR model is selected; using paperless's existing text. Pick an OCR model in Settings → Processing.`,
       );
     }
-    const runOcr = settings.ocrEnabled && ocrModelSelected && !overLimit(settings.ocrMaxPages);
+    // Not const: an original that turns out to be too big to send flips this
+    // back off once we've downloaded it and can finally see its size.
+    let runOcr = settings.ocrEnabled && ocrModelSelected && !overLimit(settings.ocrMaxPages);
+
+    // The one gate that measures bytes rather than pages. Page counts are a poor
+    // proxy for size (20 pages of 600-dpi colour is routinely 100+ MB), and
+    // paperless reports no page count at all for image originals and older
+    // imports, which switches both page gates off entirely. Null = no limit.
+    const attachMaxBytes = settings.attachMaxMb != null ? settings.attachMaxMb * 1024 * 1024 : null;
+    const overAttachLimit = (data: Buffer) =>
+      attachMaxBytes != null && data.byteLength > attachMaxBytes;
 
     // Anthropic's prompt cache is scoped to one API key and one model, and a
     // cache write costs 1.25× the normal input price. Mark the document block
@@ -172,10 +189,13 @@ export class PipelineService {
     const existing = (doc.content ?? '').trim();
     let ocrProvider: ResolvedProvider | null = null;
     let ocrUsage: LlmUsage | undefined;
-    let text: string;
+    // Null until some step produces text; the fallback below fills it in.
+    let text: string | null = null;
     // The original file, downloaded at most once per run: the OCR step pulls it
     // first and the extraction attachment below reuses those bytes.
     let original: { data: Buffer; contentType: string | null } | null = null;
+    /** Set to its size once we find the original is too big to send anywhere. */
+    let oversizedMb: string | null = null;
 
     if (runOcr) {
       ocrProvider = this.resolveProvider(settings.ocrProviderId, settings.ocrModel, 'OCR');
@@ -188,28 +208,49 @@ export class PipelineService {
         ocrUsage = cached.usage;
       } else {
         original = await client.downloadOriginal(job.documentId);
-        const ocrPrompt = this.prompts.render(
-          PROMPT_KEY.OCR,
-          ocrVars({ language: settings.language, filename: doc.original_file_name ?? null }),
-        );
-        const result = await this.ocr.ocr(
-          ocrProvider,
-          { data: original.data, contentType: original.contentType },
-          { language: settings.language, prompt: ocrPrompt, cacheDocument, signal },
-        );
-        text = result.text.trim();
-        ocrUsage = result.usage;
-        // The original IS present (we just downloaded it), so empty OCR means the
-        // page is blank/unreadable: a real failure, not a "not ready yet" defer.
-        // Failing consumes attempts and eventually goes terminal, instead of
-        // re-OCR'ing (and re-billing) the same blank page every poll.
-        if (!text)
-          throw new Error('OCR produced no text. The document may be blank or unreadable.');
-        this.ocrCache.set(job.documentId, { key: ocrKey, text, usage: ocrUsage });
+        if (overAttachLimit(original.data)) {
+          // First point in the run where the file's real size is knowable. A
+          // provider would reject it anyway, so don't spend the memory or the
+          // round-trip: no OCR, no attachment, extraction from text alone.
+          oversizedMb = asMb(original.data);
+          runOcr = false;
+          ocrProvider = null;
+          this.logger.warn(
+            `job ${job.id} (doc ${job.documentId}): original is ${oversizedMb} MB, over the ${settings.attachMaxMb} MB attachment limit; skipping OCR and the extraction attachment`,
+          );
+        } else {
+          const ocrPrompt = this.prompts.render(
+            PROMPT_KEY.OCR,
+            ocrVars({ language: settings.language, filename: doc.original_file_name ?? null }),
+          );
+          const result = await this.ocr.ocr(
+            ocrProvider,
+            { data: original.data, contentType: original.contentType },
+            { language: settings.language, prompt: ocrPrompt, cacheDocument, signal },
+          );
+          text = result.text.trim();
+          ocrUsage = result.usage;
+          // The original IS present (we just downloaded it), so empty OCR means the
+          // page is blank/unreadable: a real failure, not a "not ready yet" defer.
+          // Failing consumes attempts and eventually goes terminal, instead of
+          // re-OCR'ing (and re-billing) the same blank page every poll.
+          if (!text)
+            throw new Error('OCR produced no text. The document may be blank or unreadable.');
+          this.ocrCache.set(job.documentId, { key: ocrKey, text, usage: ocrUsage });
+        }
       }
-    } else {
+    }
+
+    if (text == null) {
       text = existing;
       if (!text) {
+        // The original is in hand and simply too large: a real failure, so
+        // attempts run out instead of re-downloading it on every poll forever.
+        if (oversizedMb) {
+          throw new Error(
+            `The original is ${oversizedMb} MB, over the ${settings.attachMaxMb} MB attachment limit, and paperless has no text for it. Raise the limit in Settings → Processing, or let paperless OCR the document first.`,
+          );
+        }
         // Not a failure: paperless likely hasn't OCR'd it yet. Defer so we don't
         // burn every attempt back-to-back before the text exists (see worker). Point
         // at whichever knob is actually blocking OCR so the message isn't misleading.
@@ -236,18 +277,22 @@ export class PipelineService {
     const hiddenTagIds = provider ? this.hiddenTags.ids() : new Set<number>();
     // How much of the original the extraction model gets to see (full/trimmed/
     // none). The OCR page limit does double duty as the threshold: both gates
-    // exist to keep oversized files away from vision models. Part of the
-    // fingerprint: changing the limit changes the model's input, so it must
+    // exist to keep oversized files away from vision models, and an original
+    // already found to be over the BYTE limit reaches the model in no form at
+    // all. Part of the fingerprint: changing what the model looks at must
     // reprocess rather than skip-as-identical.
-    const visual = provider
-      ? visualMode({ kind: provider.kind, pageCount, maxFullPages: settings.ocrMaxPages })
-      : null;
+    const visual = !provider
+      ? null
+      : oversizedMb
+        ? 'none'
+        : visualMode({ kind: provider.kind, pageCount, maxFullPages: settings.ocrMaxPages });
     const fingerprint = configFingerprint({
       llm: provider ? { kind: provider.kind, model: provider.model } : null,
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
       hintsDigest: tagHintsDigest(tagHints),
       hiddenDigest: hiddenTagsDigest(hiddenTagIds),
       visual,
+      attachMaxMb: settings.attachMaxMb,
     });
     const hash = contentHash(text, fingerprint);
 
@@ -338,10 +383,11 @@ export class PipelineService {
         kind: provider.kind,
         mode: visual,
         cacheDocument,
+        maxBytes: attachMaxBytes,
       });
       if (!filePart) {
         this.logger.debug(
-          `job ${job.id} (doc ${job.documentId}): original not attachable for ${provider.kind}; extracting from text only`,
+          `job ${job.id} (doc ${job.documentId}): original not attachable for ${provider.kind} (unsupported type, unparseable PDF, or over the ${settings.attachMaxMb} MB limit); extracting from text only`,
         );
       }
     }
@@ -496,4 +542,9 @@ export class PipelineService {
     const tags = doc.tags.filter((id) => id !== triggerTagId);
     if (tags.length !== doc.tags.length) await client.patchDocument(doc.id, { tags });
   }
+}
+
+/** Size for the oversized-original log and error lines; the limit is in MB. */
+function asMb(data: Buffer): string {
+  return (data.byteLength / 1024 / 1024).toFixed(1);
 }

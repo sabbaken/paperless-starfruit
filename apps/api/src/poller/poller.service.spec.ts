@@ -7,7 +7,7 @@ import type { QueueService } from '../queue/queue.service';
 import { PollerService } from './poller.service';
 
 interface Fakes {
-  client: { listDocuments: ReturnType<typeof vi.fn> } | null;
+  client: { listDocumentIds: ReturnType<typeof vi.fn> } | null;
   hasPending?: (id: number) => boolean;
   hasTerminalFailure?: (id: number) => boolean;
   enqueue?: (id: number) => boolean;
@@ -29,14 +29,22 @@ function makePoller({
   const queue = {
     enqueue: enqueueMock,
     hasTerminalFailure: vi.fn(hasTerminalFailure),
+    // Mirrors the real batched implementation (which wraps the same loop in one
+    // transaction), so the eligibility guards stay under test.
+    enqueueMany: (ids: number[], isEligible: (id: number) => boolean) => {
+      let enqueued = 0;
+      for (const id of ids) {
+        if (!isEligible(id)) continue;
+        if (enqueueMock(id)) enqueued++;
+      }
+      return enqueued;
+    },
   } as unknown as QueueService;
   return { poller: new PollerService(connection, settings, taxonomy, review, queue), enqueueMock };
 }
 
 const docs = (ids: number[]) => ({
-  listDocuments: vi
-    .fn()
-    .mockResolvedValue({ count: ids.length, results: ids.map((id) => ({ id })) }),
+  listDocumentIds: vi.fn().mockResolvedValue(ids),
 });
 
 describe('PollerService.pollOnce', () => {
@@ -52,7 +60,7 @@ describe('PollerService.pollOnce', () => {
     expect(await poller.pollOnce()).toBe(3);
     expect(enqueueMock).toHaveBeenCalledTimes(3);
     // queried by the single trigger tag id
-    expect(client.listDocuments).toHaveBeenCalledWith({ tagIds: [100], ordering: 'added' });
+    expect(client.listDocumentIds).toHaveBeenCalledWith({ tagIds: [100], ordering: 'added' });
   });
 
   it('skips documents already awaiting review', async () => {

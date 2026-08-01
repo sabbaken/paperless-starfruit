@@ -394,9 +394,12 @@ export const en = {
     },
     general: {
       title: 'General',
-      description: 'Polling, output language and correspondent exclusions.',
+      description: 'Polling, output language, attachment size and correspondent exclusions.',
       pollInterval: 'Poll interval (seconds)',
       outputLanguage: 'Output language',
+      attachMaxMb: 'Max attachment size (MB)',
+      attachMaxMbHint:
+        'Originals bigger than this are never sent to a model; they are processed from their text alone. The default matches the inline-file limit providers enforce anyway, so it rarely needs changing.',
       correspondentBlacklist: 'Correspondent blacklist',
       blacklistPlaceholder: 'One name per line\nNever assigned or created as a correspondent',
     },

@@ -32,6 +32,26 @@ export class QueueService {
     return true;
   }
 
+  /**
+   * Enqueue a batch of documents in ONE transaction, skipping those
+   * `isEligible` rejects. SQLite's default `synchronous = FULL` fsyncs once per
+   * implicit transaction, so the poller's first tick over a freshly-tagged
+   * library would otherwise fsync per document and block the event loop for
+   * seconds. `isEligible` runs inside the transaction and must be synchronous;
+   * every guard the poller applies is a plain SELECT on this same connection,
+   * so those reads also see the inserts made earlier in the batch.
+   */
+  enqueueMany(documentIds: number[], isEligible: (documentId: number) => boolean): number {
+    return this.db.transaction(() => {
+      let enqueued = 0;
+      for (const documentId of documentIds) {
+        if (!isEligible(documentId)) continue;
+        if (this.enqueue(documentId)) enqueued++;
+      }
+      return enqueued;
+    });
+  }
+
   /** Atomically claim the oldest queued job and mark it running. */
   claimNext(): Job | null {
     const claimed = this.db

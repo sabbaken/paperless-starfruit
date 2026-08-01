@@ -55,5 +55,13 @@ export const paperlessDocumentSchema = z.object({
 });
 export type PaperlessDocument = z.infer<typeof paperlessDocumentSchema>;
 
+/**
+ * Id-only projection of the document list, for callers that just want to know
+ * *which* documents matched. Keeping the schema this narrow is the real guard:
+ * paperless serves every document's full OCR `content` in list responses, and
+ * a server too old to honour `?fields=` would otherwise have all of it retained.
+ */
+export const paperlessDocumentIdSchema = z.object({ id: z.number().int() });
+
 /** Minimal envelope for the connection probe; we only need the total count. */
 export const documentCountSchema = z.object({ count: z.number().int() });

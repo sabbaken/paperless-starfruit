@@ -52,24 +52,26 @@ export class PollerService implements OnApplicationBootstrap, OnModuleDestroy {
     }
 
     const triggerTagId = await this.taxonomy.resolveTriggerTag(client);
-    const { results } = await client.listDocuments({
+    // Ids only: paperless ships every document's full OCR text in a list
+    // response, and on a first bulk run the whole library carries the trigger
+    // tag at once.
+    const documentIds = await client.listDocumentIds({
       tagIds: [triggerTagId],
       ordering: 'added',
     });
 
-    let enqueued = 0;
-    for (const doc of results) {
+    const enqueued = this.queue.enqueueMany(documentIds, (documentId) => {
       // A pending review item means we already processed it and are waiting on
       // the user; don't re-enqueue (the trigger tag stays until they decide).
-      if (this.review.hasPending(doc.id)) continue;
+      if (this.review.hasPending(documentId)) return false;
       // A terminally-failed job keeps its trigger tag too; without this guard
       // we'd re-enqueue (and re-spend on the LLM) every cycle forever. Re-tagging
       // does NOT clear this; the `failed` rows persist regardless of the tag.
       // Use the dashboard "Retry" action (POST /jobs/:documentId/retry) to drop
       // those rows and reprocess after fixing the cause.
-      if (this.queue.hasTerminalFailure(doc.id)) continue;
-      if (this.queue.enqueue(doc.id)) enqueued++;
-    }
+      if (this.queue.hasTerminalFailure(documentId)) return false;
+      return true;
+    });
     if (enqueued > 0) this.logger.log(`enqueued ${enqueued} document(s)`);
     return enqueued;
   }

@@ -98,6 +98,8 @@ export const settings = sqliteTable('settings', {
   ocrEnabled: integer('ocr_enabled', { mode: 'boolean' }).notNull().default(true),
   /** Skip OCR (reuse paperless's text) for documents with more pages than this; null = no limit. */
   ocrMaxPages: integer('ocr_max_pages').default(20),
+  /** Largest original (MB) sent to a model; bigger ones extract from text only. */
+  attachMaxMb: integer('attach_max_mb').default(32),
   correspondentBlacklist: text('correspondent_blacklist', { mode: 'json' })
     .notNull()
     .$type<string[]>()
@@ -141,16 +143,22 @@ export const job = sqliteTable(
 );
 
 /** A pending human-review item produced when auto-apply is off. */
-export const reviewItem = sqliteTable('review_item', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  jobId: integer('job_id')
-    .notNull()
-    .references(() => job.id),
-  documentId: integer('document_id').notNull(),
-  suggestions: text('suggestions', { mode: 'json' }).notNull(),
-  status: text('status').notNull().default('pending'),
-  createdAt: timestamp('created_at'),
-});
+export const reviewItem = sqliteTable(
+  'review_item',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    jobId: integer('job_id')
+      .notNull()
+      .references(() => job.id),
+    documentId: integer('document_id').notNull(),
+    suggestions: text('suggestions', { mode: 'json' }).notNull(),
+    status: text('status').notNull().default('pending'),
+    createdAt: timestamp('created_at'),
+  },
+  // The poller asks "is this document awaiting review?" once per tagged
+  // document per tick; without this it is a full table scan each time.
+  (t) => [index('review_item_pending_idx').on(t.documentId, t.status)],
+);
 
 /** Append-only audit trail of every processing run. */
 export const auditLog = sqliteTable(

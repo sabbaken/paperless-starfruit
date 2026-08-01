@@ -53,12 +53,22 @@ describe('PaperlessClient', () => {
   it('builds the document query with tag filter, ordering, and page size', async () => {
     fetchMock.mockResolvedValue(json({ count: 0, next: null, previous: null, results: [] }));
 
-    await client().listDocuments({ tagIds: [1, 2], pageSize: 50 });
+    await client().listDocumentIds({ tagIds: [1, 2], pageSize: 50 });
 
     const [url] = fetchMock.mock.calls[0];
     expect(url).toContain('tags__id__in=1%2C2');
     expect(url).toContain('ordering=added');
     expect(url).toContain('page_size=50');
+  });
+
+  it('asks paperless for ids only, so list responses carry no document text', async () => {
+    fetchMock.mockResolvedValue(json({ count: 0, next: null, previous: null, results: [] }));
+
+    await client().listDocumentIds({ tagIds: [100] });
+
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain('fields=id');
+    expect(url).toContain('truncate_content=true');
   });
 
   it('follows "next" across pages when listing documents', async () => {
@@ -106,9 +116,8 @@ describe('PaperlessClient', () => {
         }),
       );
 
-    const { count, results } = await client().listDocuments({ tagIds: [100] });
-    expect(count).toBe(3);
-    expect(results.map((d) => d.id)).toEqual([1, 2, 3]);
+    const ids = await client().listDocumentIds({ tagIds: [100] });
+    expect(ids).toEqual([1, 2, 3]);
     // Page 2 re-anchors to the verified host, not paperless's advertised internal one.
     expect(fetchMock.mock.calls[1][0]).toBe('http://pl.local/api/documents/?page=2&page_size=200');
   });

@@ -4,6 +4,7 @@ import {
   documentCountSchema,
   paginatedSchema,
   paperlessCorrespondentSchema,
+  paperlessDocumentIdSchema,
   paperlessDocumentSchema,
   paperlessTagSchema,
   type Paginated,
@@ -32,6 +33,8 @@ export interface ListDocumentsParams {
   ordering?: string;
   pageSize?: number;
   page?: number;
+  /** Restrict the fields paperless serialises (`?fields=`); omit for all of them. */
+  fields?: string[];
 }
 
 /** Fields paperless accepts on a PATCH. `tags` replaces the whole array. */
@@ -110,26 +113,31 @@ export class PaperlessClient {
     return data;
   }
 
-  async listDocuments(
-    params: ListDocumentsParams = {},
-  ): Promise<{ count: number; results: PaperlessDocument[] }> {
-    const schema = paginatedSchema(paperlessDocumentSchema);
-    const results: PaperlessDocument[] = [];
-    let count = 0;
-    // Follow `next` across pages; a single page would starve documents past
-    // the first (pending-review docs accumulate at the head of `ordering=added`).
-    let next: string | null = `/api/documents/?${this.buildDocumentQuery(params)}`;
-    let firstPage = true;
+  /**
+   * Ids of every document matching a filter, and nothing else.
+   *
+   * paperless serialises each document's full OCR `content` into list
+   * responses, so asking for whole documents here means holding the entire
+   * library's text in one array for the length of the walk — hundreds of MB on
+   * a first bulk run, live from the very first poll. `fields=id` makes the
+   * server send ids alone and `truncate_content` caps the text at 550 chars on
+   * servers too old to honour `fields`; the narrow schema then discards
+   * anything either of them let through.
+   *
+   * Follows `next` across pages: a single page would starve documents past the
+   * first (pending-review docs accumulate at the head of `ordering=added`).
+   */
+  async listDocumentIds(params: ListDocumentsParams = {}): Promise<number[]> {
+    const schema = paginatedSchema(paperlessDocumentIdSchema);
+    const ids: number[] = [];
+    const query = this.buildDocumentQuery({ ...params, fields: ['id'] });
+    let next: string | null = `/api/documents/?${query}&truncate_content=true`;
     while (next) {
-      const page: Paginated<PaperlessDocument> = (await this.request(next, schema)).data;
-      if (firstPage) {
-        count = page.count;
-        firstPage = false;
-      }
-      results.push(...page.results);
+      const page: Paginated<{ id: number }> = (await this.request(next, schema)).data;
+      for (const doc of page.results) ids.push(doc.id);
       next = page.next ? toRelativeUrl(page.next) : null;
     }
-    return { count, results };
+    return ids;
   }
 
   /**
@@ -194,6 +202,7 @@ export class PaperlessClient {
     sp.set('ordering', p.ordering ?? 'added');
     sp.set('page_size', String(p.pageSize ?? PAGE_SIZE));
     if (p.page) sp.set('page', String(p.page));
+    if (p.fields?.length) sp.set('fields', p.fields.join(','));
     return sp.toString();
   }
 
