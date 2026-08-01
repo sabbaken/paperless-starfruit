@@ -27,6 +27,22 @@ RUN pnpm exec turbo run build \
 # never built or served here. Drop its sources so the runtime `COPY /app` below
 # doesn't carry them into the image.
 RUN rm -rf apps/website
+# Everything that ships from here on is compiled output, so drop the dev
+# toolchain (vitest, vite, esbuild, drizzle-kit, the Nest CLI). It never runs
+# in the container, but it does ship to users, where image scanners report its
+# CVEs against this image.
+# It takes both commands. `install --prod` alone only strips the *root*
+# project's devDependencies and leaves every workspace package's in place;
+# `prune --prod` clears the virtual store but, with --ignore-scripts, also
+# empties each importer's node_modules, so the second command relinks them.
+# Neither reinstalls better-sqlite3, so its compiled binding survives.
+#   --ignore-scripts: the root `prepare` runs husky, itself a devDependency,
+#     so it is already gone when the lifecycle script fires.
+#   confirmModulesPurge=false: otherwise pnpm asks before touching
+#     node_modules, finds no tty, and hangs.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+  pnpm prune --prod --ignore-scripts --config.confirmModulesPurge=false \
+  && pnpm install --frozen-lockfile --prod --ignore-scripts --config.confirmModulesPurge=false
 
 FROM base AS runtime
 ENV NODE_ENV=production
