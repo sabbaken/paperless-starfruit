@@ -56,6 +56,6 @@
     }
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,yml,yaml,astro}": "prettier --write"
+    "*.{ts,tsx,mts,js,jsx,mjs,cjs,json,css,md,yml,yaml,astro}": "prettier --write"
   }
 }
