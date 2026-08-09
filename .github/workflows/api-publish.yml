@@ -1,15 +1,25 @@
 name: API · Publish image
 
-# Builds and pushes the @paperless-starfruit/api Docker image to GitHub Container
-# Registry (ghcr.io) when a GitHub release is published. The release tag (e.g.
-# v1.2.0) names the version: the image is built from the tagged commit, stamped
-# with APP_VERSION, tagged `<version>` (plus `latest` for non-prereleases), and
-# the pull command is appended to the release notes. Use the manual trigger to
-# rebuild an existing release's image (e.g. after a base-image security fix).
-# It never moves `latest` unless explicitly asked to.
+# Cuts a release and publishes the @paperless-starfruit/api Docker image to GitHub
+# Container Registry (ghcr.io). Pushing a `v*` tag is the whole process: the
+# GitHub release is created from the tag (generated notes) if it doesn't exist
+# yet, the image is built from the tagged commit, stamped with APP_VERSION,
+# tagged `<version>` (plus `latest` for non-prereleases), and the pull command is
+# appended to the release notes. So `git push --follow-tags` ships a release.
+#
+# `gh release create vX.Y.Z` still works and lands on the same path: creating a
+# release pushes its tag, this runs, and the release-already-exists check makes
+# the create step a no-op. The tag push is deliberately the ONLY automatic
+# trigger — releases created by a workflow's GITHUB_TOKEN do not emit events that
+# start other workflows, so a `release: published` trigger would never fire for
+# tag-pushed releases, while keeping both triggers would race two identical
+# builds whenever `gh release create` was used.
+#
+# Use the manual trigger to rebuild an existing release's image (e.g. after a
+# base-image security fix). It never moves `latest` unless explicitly asked to.
 on:
-  release:
-    types: [published]
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
@@ -21,28 +31,64 @@ on:
         type: boolean
         default: false
 
+# One publish at a time per tag. Not cancel-in-progress: aborting mid-push could
+# leave a half-written manifest in ghcr.
+concurrency:
+  group: api-publish-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # checkout the tag + append the image reference to the release notes
+      contents: write # create the release, checkout the tag, append the image reference to the notes
       packages: write # required to push to ghcr.io with GITHUB_TOKEN
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
-
-      - name: Derive the version from the release tag
+      - name: Resolve the tag and version
         id: version
         env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          # A tag push carries the tag in `ref_name`; a manual rebuild names it.
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         run: |
           version="${TAG#v}"
           if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$ ]]; then
-            echo "::error::Release tag '$TAG' is not a semver version (expected e.g. v1.2.0)"
+            echo "::error::Tag '$TAG' is not a semver version (expected e.g. v1.2.0)"
             exit 1
           fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.version.outputs.tag }}
+
+      - name: Create the release if it doesn't exist yet
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+          DISPATCH_LATEST: ${{ inputs.latest }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving it as is."
+          else
+            # A suffixed version (v1.5.0-rc.1) is a prerelease, which is what
+            # keeps `latest` off it below. Notes are generated server-side.
+            prerelease=()
+            if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
+            gh release create "$TAG" --generate-notes "${prerelease[@]}"
+          fi
+          # The release is the source of truth for `latest`, so a manually
+          # created `--prerelease` on a plain semver tag is still honoured.
+          if [[ "$DISPATCH" == 'true' ]]; then
+            echo "latest=$DISPATCH_LATEST" >> "$GITHUB_OUTPUT"
+          elif [[ "$(gh release view "$TAG" --json isPrerelease -q .isPrerelease)" == 'false' ]]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -60,7 +106,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}/api
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ (github.event_name == 'release' && !github.event.release.prerelease) || inputs.latest == true }}
+            type=raw,value=latest,enable=${{ steps.release.outputs.latest }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -76,10 +122,9 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Append the image reference to the release notes
-        if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ steps.version.outputs.tag }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY,,}/api:$VERSION"

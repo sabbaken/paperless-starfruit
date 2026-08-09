@@ -10,8 +10,8 @@
  *   English-only for now; a value like `'{{count}} tag(s)'` is a deliberate
  *   pseudo-plural to revisit when a real plural locale is added.
  *
- * Adding a locale later: create a sibling `ru.ts` exporting
- * `export const ru = { … } satisfies Messages` — every missing/renamed key is a
+ * Adding a locale: create a sibling `xx.ts` exporting
+ * `export const xx = { … } satisfies Messages` — every missing/renamed key is a
  * compile error right there — then register it in `dictionaries` and `LOCALES`.
  */
 export const en = {
@@ -91,6 +91,10 @@ export const en = {
     addLocalEndpoint: 'Add local endpoint',
     connected: 'Connected',
     addKey: 'Add key',
+    // Whole sentences, not `common.add` + a name: verb-last locales (German) can't
+    // reorder a `${verb} ${provider}` template built in the component.
+    dialogAdd: 'Add {{provider}}',
+    dialogEdit: 'Edit {{provider}}',
     name: 'Name',
     namePlaceholder: 'Ollama (laptop)',
     baseUrl: 'Base URL',
@@ -503,6 +507,9 @@ export const en = {
       lead: 'Connect the providers you already pay for, or a model running on your own hardware.',
       logoAlt: '{{name}} logo',
       localName: 'Anything OpenAI-compatible',
+      // The cloud rows' model lists stay in the component — they are pure proper
+      // nouns. This one carries prose ("local or remote"), so it lives here.
+      localModels: 'Ollama · LM Studio · vLLM · OpenRouter (local or remote)',
       note: 'Encrypted at rest, and sent straight to the provider, never through us.',
     },
     ctaFooter: {
@@ -615,10 +622,18 @@ export const en = {
       nextLabel: 'Next screenshot',
       trackLabel: 'App screenshots, scrolls horizontally',
       imageAlt: '{{label}} in Paperless Starfruit',
+      // Each slide's screen name: the caption's lead-in and the `imageAlt` label.
+      // Deliberately not reused from `nav.labels` — that namespace is the app's
+      // own chrome, and the landing shouldn't shift when a nav label is retuned.
+      dashboardLabel: 'Dashboard',
       dashboardCaption: 'Queue depth, throughput and recent runs.',
+      reviewLabel: 'Review queue',
       reviewCaption: 'Suggestions side-by-side with the document.',
+      tagsLabel: 'Tags',
       tagsCaption: 'Give each tag a hint the AI follows.',
+      promptsLabel: 'Prompts',
       promptsCaption: 'Edit and test the prompts each model receives.',
+      apiKeysLabel: 'API keys',
       apiKeysCaption: 'Add, test and mask your provider keys.',
     },
   },

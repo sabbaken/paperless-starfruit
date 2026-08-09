@@ -1,17 +1,19 @@
+import { de } from './locales/de';
 import { en } from './locales/en';
 import { ru } from './locales/ru';
 import type { Messages, MessageKey, TFunction, TVars } from './types';
 
 export type { Messages, MessageKey, TFunction, TVars } from './types';
+export { de } from './locales/de';
 export { en } from './locales/en';
 export { ru } from './locales/ru';
 
 /**
  * Every bundled dictionary, keyed by locale code. English is the contract that
- * `Messages` is derived from; adding a locale is `{ en, ru }` with `ru` typed
- * `satisfies Messages`, which forces it to cover every key.
+ * `Messages` is derived from; adding a locale is one more entry here whose
+ * dictionary is typed `satisfies Messages`, which forces it to cover every key.
  */
-export const dictionaries = { en, ru } satisfies Record<string, Messages>;
+export const dictionaries = { en, de, ru } satisfies Record<string, Messages>;
 
 /** Canonical locale codes — the single source shared by web state and the site. */
 export type Locale = keyof typeof dictionaries;
@@ -34,6 +36,7 @@ export interface LocaleMeta {
  */
 export const LOCALES: ReadonlyArray<LocaleMeta> = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
 ];
 

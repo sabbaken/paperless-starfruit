@@ -134,7 +134,9 @@ export function ApiKeysPage() {
           <DialogHeader>
             <DialogTitle>
               {shown && shownKind
-                ? `${shown.mode === 'edit' ? t('common.edit') : t('common.add')} ${t(`providerKinds.${shownKind}.label`)}`
+                ? t(shown.mode === 'edit' ? 'apiKeys.dialogEdit' : 'apiKeys.dialogAdd', {
+                    provider: t(`providerKinds.${shownKind}.label`),
+                  })
                 : ''}
             </DialogTitle>
             <DialogDescription>{t('apiKeys.encryptedNote')}</DialogDescription>
