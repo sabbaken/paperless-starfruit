@@ -36,25 +36,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.65.0"
   },
-  "pnpm": {
-    "overrides": {
-      "undici": "^7.29.0",
-      "@esbuild-kit/core-utils>esbuild": "^0.25.12"
-    },
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild",
-      "@nestjs/core",
-      "sharp"
-    ],
-    "packageExtensions": {
-      "@hookform/resolvers": {
-        "peerDependencies": {
-          "zod": "*"
-        }
-      }
-    }
-  },
   "lint-staged": {
     "*.{ts,tsx,mts,js,jsx,mjs,cjs,json,css,md,yml,yaml,astro}": "prettier --write"
   }
