@@ -1,3 +1,11 @@
+> ## 🚀 Kiryl Viarenich — Senior Full-Stack Developer
+>
+> **I'm currently open to new opportunities and looking for a job.**
+>
+> Senior full-stack developer with 6 years of experience, strongest in React and Node.js/NestJS, used to owning a feature from the schema through to the screen.
+>
+> 💼 [LinkedIn](https://www.linkedin.com/in/kiryl-viarenich)
+
 # <img src="apps/website/public/paperless-starfruit.png" height="36" alt="" /> Paperless Starfruit
 
 A self-hosted, bring-your-own-keys AI companion for [paperless-ngx](https://docs.paperless-ngx.com/):
