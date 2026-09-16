@@ -24,14 +24,15 @@ RUN pnpm exec turbo run build \
 # Not served here, and `COPY /app` below would carry the sources into the image.
 RUN rm -rf apps/website
 # Drop the dev toolchain: unused at runtime, but scanners flag its CVEs.
-# Both commands needed — `install --prod` strips only the root's devDeps, and
-# `prune --prod` empties each importer's node_modules, which install relinks.
-# Neither reinstalls better-sqlite3, so its compiled binding survives.
+# On pnpm 12 `prune --prod` is the whole step: it strips the root's devDeps as
+# well as each importer's, relinks what is left, and rewrites pnpm-lock.yaml to
+# that production graph. The `install --frozen-lockfile --prod` that pnpm 10
+# needed after it now fails on the rewritten lockfile (ERR_PNPM_OUTDATED_LOCKFILE).
+# It does not reinstall better-sqlite3, so the compiled binding survives.
 #   --ignore-scripts: root `prepare` runs husky, already pruned by then.
 #   confirmModulesPurge=false: pnpm otherwise prompts and hangs (no tty).
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-  pnpm prune --prod --ignore-scripts --config.confirmModulesPurge=false \
-  && pnpm install --frozen-lockfile --prod --ignore-scripts --config.confirmModulesPurge=false
+  pnpm prune --prod --ignore-scripts --config.confirmModulesPurge=false
 
 FROM base AS runtime
 ENV NODE_ENV=production

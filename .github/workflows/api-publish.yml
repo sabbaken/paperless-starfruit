@@ -38,7 +38,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The gate. A tag push does NOT run ci.yml (that one is scoped to `branches:
+  # [master]`), so without this job nothing is ever checked on the way to
+  # ghcr.io — a broken commit could be tagged and published straight to
+  # `latest`. Same commands ci.yml runs, minus `build`, which the image build
+  # below does anyway.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # A manual rebuild names an older tag, and a bare checkout would test
+          # the default branch instead of the code being published.
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm run test
+
   publish:
+    needs: [check]
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the release, checkout the tag, append the image reference to the notes
