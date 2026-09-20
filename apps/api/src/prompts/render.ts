@@ -14,10 +14,12 @@ export function renderTemplate(body: string, vars: Record<string, string>): stri
 }
 
 /** One existing tag offered to the model, with the user's optional usage hint. */
-export interface TagContext {
+export interface TaxonomyContext {
   name: string;
   comment?: string | null;
 }
+
+export type TagContext = TaxonomyContext;
 
 export interface ExtractionVarInput {
   /** Recognised text (new OCR output, or paperless's existing text). */
@@ -25,13 +27,16 @@ export interface ExtractionVarInput {
   language: string;
   /** Existing taxonomy, to steer reuse over invention. */
   allTags: TagContext[];
+  allDocumentTypes: TaxonomyContext[];
   allCorrespondents: string[];
   /** Whether the model may introduce new tags / correspondents (drives `{{tag_policy}}` / `{{correspondent_policy}}`). */
   allowNewTags: boolean;
+  allowNewDocumentTypes: boolean;
   allowNewCorrespondents: boolean;
   /** The document's current metadata in paperless. */
   currentTitle: string;
   currentTags: string[];
+  currentDocumentType: string | null;
   currentCorrespondent: string | null;
   created: string | null;
   filename: string | null;
@@ -46,19 +51,28 @@ const CORRESPONDENT_POLICY = {
   on: 'If none matches, you may introduce a new correspondent.',
   off: 'Do not invent a new correspondent; if none matches, return null.',
 };
+const DOCUMENT_TYPE_POLICY = {
+  on: 'If none fits, you may introduce one new document type.',
+  off: 'Do not invent a document type; if none fits, return null.',
+};
 
 export function extractionVars(i: ExtractionVarInput): Record<string, string> {
   return {
     content: truncateContent(i.content),
     language: i.language,
     all_tags: tagList(i.allTags),
+    all_document_types: taxonomyList(i.allDocumentTypes, 'Document type'),
     all_correspondents: list(i.allCorrespondents),
     tag_policy: i.allowNewTags ? TAG_POLICY.on : TAG_POLICY.off,
     correspondent_policy: i.allowNewCorrespondents
       ? CORRESPONDENT_POLICY.on
       : CORRESPONDENT_POLICY.off,
+    document_type_policy: i.allowNewDocumentTypes
+      ? DOCUMENT_TYPE_POLICY.on
+      : DOCUMENT_TYPE_POLICY.off,
     title: i.currentTitle,
     tags: list(i.currentTags),
+    document_type: orNone(i.currentDocumentType),
     correspondent: orNone(i.currentCorrespondent),
     created: orNone(i.created),
     filename: orNone(i.filename),
@@ -93,16 +107,24 @@ function list(values: string[]): string {
  * ("Existing tags: {{all_tags}}, prefer these.").
  */
 function tagList(tags: TagContext[]): string {
-  if (!tags.length) return '(none)';
-  const hinted = tags.filter((t) => t.comment?.trim());
-  if (!hinted.length) return list(tags.map((t) => t.name));
+  return taxonomyList(tags, 'Tag', 'Other existing tags');
+}
+
+function taxonomyList(
+  items: TaxonomyContext[],
+  heading: string,
+  remainderLabel = 'Other existing document types',
+): string {
+  if (!items.length) return '(none)';
+  const hinted = items.filter((item) => item.comment?.trim());
+  if (!hinted.length) return list(items.map((item) => item.name));
 
   // Tag names go in verbatim (no escaping): the model is asked to echo them
   // back, and an escaped name would no longer match on reconciliation.
-  const rows = hinted.map((t) => `| ${t.name} | ${hintCell(t.comment ?? '')} |`);
-  const lines = ['', '| Tag | When to use it |', '| --- | --- |', ...rows];
-  const plain = tags.filter((t) => !t.comment?.trim());
-  if (plain.length) lines.push('', `Other existing tags: ${list(plain.map((t) => t.name))}`);
+  const rows = hinted.map((item) => `| ${item.name} | ${hintCell(item.comment ?? '')} |`);
+  const lines = ['', `| ${heading} | When to use it |`, '| --- | --- |', ...rows];
+  const plain = items.filter((item) => !item.comment?.trim());
+  if (plain.length) lines.push('', `${remainderLabel}: ${list(plain.map((item) => item.name))}`);
   lines.push('');
   return lines.join('\n');
 }

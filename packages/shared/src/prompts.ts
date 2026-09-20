@@ -20,7 +20,7 @@ export const PROMPT_META: Record<PromptKey, PromptMeta> = {
   [PROMPT_KEY.EXTRACTION]: {
     label: 'Metadata extraction',
     description:
-      'Asks the model for the title, tags, correspondent and date. The response shape is enforced separately, so this prompt is about guidance and which context to include.',
+      'Asks the model for the title, tags, document type, correspondent and date. The response shape is enforced separately, so this prompt is about guidance and which context to include.',
   },
   [PROMPT_KEY.OCR]: {
     label: 'OCR transcription',
@@ -59,6 +59,12 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
       description: 'Every correspondent already in paperless.',
     },
     {
+      name: 'all_document_types',
+      label: 'Existing document types',
+      description:
+        'Every document type already in paperless. Hinted types render as a Markdown table so the model can distinguish similar types.',
+    },
+    {
       name: 'tag_policy',
       label: 'Tag policy',
       description:
@@ -71,11 +77,21 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
         'A sentence stating whether the model may introduce a new correspondent (reflects the “Create new correspondents” setting).',
     },
     {
+      name: 'document_type_policy',
+      label: 'Document type policy',
+      description: 'A sentence stating whether the model may introduce a new document type.',
+    },
+    {
       name: 'title',
       label: 'Current title',
       description: 'The document’s current title in paperless.',
     },
     { name: 'tags', label: 'Current tags', description: 'The document’s current tag names.' },
+    {
+      name: 'document_type',
+      label: 'Current document type',
+      description: 'The document’s current document type, if any.',
+    },
     {
       name: 'correspondent',
       label: 'Current correspondent',
@@ -108,6 +124,7 @@ export const DEFAULT_PROMPTS: Record<PromptKey, string> = {
 Return concise, human-meaningful values:
 - title: a short descriptive title, no file extensions, no reference numbers as the whole title.
 - tags: a few relevant topical tags. Strongly prefer reusing an existing tag listed below when it fits. {{tag_policy}}
+- documentType: exactly one document type that best describes the document, or null. Never return more than one. Prefer an existing type listed below. {{document_type_policy}}
 - correspondent: the organisation or person the document is from (issuer/sender), or null if not evident. Prefer an existing correspondent when it matches. {{correspondent_policy}}
 - date: the document's own date (when it was issued or written). Give YYYY-MM-DD when the day is clear. When only a period is evident (a monthly invoice/statement, or a value like "May 2026"), give YYYY-MM (or YYYY when only the year is known); the first day of that period is filled in automatically, so don't invent a day. The original file name below often encodes this date (e.g. "2023-05-invoice.pdf"). Prefer it as evidence, and fall back to it when the body doesn't state a date. Use null only when no date or period is evident at all. Never use today's date as a fallback.
 
@@ -115,6 +132,7 @@ Write all output in {{language}} (use the document's own language when this is "
 
 Original file name: {{filename}}
 Existing tags: {{all_tags}}
+Existing document types: {{all_document_types}}
 Existing correspondents: {{all_correspondents}}
 
 When the original document is attached as a file or image, treat it as the primary evidence (letterheads, headers, stamps and signatures often carry the correspondent and date) and the transcribed text below as an aid. Long documents may attach only their first and last pages; the text below still covers all of them.

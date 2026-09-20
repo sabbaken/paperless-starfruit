@@ -11,6 +11,7 @@ describe('SettingsService', () => {
       pollIntervalSec: 60,
       autoApply: true,
       createNewTags: false,
+      createNewDocumentTypes: false,
       createNewCorrespondents: true,
       extractionEnabled: true,
       extractMaxPages: 100,

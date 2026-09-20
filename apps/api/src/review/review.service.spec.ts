@@ -16,9 +16,16 @@ const SUGGESTIONS: ReviewSuggestions = {
     { id: 7, name: 'invoice', isNew: false },
     { id: null, name: 'acme', isNew: true },
   ],
+  documentType: { id: 8, name: 'Invoice', isNew: false },
   correspondent: { id: 3, name: 'ACME', isNew: false },
   date: '2024-03-02',
-  current: { title: 'scan_0001', tagNames: ['Old'], correspondentName: null, date: '2024-01-01' },
+  current: {
+    title: 'scan_0001',
+    tagNames: ['Old'],
+    documentTypeName: null,
+    correspondentName: null,
+    date: '2024-01-01',
+  },
 };
 
 function makeReview(blacklist: string[] = []) {
@@ -28,6 +35,7 @@ function makeReview(blacklist: string[] = []) {
     title: 'scan_0001',
     content: 'document preview text',
     tags: [9, TRIGGER_TAG],
+    document_type: null,
     correspondent: null,
     created: '2024-01-01T00:00:00Z',
   };
@@ -52,6 +60,11 @@ function makeReview(blacklist: string[] = []) {
       ),
     ),
     resolveCorrespondent: vi.fn().mockResolvedValue({ id: 3, name: 'ACME', isNew: false }),
+    resolveDocumentType: vi.fn().mockResolvedValue({
+      id: 8,
+      name: 'Invoice',
+      isNew: false,
+    }),
   } as unknown as TaxonomyService;
   const audit = { record: vi.fn() } as unknown as AuditService & {
     record: ReturnType<typeof vi.fn>;
@@ -88,6 +101,7 @@ describe('ReviewService', () => {
     await service.approve(id, {
       title: 'ACME Invoice',
       tagNames: ['invoice', 'acme'],
+      documentTypeName: 'Invoice',
       correspondentName: 'ACME',
       date: '2024-03-02',
     });
@@ -98,6 +112,7 @@ describe('ReviewService', () => {
     expect(patch).toEqual({
       title: 'ACME Invoice',
       tags: [9, 7, 55], // keeps 9, drops trigger 100, adds resolved 7 + 55
+      document_type: 8,
       correspondent: 3,
       created: '2024-03-02', // date-only: no UTC-midnight day shift
     });
@@ -108,7 +123,13 @@ describe('ReviewService', () => {
 
   it('leaves correspondent + date unchanged when omitted', async () => {
     const { service, client, id } = makeReview();
-    await service.approve(id, { title: 'T', tagNames: [], correspondentName: null, date: null });
+    await service.approve(id, {
+      title: 'T',
+      tagNames: [],
+      documentTypeName: null,
+      correspondentName: null,
+      date: null,
+    });
     const [, patch] = client.patchDocument.mock.calls[0];
     expect(patch).not.toHaveProperty('correspondent');
     expect(patch).not.toHaveProperty('created');
@@ -117,9 +138,21 @@ describe('ReviewService', () => {
 
   it('refuses to approve an item that is not pending', async () => {
     const { service, id } = makeReview();
-    await service.approve(id, { title: 'T', tagNames: [], correspondentName: null, date: null });
+    await service.approve(id, {
+      title: 'T',
+      tagNames: [],
+      documentTypeName: null,
+      correspondentName: null,
+      date: null,
+    });
     await expect(
-      service.approve(id, { title: 'T', tagNames: [], correspondentName: null, date: null }),
+      service.approve(id, {
+        title: 'T',
+        tagNames: [],
+        documentTypeName: null,
+        correspondentName: null,
+        date: null,
+      }),
     ).rejects.toThrow(/already approved/i);
   });
 

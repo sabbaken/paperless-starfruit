@@ -14,11 +14,15 @@ export type ResolvedTag = z.infer<typeof resolvedTagSchema>;
 
 export const resolvedCorrespondentSchema = resolvedTagSchema;
 export type ResolvedCorrespondent = z.infer<typeof resolvedCorrespondentSchema>;
+export const resolvedDocumentTypeSchema = resolvedTagSchema;
+export type ResolvedDocumentType = z.infer<typeof resolvedDocumentTypeSchema>;
 
 /** The document's metadata before processing, the left-hand side of the diff. */
 export const reviewCurrentSchema = z.object({
   title: z.string(),
   tagNames: z.array(z.string()),
+  // Defaults keep review items created by older releases readable.
+  documentTypeName: z.string().nullable().default(null),
   correspondentName: z.string().nullable(),
   date: z.string().nullable(),
 });
@@ -31,6 +35,7 @@ export const reviewCurrentSchema = z.object({
 export const reviewSuggestionsSchema = z.object({
   title: z.string(),
   tags: z.array(resolvedTagSchema),
+  documentType: resolvedDocumentTypeSchema.nullable().default(null),
   correspondent: resolvedCorrespondentSchema.nullable(),
   date: z.string().nullable(),
   current: reviewCurrentSchema,
@@ -63,6 +68,7 @@ export type ReviewDetail = z.infer<typeof reviewDetailSchema>;
 export const reviewApproveSchema = z.object({
   title: z.string().min(1),
   tagNames: z.array(z.string()),
+  documentTypeName: z.string().nullable().default(null),
   correspondentName: z.string().nullable(),
   date: z
     .string()

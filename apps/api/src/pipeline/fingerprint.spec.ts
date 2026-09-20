@@ -45,15 +45,15 @@ describe('configFingerprint', () => {
   });
 
   it('pins the exact byte format: a silent format change would mass-reprocess every install', () => {
-    expect(configFingerprint({ llm, ocr: null })).toBe('v2|llm:anthropic/claude-haiku-4-5|ocr:off');
+    expect(configFingerprint({ llm, ocr: null })).toBe('v3|llm:anthropic/claude-haiku-4-5|ocr:off');
     expect(configFingerprint({ llm, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } })).toBe(
-      'v2|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest',
+      'v3|llm:anthropic/claude-haiku-4-5|ocr:mistral/mistral-ocr-latest',
     );
     expect(
       configFingerprint({ llm: null, ocr: { kind: 'mistral', model: 'mistral-ocr-latest' } }),
-    ).toBe('v2|llm:off|ocr:mistral/mistral-ocr-latest');
+    ).toBe('v3|llm:off|ocr:mistral/mistral-ocr-latest');
     expect(configFingerprint({ llm, ocr: null, visual: 'full' })).toBe(
-      'v2|llm:anthropic/claude-haiku-4-5|ocr:off|visual:full',
+      'v3|llm:anthropic/claude-haiku-4-5|ocr:off|visual:full',
     );
   });
 
@@ -93,6 +93,17 @@ describe('configFingerprint', () => {
     const b = configFingerprint({ llm, hiddenDigest: hiddenTagsDigest(new Set([1, 2])) });
     expect(a).not.toBe(none);
     expect(a).not.toBe(b);
+  });
+
+  it('changes when any create-new policy changes', () => {
+    const base = { tags: false, documentTypes: false, correspondents: true };
+    const a = configFingerprint({ llm, creationPolicy: base });
+    const b = configFingerprint({
+      llm,
+      creationPolicy: { ...base, documentTypes: true },
+    });
+    expect(a).not.toBe(b);
+    expect(a).toContain('|create:001');
   });
 });
 

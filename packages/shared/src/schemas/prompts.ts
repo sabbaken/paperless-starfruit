@@ -54,6 +54,7 @@ export const promptTestResultSchema = z.object({
     .object({
       title: z.string(),
       tags: z.array(z.string()),
+      documentType: z.string().nullable(),
       correspondent: z.string().nullable(),
       date: z.string().nullable(),
     })

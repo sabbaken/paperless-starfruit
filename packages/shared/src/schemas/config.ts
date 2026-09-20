@@ -154,6 +154,7 @@ export const settingsSchema = z.object({
   pollIntervalSec: z.number().int().min(15).default(60),
   autoApply: z.boolean().default(true),
   createNewTags: z.boolean().default(false),
+  createNewDocumentTypes: z.boolean().default(false),
   createNewCorrespondents: z.boolean().default(true),
   /** Run LLM metadata extraction; off = OCR-only mode (text write-back, no metadata). */
   extractionEnabled: z.boolean().default(true),

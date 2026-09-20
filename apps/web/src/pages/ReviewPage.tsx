@@ -197,6 +197,9 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
   const [correspondent, setCorrespondent] = useState(
     s.correspondent?.name ?? s.current.correspondentName ?? '',
   );
+  const [documentType, setDocumentType] = useState(
+    s.documentType?.name ?? s.current.documentTypeName ?? '',
+  );
   const [date, setDate] = useState(s.date ?? '');
 
   const approve = useApproveReview();
@@ -210,6 +213,7 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
         payload: {
           title: title.trim(),
           tagNames: [...tags],
+          documentTypeName: documentType.trim() || null,
           correspondentName: correspondent.trim() || null,
           date: date || null,
         },
@@ -313,6 +317,18 @@ function ReviewEditor({ detail, onClose }: { detail: ReviewDetail; onClose: () =
                 </p>
               )}
             </div>
+
+            <Field
+              label={t('review.fieldDocumentType')}
+              current={s.current.documentTypeName}
+              changed={s.current.documentTypeName !== (documentType || null)}
+            >
+              <Input
+                value={documentType}
+                placeholder={t('review.nonePlaceholder')}
+                onChange={(e) => setDocumentType(e.target.value)}
+              />
+            </Field>
 
             <Field
               label={t('review.fieldCorrespondent')}

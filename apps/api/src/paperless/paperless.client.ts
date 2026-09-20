@@ -6,10 +6,12 @@ import {
   paperlessCorrespondentSchema,
   paperlessDocumentIdSchema,
   paperlessDocumentSchema,
+  paperlessDocumentTypeSchema,
   paperlessTagSchema,
   type Paginated,
   type PaperlessCorrespondent,
   type PaperlessDocument,
+  type PaperlessDocumentType,
   type PaperlessTag,
 } from './paperless.schemas';
 
@@ -41,6 +43,7 @@ export interface ListDocumentsParams {
 export interface DocumentPatch {
   title?: string;
   tags?: number[];
+  document_type?: number | null;
   correspondent?: number | null;
   created?: string;
   content?: string;
@@ -95,6 +98,26 @@ export class PaperlessClient {
 
   async updateTag(id: number, patch: { name?: string; color?: string }): Promise<PaperlessTag> {
     const { data } = await this.request(`/api/tags/${id}/`, paperlessTagSchema, {
+      method: 'PATCH',
+      body: patch,
+    });
+    return data;
+  }
+
+  listDocumentTypes(): Promise<PaperlessDocumentType[]> {
+    return this.collectAll('/api/document_types/', paperlessDocumentTypeSchema);
+  }
+
+  async createDocumentType(name: string): Promise<PaperlessDocumentType> {
+    const { data } = await this.request('/api/document_types/', paperlessDocumentTypeSchema, {
+      method: 'POST',
+      body: { name },
+    });
+    return data;
+  }
+
+  async updateDocumentType(id: number, patch: { name: string }): Promise<PaperlessDocumentType> {
+    const { data } = await this.request(`/api/document_types/${id}/`, paperlessDocumentTypeSchema, {
       method: 'PATCH',
       body: patch,
     });

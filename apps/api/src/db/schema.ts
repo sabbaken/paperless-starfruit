@@ -67,6 +67,14 @@ export const tagComment = sqliteTable('tag_comment', {
   updatedAt: timestamp('updated_at'),
 });
 
+/** Local AI guidance for a paperless document type. */
+export const documentTypeComment = sqliteTable('document_type_comment', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  documentTypeId: integer('document_type_id').notNull().unique(),
+  comment: text('comment').notNull(),
+  updatedAt: timestamp('updated_at'),
+});
+
 /**
  * A paperless tag hidden from the AI: excluded from the extraction prompt
  * (both the offered taxonomy and the document's current tags) and stripped
@@ -79,6 +87,13 @@ export const hiddenTag = sqliteTable('hidden_tag', {
   createdAt: timestamp('created_at'),
 });
 
+/** A paperless document type excluded from LLM context and suggestions. */
+export const hiddenDocumentType = sqliteTable('hidden_document_type', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  documentTypeId: integer('document_type_id').notNull().unique(),
+  createdAt: timestamp('created_at'),
+});
+
 /** Single-row application settings (id = 1). */
 export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(),
@@ -87,6 +102,9 @@ export const settings = sqliteTable('settings', {
   pollIntervalSec: integer('poll_interval_sec').notNull().default(60),
   autoApply: integer('auto_apply', { mode: 'boolean' }).notNull().default(true),
   createNewTags: integer('create_new_tags', { mode: 'boolean' }).notNull().default(false),
+  createNewDocumentTypes: integer('create_new_document_types', { mode: 'boolean' })
+    .notNull()
+    .default(false),
   createNewCorrespondents: integer('create_new_correspondents', { mode: 'boolean' })
     .notNull()
     .default(true),

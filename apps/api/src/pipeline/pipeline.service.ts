@@ -21,6 +21,8 @@ import { buildLanguageModel, type ResolvedProvider } from '../providers/model.fa
 import { SettingsService } from '../settings/settings.service';
 import { HiddenTagsService } from '../taxonomy/hidden-tags.service';
 import { TagCommentsService } from '../taxonomy/tag-comments.service';
+import { DocumentTypeCommentsService } from '../taxonomy/document-type-comments.service';
+import { HiddenDocumentTypesService } from '../taxonomy/hidden-document-types.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { mergeTagIds } from '../taxonomy/tags';
 import { ReviewService } from '../review/review.service';
@@ -68,6 +70,8 @@ export class PipelineService {
     private readonly taxonomy: TaxonomyService,
     private readonly tagComments: TagCommentsService,
     private readonly hiddenTags: HiddenTagsService,
+    private readonly documentTypeComments: DocumentTypeCommentsService,
+    private readonly hiddenDocumentTypes: HiddenDocumentTypesService,
     private readonly review: ReviewService,
     private readonly queue: QueueService,
     private readonly audit: AuditService,
@@ -270,11 +274,15 @@ export class PipelineService {
     // (only while extraction runs): editing a hint and re-tagging a document
     // must re-run it, not skip-as-identical.
     const tagHints = provider ? this.tagComments.map() : new Map<number, string>();
+    const documentTypeHints = provider
+      ? this.documentTypeComments.map()
+      : new Map<number, string>();
     // Tags the AI must never know about: kept out of the offered taxonomy AND
     // the document's current tags below, and stripped from suggestions after
     // extraction. Loaded once so the prompt and the reconciliation agree even
     // if the set is edited mid-run.
     const hiddenTagIds = provider ? this.hiddenTags.ids() : new Set<number>();
+    const hiddenDocumentTypeIds = provider ? this.hiddenDocumentTypes.ids() : new Set<number>();
     // How much of the original the extraction model gets to see (full/trimmed/
     // none). The OCR page limit does double duty as the threshold: both gates
     // exist to keep oversized files away from vision models, and an original
@@ -290,7 +298,16 @@ export class PipelineService {
       llm: provider ? { kind: provider.kind, model: provider.model } : null,
       ocr: ocrProvider ? { kind: ocrProvider.kind, model: ocrProvider.model } : null,
       hintsDigest: tagHintsDigest(tagHints),
+      documentTypeHintsDigest: tagHintsDigest(documentTypeHints),
       hiddenDigest: hiddenTagsDigest(hiddenTagIds),
+      hiddenDocumentTypesDigest: hiddenTagsDigest(hiddenDocumentTypeIds),
+      creationPolicy: provider
+        ? {
+            tags: settings.createNewTags,
+            documentTypes: settings.createNewDocumentTypes,
+            correspondents: settings.createNewCorrespondents,
+          }
+        : null,
       visual,
       attachMaxMb: settings.attachMaxMb,
     });
@@ -351,17 +368,26 @@ export class PipelineService {
         allTags: snap.tags
           .filter((t) => !isTrigger(t.id) && !isHidden(t.id))
           .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
+        allDocumentTypes: snap.documentTypes
+          .filter((type) => !hiddenDocumentTypeIds.has(type.id))
+          .map((type) => ({
+            name: type.name,
+            comment: documentTypeHints.get(type.id) ?? null,
+          })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         // The prompt reflects the user's intent (the raw setting), not the
         // auto-gated `create` below, so in review mode the model still proposes
         // new tags/correspondents the human can approve.
         allowNewTags: settings.createNewTags,
+        allowNewDocumentTypes: settings.createNewDocumentTypes,
         allowNewCorrespondents: settings.createNewCorrespondents,
         currentTitle: doc.title,
         currentTags: doc.tags
           .filter((id) => !isTrigger(id) && !isHidden(id))
           .map(tagName)
           .filter((n): n is string => !!n),
+        currentDocumentType:
+          snap.documentTypes.find((type) => type.id === doc.document_type)?.name ?? null,
         currentCorrespondent:
           snap.correspondents.find((c) => c.id === doc.correspondent)?.name ?? null,
         created: doc.created ? doc.created.slice(0, 10) : null,
@@ -417,6 +443,7 @@ export class PipelineService {
     // Only create new entities without a human gate (auto mode), and only the
     // kinds the user opted into; tags and correspondents are gated separately.
     const createTags = isAuto && settings.createNewTags;
+    const createDocumentTypes = isAuto && settings.createNewDocumentTypes;
     const createCorrespondents = isAuto && settings.createNewCorrespondents;
 
     // The model never saw hidden tags, but it can still guess one's name from
@@ -426,6 +453,15 @@ export class PipelineService {
     const norm = (s: string) => s.trim().toLowerCase();
     const hiddenNames = new Set(snap.tags.filter((t) => isHidden(t.id)).map((t) => norm(t.name)));
     const suggestedTags = extraction.tags.filter((name) => !hiddenNames.has(norm(name)));
+    const hiddenDocumentTypeNames = new Set(
+      snap.documentTypes
+        .filter((type) => hiddenDocumentTypeIds.has(type.id))
+        .map((type) => norm(type.name)),
+    );
+    const suggestedDocumentType =
+      extraction.documentType && !hiddenDocumentTypeNames.has(norm(extraction.documentType))
+        ? extraction.documentType
+        : null;
 
     // Resolve against the same snapshot the prompt was rendered from: a Tags-page
     // edit during the (long) LLM call must not shift the ground under this job:
@@ -438,6 +474,11 @@ export class PipelineService {
       client,
       extraction.correspondent,
       { create: createCorrespondents, blacklist: settings.correspondentBlacklist, snapshot: snap },
+    );
+    const resolvedDocumentType = await this.taxonomy.resolveDocumentType(
+      client,
+      suggestedDocumentType,
+      { create: createDocumentTypes, snapshot: snap },
     );
 
     const auditBase = {
@@ -454,7 +495,7 @@ export class PipelineService {
       await this.applyAuto(
         client,
         doc,
-        { extraction, resolvedTags, resolvedCorrespondent },
+        { extraction, resolvedTags, resolvedCorrespondent, resolvedDocumentType },
         triggerTagId,
         ocrChanged ? text : undefined,
       );
@@ -470,6 +511,7 @@ export class PipelineService {
     const suggestions: ReviewSuggestions = {
       title: extraction.title,
       tags: resolvedTags,
+      documentType: resolvedDocumentType,
       correspondent: resolvedCorrespondent,
       date: extraction.date,
       current: {
@@ -478,6 +520,7 @@ export class PipelineService {
           client,
           doc.tags.filter((id) => !isTrigger(id)),
         ),
+        documentTypeName: await this.taxonomy.documentTypeName(client, doc.document_type),
         correspondentName: await this.taxonomy.correspondentName(client, doc.correspondent),
         date: doc.created ? doc.created.slice(0, 10) : null,
       },
@@ -514,6 +557,7 @@ export class PipelineService {
       extraction: Extraction;
       resolvedTags: ResolvedTag[];
       resolvedCorrespondent: ResolvedTag | null;
+      resolvedDocumentType: ResolvedTag | null;
     },
     triggerTagId: number,
     /** New OCR text to write back in the same PATCH, when it changed. */
@@ -527,6 +571,9 @@ export class PipelineService {
       tags: mergeTagIds(doc.tags, addIds, [triggerTagId]),
     };
     if (s.resolvedCorrespondent?.id != null) patch.correspondent = s.resolvedCorrespondent.id;
+    if (s.resolvedDocumentType?.id != null) {
+      patch.document_type = s.resolvedDocumentType.id;
+    }
     // Send a date-only value: a UTC-midnight datetime would render a day early
     // on UTC-behind servers (paperless stores `created` in the server timezone).
     if (s.extraction.date) patch.created = s.extraction.date;

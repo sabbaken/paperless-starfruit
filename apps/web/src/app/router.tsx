@@ -12,6 +12,7 @@ import { ProcessingPage } from '@/pages/ProcessingPage';
 import { PromptsPage } from '@/pages/PromptsPage';
 import { ReviewPage } from '@/pages/ReviewPage';
 import { TagsPage } from '@/pages/TagsPage';
+import { DocumentTypesPage } from '@/pages/DocumentTypesPage';
 
 /** The regular app shell: connection gate + sidebar chrome around the routed page. */
 function AppChrome() {
@@ -47,6 +48,7 @@ export function AppRouter() {
             <Route path="/review" element={<ReviewPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/tags" element={<TagsPage />} />
+            <Route path="/document-types" element={<DocumentTypesPage />} />
             <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
             <Route path="/settings/general" element={<GeneralPage />} />
             <Route path="/settings/connection" element={<ConnectionPage />} />

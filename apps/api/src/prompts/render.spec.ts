@@ -17,11 +17,14 @@ describe('extractionVars', () => {
     content: 'body',
     language: 'auto',
     allTags: [{ name: 'Invoice' }, { name: 'Tax' }],
+    allDocumentTypes: [{ name: 'Invoice' }],
     allCorrespondents: ['ACME'],
     allowNewTags: true,
+    allowNewDocumentTypes: false,
     allowNewCorrespondents: true,
     currentTitle: 'scan_0001',
     currentTags: [],
+    currentDocumentType: null,
     currentCorrespondent: null,
     created: null,
     filename: null,
@@ -31,9 +34,25 @@ describe('extractionVars', () => {
     const v = extractionVars(base);
     expect(v.all_tags).toBe('Invoice, Tax');
     expect(v.tags).toBe('(none)');
+    expect(v.all_document_types).toBe('Invoice');
+    expect(v.document_type).toBe('(none)');
     expect(v.correspondent).toBe('(none)');
     expect(v.filename).toBe('(none)');
     expect(v.title).toBe('scan_0001');
+  });
+
+  it('renders hinted document types and their singular creation policy', () => {
+    const v = extractionVars({
+      ...base,
+      allDocumentTypes: [{ name: 'Invoice', comment: 'Requests payment' }, { name: 'Receipt' }],
+      allowNewDocumentTypes: true,
+      currentDocumentType: 'Receipt',
+    });
+    expect(v.all_document_types).toContain('| Document type | When to use it |');
+    expect(v.all_document_types).toContain('| Invoice | Requests payment |');
+    expect(v.all_document_types).toContain('Other existing document types: Receipt');
+    expect(v.document_type_policy).toContain('one new document type');
+    expect(v.document_type).toBe('Receipt');
   });
 
   it('expands the create-new toggles into directive sentences, independently', () => {

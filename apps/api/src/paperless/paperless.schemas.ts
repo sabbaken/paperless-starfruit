@@ -34,6 +34,13 @@ export const paperlessTagSchema = z.object({
 });
 export type PaperlessTag = z.infer<typeof paperlessTagSchema>;
 
+export const paperlessDocumentTypeSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  document_count: z.number().int().optional(),
+});
+export type PaperlessDocumentType = z.infer<typeof paperlessDocumentTypeSchema>;
+
 export const paperlessCorrespondentSchema = z.object({
   id: z.number().int(),
   name: z.string(),
@@ -45,6 +52,7 @@ export const paperlessDocumentSchema = z.object({
   title: z.string(),
   content: z.string().nullable().optional(),
   tags: z.array(z.number().int()),
+  document_type: z.number().int().nullable(),
   correspondent: z.number().int().nullable(),
   created: z.string(),
   added: z.string().optional(),

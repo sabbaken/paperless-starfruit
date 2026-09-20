@@ -154,11 +154,15 @@ export class ReviewService {
           blacklist,
         })
       : null;
+    const documentType = payload.documentTypeName
+      ? await this.taxonomy.resolveDocumentType(client, payload.documentTypeName, { create: true })
+      : null;
 
     const addIds = resolvedTags.map((t) => t.id).filter((x): x is number => x != null);
     const patch = {
       title: payload.title,
       tags: mergeTagIds(doc.tags, addIds, [triggerTagId]),
+      ...(documentType?.id != null ? { document_type: documentType.id } : {}),
       ...(correspondent?.id != null ? { correspondent: correspondent.id } : {}),
       // Date-only: a UTC-midnight datetime shifts a day on UTC-behind servers.
       ...(payload.date ? { created: payload.date } : {}),
@@ -208,6 +212,7 @@ function suggestionToApproval(s: ReviewSuggestions): ReviewApprove {
   return {
     title: s.title,
     tagNames: s.tags.map((t) => t.name),
+    documentTypeName: s.documentType?.name ?? null,
     correspondentName: s.correspondent?.name ?? null,
     date: s.date,
   };

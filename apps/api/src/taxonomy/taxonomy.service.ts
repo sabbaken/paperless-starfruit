@@ -5,11 +5,16 @@ import {
   type ResolvedTag,
 } from '@paperless-starfruit/shared';
 import type { PaperlessClient } from '../paperless/paperless.client';
-import type { PaperlessCorrespondent, PaperlessTag } from '../paperless/paperless.schemas';
+import type {
+  PaperlessCorrespondent,
+  PaperlessDocumentType,
+  PaperlessTag,
+} from '../paperless/paperless.schemas';
 
 /** One consistent view of the paperless taxonomy (what `getSnapshot` returns). */
 export interface TaxonomySnapshot {
   tags: PaperlessTag[];
+  documentTypes: PaperlessDocumentType[];
   correspondents: PaperlessCorrespondent[];
 }
 
@@ -36,11 +41,12 @@ export class TaxonomyService {
     if (!force && this.snapshot && Date.now() - this.snapshot.fetchedAt < SNAPSHOT_TTL_MS) {
       return this.snapshot;
     }
-    const [tags, correspondents] = await Promise.all([
+    const [tags, documentTypes, correspondents] = await Promise.all([
       client.listTags(),
+      client.listDocumentTypes(),
       client.listCorrespondents(),
     ]);
-    this.snapshot = { fetchedAt: Date.now(), tags, correspondents };
+    this.snapshot = { fetchedAt: Date.now(), tags, documentTypes, correspondents };
     return this.snapshot;
   }
 
@@ -106,6 +112,26 @@ export class TaxonomyService {
     return { id: null, name: trimmed, isNew: true };
   }
 
+  /** Resolve the single suggested document type, optionally creating it. */
+  async resolveDocumentType(
+    client: PaperlessClient,
+    name: string | null,
+    opts: { create: boolean; snapshot?: TaxonomySnapshot },
+  ): Promise<ResolvedTag | null> {
+    const trimmed = name?.trim();
+    if (!trimmed) return null;
+
+    const snap = opts.snapshot ?? (await this.getSnapshot(client));
+    const existing = snap.documentTypes.find((type) => norm(type.name) === norm(trimmed));
+    if (existing) return { id: existing.id, name: existing.name, isNew: false };
+    if (opts.create) {
+      const created = await client.createDocumentType(trimmed);
+      snap.documentTypes.push(created);
+      return { id: created.id, name: created.name, isNew: true };
+    }
+    return { id: null, name: trimmed, isNew: true };
+  }
+
   /** Names for a set of tag ids (for the review diff's "current" side). */
   async tagNames(client: PaperlessClient, ids: number[]): Promise<string[]> {
     const snap = await this.getSnapshot(client);
@@ -118,6 +144,12 @@ export class TaxonomyService {
     if (id == null) return null;
     const snap = await this.getSnapshot(client);
     return snap.correspondents.find((c) => c.id === id)?.name ?? null;
+  }
+
+  async documentTypeName(client: PaperlessClient, id: number | null): Promise<string | null> {
+    if (id == null) return null;
+    const snap = await this.getSnapshot(client);
+    return snap.documentTypes.find((type) => type.id === id)?.name ?? null;
   }
 
   /** Drop caches (e.g. after the paperless connection changes). */

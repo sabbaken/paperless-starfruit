@@ -9,6 +9,7 @@ import {
   LogOut,
   SlidersHorizontal,
   Tags,
+  FileType2,
 } from 'lucide-react';
 import { useConnection } from '@/api/connection';
 import { useLogout } from '@/api/auth';
@@ -68,6 +69,11 @@ const buildMeta = (
     description: t('nav.meta.tags.description'),
     width: 'wide',
   },
+  '/document-types': {
+    title: t('nav.meta.documentTypes.title'),
+    description: t('nav.meta.documentTypes.description'),
+    width: 'wide',
+  },
   '/settings/general': {
     title: t('nav.meta.general.title'),
     description: t('nav.meta.general.description'),
@@ -124,6 +130,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     { to: '/review', label: t('nav.labels.review'), icon: Inbox, badge: stats.data?.pendingReview },
     { to: '/history', label: t('nav.labels.history'), icon: History },
     { to: '/tags', label: t('nav.labels.tags'), icon: Tags },
+    { to: '/document-types', label: t('nav.labels.documentTypes'), icon: FileType2 },
     {
       to: '/settings',
       label: t('nav.labels.settings'),

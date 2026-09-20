@@ -417,6 +417,10 @@ function TestResult({ result, promptKey }: { result: PromptTestResult; promptKey
             value={result.extraction.tags.length ? result.extraction.tags.join(', ') : '—'}
           />
           <Field
+            label={t('prompts.fieldDocumentType')}
+            value={result.extraction.documentType ?? '—'}
+          />
+          <Field
             label={t('prompts.fieldCorrespondent')}
             value={result.extraction.correspondent ?? '—'}
           />

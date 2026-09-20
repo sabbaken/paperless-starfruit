@@ -12,6 +12,8 @@ import type { LlmService } from '../providers/llm.service';
 import type { OcrService } from '../providers/ocr.service';
 import type { HiddenTagsService } from '../taxonomy/hidden-tags.service';
 import type { TagCommentsService } from '../taxonomy/tag-comments.service';
+import type { DocumentTypeCommentsService } from '../taxonomy/document-type-comments.service';
+import type { HiddenDocumentTypesService } from '../taxonomy/hidden-document-types.service';
 import type { TaxonomyService } from '../taxonomy/taxonomy.service';
 import type { ReviewService } from '../review/review.service';
 import type { QueueService } from '../queue/queue.service';
@@ -34,6 +36,7 @@ const DEFAULT_SETTINGS: Settings = {
   pollIntervalSec: 60,
   autoApply: false,
   createNewTags: false,
+  createNewDocumentTypes: false,
   createNewCorrespondents: true,
   extractionEnabled: true,
   extractMaxPages: null,
@@ -54,6 +57,7 @@ const DEFAULT_DOC: PaperlessDocument = {
   title: 'scan_0001',
   content: 'Invoice from ACME total 42 dated 2024-03-02',
   tags: [TRIGGER_TAG],
+  document_type: null,
   correspondent: null,
   created: '2024-01-01T00:00:00Z',
 };
@@ -61,6 +65,7 @@ const DEFAULT_DOC: PaperlessDocument = {
 const EXTRACTION = {
   title: 'ACME Invoice',
   tags: ['invoice'],
+  documentType: 'Invoice',
   correspondent: 'ACME',
   date: '2024-03-02',
 };
@@ -122,6 +127,7 @@ function makePipeline(o: Overrides = {}) {
         { id: 9, name: 'Existing' },
         { id: TRIGGER_TAG, name: 'psf-process' },
       ],
+      documentTypes: [{ id: 6, name: 'Invoice' }],
       correspondents: [{ id: 3, name: 'ACME' }],
     }),
     resolveTags: vi
@@ -134,7 +140,13 @@ function makePipeline(o: Overrides = {}) {
           ? { id: 3, name: 'ACME', isNew: false }
           : o.resolvedCorrespondent,
       ),
+    resolveDocumentType: vi.fn().mockResolvedValue({
+      id: 6,
+      name: 'Invoice',
+      isNew: false,
+    }),
     tagNames: vi.fn().mockResolvedValue(['Existing']),
+    documentTypeName: vi.fn().mockResolvedValue(null),
     correspondentName: vi.fn().mockResolvedValue(null),
   } as unknown as TaxonomyService;
 
@@ -158,6 +170,12 @@ function makePipeline(o: Overrides = {}) {
   const hiddenTags = {
     ids: vi.fn().mockReturnValue(new Set(o.hidden ?? [])),
   } as unknown as HiddenTagsService;
+  const documentTypeComments = {
+    map: vi.fn().mockReturnValue(new Map()),
+  } as unknown as DocumentTypeCommentsService;
+  const hiddenDocumentTypes = {
+    ids: vi.fn().mockReturnValue(new Set()),
+  } as unknown as HiddenDocumentTypesService;
 
   const pipeline = new PipelineService(
     connection,
@@ -168,6 +186,8 @@ function makePipeline(o: Overrides = {}) {
     taxonomy,
     tagComments,
     hiddenTags,
+    documentTypeComments,
+    hiddenDocumentTypes,
     review,
     queue,
     audit,
@@ -198,6 +218,7 @@ describe('PipelineService.process', () => {
     expect(patch).toEqual({
       title: 'ACME Invoice',
       tags: [9, 7], // keeps existing 9, drops trigger 100, adds suggested 7
+      document_type: 6,
       correspondent: 3,
       created: '2024-03-02', // date-only: no UTC-midnight day shift
     });

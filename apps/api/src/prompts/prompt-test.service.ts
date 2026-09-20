@@ -21,6 +21,8 @@ import { buildLanguageModel, type ResolvedProvider } from '../providers/model.fa
 import { SettingsService } from '../settings/settings.service';
 import { HiddenTagsService } from '../taxonomy/hidden-tags.service';
 import { TagCommentsService } from '../taxonomy/tag-comments.service';
+import { DocumentTypeCommentsService } from '../taxonomy/document-type-comments.service';
+import { HiddenDocumentTypesService } from '../taxonomy/hidden-document-types.service';
 import { TaxonomyService } from '../taxonomy/taxonomy.service';
 import { PromptsService } from './prompts.service';
 import { extractionVars, ocrVars, renderTemplate } from './render';
@@ -42,6 +44,8 @@ export class PromptTestService {
     private readonly taxonomy: TaxonomyService,
     private readonly tagComments: TagCommentsService,
     private readonly hiddenTags: HiddenTagsService,
+    private readonly documentTypeComments: DocumentTypeCommentsService,
+    private readonly hiddenDocumentTypes: HiddenDocumentTypesService,
     private readonly prompts: PromptsService,
   ) {}
 
@@ -76,6 +80,8 @@ export class PromptTestService {
     // Mirror the pipeline: hidden tags never reach the rendered prompt, so the
     // preview shows exactly what a real run would send.
     const hiddenIds = this.hiddenTags.ids();
+    const documentTypeHints = this.documentTypeComments.map();
+    const hiddenDocumentTypeIds = this.hiddenDocumentTypes.ids();
     const excluded = (id: number) => triggerIds.has(id) || hiddenIds.has(id);
 
     const rendered = renderTemplate(
@@ -86,14 +92,23 @@ export class PromptTestService {
         allTags: snap.tags
           .filter((t) => !excluded(t.id))
           .map((t) => ({ name: t.name, comment: tagHints.get(t.id) ?? null })),
+        allDocumentTypes: snap.documentTypes
+          .filter((type) => !hiddenDocumentTypeIds.has(type.id))
+          .map((type) => ({
+            name: type.name,
+            comment: documentTypeHints.get(type.id) ?? null,
+          })),
         allCorrespondents: snap.correspondents.map((c) => c.name),
         allowNewTags: settings.createNewTags,
+        allowNewDocumentTypes: settings.createNewDocumentTypes,
         allowNewCorrespondents: settings.createNewCorrespondents,
         currentTitle: doc.title,
         currentTags: doc.tags
           .filter((id) => !excluded(id))
           .map(tagName)
           .filter((n): n is string => !!n),
+        currentDocumentType:
+          snap.documentTypes.find((type) => type.id === doc.document_type)?.name ?? null,
         currentCorrespondent:
           snap.correspondents.find((c) => c.id === doc.correspondent)?.name ?? null,
         created: doc.created ? doc.created.slice(0, 10) : null,

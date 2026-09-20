@@ -5,17 +5,22 @@ import { TaxonomyService } from './taxonomy.service';
 function fakeClient(
   tags: { id: number; name: string }[] = [],
   correspondents: { id: number; name: string }[] = [],
+  documentTypes: { id: number; name: string }[] = [],
 ) {
   let tagSeq = 1000;
   let corrSeq = 2000;
+  let typeSeq = 3000;
   return {
     listTags: vi.fn().mockResolvedValue(tags),
+    listDocumentTypes: vi.fn().mockResolvedValue(documentTypes),
     listCorrespondents: vi.fn().mockResolvedValue(correspondents),
     createTag: vi.fn((name: string) => Promise.resolve({ id: ++tagSeq, name })),
+    createDocumentType: vi.fn((name: string) => Promise.resolve({ id: ++typeSeq, name })),
     createCorrespondent: vi.fn((name: string) => Promise.resolve({ id: ++corrSeq, name })),
   } as unknown as PaperlessClient & {
     listTags: ReturnType<typeof vi.fn>;
     createTag: ReturnType<typeof vi.fn>;
+    createDocumentType: ReturnType<typeof vi.fn>;
     createCorrespondent: ReturnType<typeof vi.fn>;
   };
 }
@@ -69,6 +74,20 @@ describe('TaxonomyService', () => {
     });
     expect(out).toBeNull();
     expect(client.createCorrespondent).not.toHaveBeenCalled();
+  });
+
+  it('resolves exactly one existing document type case-insensitively', async () => {
+    const client = fakeClient([], [], [{ id: 12, name: 'Invoice' }]);
+    const out = await svc.resolveDocumentType(client, 'invoice', { create: false });
+    expect(out).toEqual({ id: 12, name: 'Invoice', isNew: false });
+    expect(client.createDocumentType).not.toHaveBeenCalled();
+  });
+
+  it('defers creation of a missing document type without returning an array', async () => {
+    const client = fakeClient();
+    const out = await svc.resolveDocumentType(client, 'Statement', { create: false });
+    expect(out).toEqual({ id: null, name: 'Statement', isNew: true });
+    expect(Array.isArray(out)).toBe(false);
   });
 
   it('resolves an existing correspondent', async () => {

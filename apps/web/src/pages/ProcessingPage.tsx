@@ -197,6 +197,16 @@ function PipelineStepper({
               />
             </div>
             <div className="py-3">
+              <SwitchRow
+                label={t('processing.extraction.createNewDocumentTypes')}
+                checked={form.createNewDocumentTypes}
+                onCheckedChange={(v) => {
+                  setForm((f) => ({ ...f, createNewDocumentTypes: v }));
+                  commit({ createNewDocumentTypes: v });
+                }}
+              />
+            </div>
+            <div className="py-3">
               <MaxPagesField
                 label={t('processing.extraction.skipAbove')}
                 hint={t('processing.extraction.skipAboveHint')}

@@ -70,6 +70,7 @@ function toSettings(row: SettingsRow): Settings {
     pollIntervalSec: row.pollIntervalSec,
     autoApply: row.autoApply,
     createNewTags: row.createNewTags,
+    createNewDocumentTypes: row.createNewDocumentTypes,
     createNewCorrespondents: row.createNewCorrespondents,
     extractionEnabled: row.extractionEnabled,
     extractMaxPages: row.extractMaxPages ?? null,

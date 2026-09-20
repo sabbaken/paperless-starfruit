@@ -2,6 +2,7 @@ export * from './audit';
 export * from './auth';
 export * from './extraction';
 export * from './config';
+export * from './document-types';
 export * from './job';
 export * from './models';
 export * from './prompts';
