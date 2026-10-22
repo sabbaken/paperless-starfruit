@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useMatch } from 'react-router';
 import {
   ChevronRight,
   Coffee,
@@ -41,6 +41,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
+import { ReviewHeader } from '@/components/review-header';
 import { UpdateNotice } from '@/components/update-notice';
 import { useTranslation } from '@/i18n/I18nProvider';
 import type { TFunction } from '@paperless-starfruit/shared';
@@ -110,6 +111,14 @@ function GithubIcon() {
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const reviewMatch = useMatch('/review/:id');
+  const reviewId = Number(reviewMatch?.params.id);
+  const isReviewDetail = Boolean(
+    reviewMatch &&
+    /^\d+$/.test(reviewMatch.params.id ?? '') &&
+    Number.isSafeInteger(reviewId) &&
+    reviewId > 0,
+  );
   const connection = useConnection();
   // Drives the live "pending review" badge in the nav; cheap and always-on.
   const stats = useStats({ refetchInterval: 8000 });
@@ -120,7 +129,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const logout = useLogout();
 
   const metaMap = buildMeta(t);
-  const meta = metaMap[pathname] ?? metaMap['/dashboard'];
+  const meta =
+    metaMap[pathname] ?? metaMap[pathname.startsWith('/review/') ? '/review' : '/dashboard'];
   const width = meta.width ?? 'narrow';
   const conn = connection.data;
   const baseUrl = conn && conn.connected ? conn.baseUrl : null;
@@ -176,7 +186,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   }
 
                   const Icon = item.icon;
-                  const active = item.to === pathname;
+                  const active = item.to === pathname || pathname.startsWith(`${item.to}/`);
                   return (
                     <SidebarMenuItem key={item.to}>
                       <SidebarMenuButton
@@ -260,15 +270,19 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       </Sidebar>
 
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+        <header className="sticky top-0 z-10 flex min-h-14 shrink-0 items-center gap-2 border-b bg-background px-4 py-2">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
-          <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold tracking-tight">{meta.title}</h1>
-            {meta.description && (
-              <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
-            )}
-          </div>
+          {isReviewDetail ? (
+            <ReviewHeader id={reviewId} />
+          ) : (
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-semibold tracking-tight">{meta.title}</h1>
+              {meta.description && (
+                <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+              )}
+            </div>
+          )}
         </header>
 
         {/* A flex column all the way down, so a page can flex-1 itself to

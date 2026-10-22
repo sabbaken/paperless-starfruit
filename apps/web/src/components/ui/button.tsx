@@ -1,3 +1,4 @@
+import { Slot } from 'radix-ui';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -20,23 +21,27 @@ const SIZES = {
 } as const;
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  asChild?: boolean;
   variant?: keyof typeof VARIANTS;
   size?: keyof typeof SIZES;
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', ...props }, ref) => (
-    <button
-      ref={ref}
-      data-slot="button"
-      className={cn(
-        "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-        VARIANTS[variant],
-        SIZES[size],
-        className,
-      )}
-      {...props}
-    />
-  ),
+  ({ className, variant = 'default', size = 'default', asChild = false, ...props }, ref) => {
+    const Component = asChild ? Slot.Root : 'button';
+    return (
+      <Component
+        ref={ref}
+        data-slot="button"
+        className={cn(
+          "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+          VARIANTS[variant],
+          SIZES[size],
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
 );
 Button.displayName = 'Button';

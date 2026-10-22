@@ -10,7 +10,7 @@ import { HistoryPage } from '@/pages/HistoryPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { ProcessingPage } from '@/pages/ProcessingPage';
 import { PromptsPage } from '@/pages/PromptsPage';
-import { ReviewPage } from '@/pages/ReviewPage';
+import { ReviewPage, ReviewDetailPage } from '@/pages/ReviewPage';
 import { TagsPage } from '@/pages/TagsPage';
 import { DocumentTypesPage } from '@/pages/DocumentTypesPage';
 
@@ -46,6 +46,7 @@ export function AppRouter() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/review" element={<ReviewPage />} />
+            <Route path="/review/:id" element={<ReviewDetailPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/document-types" element={<DocumentTypesPage />} />
