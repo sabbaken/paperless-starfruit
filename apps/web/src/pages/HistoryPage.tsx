@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import {
   Table,
+  TableAction,
   TableBody,
   TableCell,
   TableHead,
@@ -139,24 +140,22 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
         </Empty>
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-4">{t('history.decisionHeader')}</TableHead>
-                  <TableHead>{t('history.documentHeader')}</TableHead>
-                  <TableHead className="w-full">{t('history.whenHeader')}</TableHead>
-                  <TableHead className="text-right">{t('history.tokensHeader')}</TableHead>
-                  <TableHead aria-label={t('history.openAria')} />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <HistoryRow key={item.id} item={item} onOpen={onOpen} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('history.decisionHeader')}</TableHead>
+                <TableHead>{t('history.documentHeader')}</TableHead>
+                <TableHead className="w-full">{t('history.whenHeader')}</TableHead>
+                <TableHead className="text-right">{t('history.tokensHeader')}</TableHead>
+                <TableHead aria-label={t('history.openAria')} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item) => (
+                <HistoryRow key={item.id} item={item} onOpen={onOpen} />
+              ))}
+            </TableBody>
+          </Table>
           <Pager offset={offset} total={total} count={items.length} onChange={setOffset} />
         </>
       )}
@@ -171,28 +170,30 @@ function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: nu
       onClick={item.hasDetail ? () => onOpen(item.id) : undefined}
       className={cn(!item.hasDetail && 'hover:bg-transparent', item.hasDetail && 'cursor-pointer')}
     >
-      <TableCell className={cn('py-3 pl-4 font-medium', decisionTone(item.decision))}>
+      <TableCell className={cn('font-medium', decisionTone(item.decision))}>
         {t(`auditDecisions.${decisionKey(item.decision)}`)}
       </TableCell>
-      <TableCell className="py-3">
+      <TableCell>
         <DocumentLink documentId={item.documentId} />
       </TableCell>
-      <TableCell className="w-full py-3 text-xs text-muted-foreground">
+      <TableCell className="w-full text-sm text-muted-foreground">
         {formatTime(item.createdAt)}
       </TableCell>
-      <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
+      <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
         {item.tokensCost != null ? item.tokensCost.toLocaleString() : ''}
       </TableCell>
-      <TableCell className="py-3 pr-4 text-right text-xs text-muted-foreground">
+      <TableCell className="text-right">
         {/* Row click covers the mouse; a real button keeps the detail reachable by keyboard. */}
         {item.hasDetail && (
-          <button
+          <TableAction
             type="button"
-            onClick={() => onOpen(item.id)}
-            className="cursor-pointer hover:text-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(item.id);
+            }}
           >
             {t('history.view')}
-          </button>
+          </TableAction>
         )}
       </TableCell>
     </TableRow>
@@ -250,8 +251,9 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        'rounded-full border px-2.5 py-1 text-xs transition-colors',
+        'cursor-pointer rounded-full border px-2.5 py-1 text-xs transition-colors',
         active
           ? 'border-primary bg-primary/10 text-foreground'
           : 'border-input text-muted-foreground hover:text-foreground',

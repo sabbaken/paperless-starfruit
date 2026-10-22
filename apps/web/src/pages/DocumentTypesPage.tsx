@@ -101,81 +101,79 @@ export function DocumentTypesPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="pl-4">{t('documentTypes.colType')}</TableHead>
-                <TableHead className="w-full">{t('documentTypes.colHint')}</TableHead>
-                <TableHead className="text-right">{t('documentTypes.colDocs')}</TableHead>
-                <TableHead aria-label={t('documentTypes.actionsAriaLabel')} />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map((type) => (
-                <TableRow key={type.id} className={cn(type.hidden && 'bg-muted/30')}>
-                  <TableCell className="py-3 pl-4">
-                    <span
-                      className={cn(
-                        'font-medium',
-                        type.hidden && 'text-muted-foreground line-through',
-                      )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('documentTypes.colType')}</TableHead>
+              <TableHead className="w-full">{t('documentTypes.colHint')}</TableHead>
+              <TableHead className="text-right">{t('documentTypes.colDocs')}</TableHead>
+              <TableHead aria-label={t('documentTypes.actionsAriaLabel')} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {visible.map((type) => (
+              <TableRow key={type.id} className={cn(type.hidden && 'bg-muted/30')}>
+                <TableCell>
+                  <span
+                    className={cn(
+                      'font-medium',
+                      type.hidden && 'text-muted-foreground line-through',
+                    )}
+                  >
+                    {type.name}
+                  </span>
+                </TableCell>
+                <TableCell className="w-full max-w-0">
+                  <p className="truncate text-muted-foreground" title={type.comment ?? undefined}>
+                    {type.comment ?? '—'}
+                  </p>
+                </TableCell>
+                <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                  {type.documentCount ?? ''}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={
+                        type.hidden
+                          ? t('documentTypes.showToAi', { name: type.name })
+                          : t('documentTypes.hideFromAi', { name: type.name })
+                      }
+                      title={
+                        type.hidden
+                          ? t('documentTypes.hiddenTitle')
+                          : t('documentTypes.visibleTitle')
+                      }
+                      disabled={toggleHidden.isPending && toggleHidden.variables?.id === type.id}
+                      onClick={() =>
+                        toggleHidden.mutate({ id: type.id, input: { hidden: !type.hidden } })
+                      }
                     >
-                      {type.name}
-                    </span>
-                  </TableCell>
-                  <TableCell className="w-full max-w-0 py-3">
-                    <p className="truncate text-muted-foreground" title={type.comment ?? undefined}>
-                      {type.comment ?? '—'}
-                    </p>
-                  </TableCell>
-                  <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
-                    {type.documentCount ?? ''}
-                  </TableCell>
-                  <TableCell className="py-0 pr-2 text-right">
-                    <div className="flex items-center justify-end">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={
-                          type.hidden
-                            ? t('documentTypes.showToAi', { name: type.name })
-                            : t('documentTypes.hideFromAi', { name: type.name })
-                        }
-                        title={
-                          type.hidden
-                            ? t('documentTypes.hiddenTitle')
-                            : t('documentTypes.visibleTitle')
-                        }
-                        disabled={toggleHidden.isPending && toggleHidden.variables?.id === type.id}
-                        onClick={() =>
-                          toggleHidden.mutate({ id: type.id, input: { hidden: !type.hidden } })
-                        }
-                      >
-                        {type.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={t('documentTypes.editAria', { name: type.name })}
-                        onClick={() => setForm({ mode: 'edit', documentType: type })}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {visible.length === 0 && (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {t('documentTypes.noMatch', { query: query.trim() })}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                      {type.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('documentTypes.editAria', { name: type.name })}
+                      onClick={() => setForm({ mode: 'edit', documentType: type })}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {visible.length === 0 && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                  {t('documentTypes.noMatch', { query: query.trim() })}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       )}
 
       <Dialog open={!!form} onOpenChange={(open) => !open && setForm(null)}>

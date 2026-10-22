@@ -144,6 +144,13 @@ export const ru = {
     },
   },
   dashboard: {
+    period: 'Период',
+    last30Days: 'Последние 30 дней',
+    last90Days: 'Последние 90 дней',
+    last365Days: 'Последние 365 дней',
+    allTime: 'Всё время',
+    processedInPeriod: 'Обработано за период',
+    recentEmptyPeriod: 'За этот период активности нет.',
     pipeline: 'Обработка документов',
     resume: 'Возобновить',
     pause: 'Пауза',

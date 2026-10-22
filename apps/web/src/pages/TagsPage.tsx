@@ -152,104 +152,102 @@ export function TagsPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="pl-4">{t('tags.colTag')}</TableHead>
-                <TableHead className="w-full">{t('tags.colHint')}</TableHead>
-                <TableHead className="text-right">{t('tags.colDocs')}</TableHead>
-                <TableHead aria-label={t('tags.actionsAriaLabel')} />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map(({ tag, depth }) => (
-                // A hidden tag reads as "switched off": a faint wash over the whole
-                // row instead of a badge, so the tag column keeps its layout.
-                <TableRow key={tag.id} className={cn(tag.hidden && 'bg-muted/30')}>
-                  <TableCell className="py-3 pl-4">
-                    <div
-                      className="flex items-center gap-2"
-                      style={depth > 1 ? { paddingLeft: `${(depth - 1) * 1.25}rem` } : undefined}
-                    >
-                      {depth > 0 && (
-                        <CornerDownRight
-                          aria-hidden
-                          className="size-3.5 shrink-0 text-muted-foreground/70"
-                        />
-                      )}
-                      <span
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('tags.colTag')}</TableHead>
+              <TableHead className="w-full">{t('tags.colHint')}</TableHead>
+              <TableHead className="text-right">{t('tags.colDocs')}</TableHead>
+              <TableHead aria-label={t('tags.actionsAriaLabel')} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {visible.map(({ tag, depth }) => (
+              // A hidden tag reads as "switched off": a faint wash over the whole
+              // row instead of a badge, so the tag column keeps its layout.
+              <TableRow key={tag.id} className={cn(tag.hidden && 'bg-muted/30')}>
+                <TableCell>
+                  <div
+                    className="flex items-center gap-2"
+                    style={depth > 1 ? { paddingLeft: `${(depth - 1) * 1.25}rem` } : undefined}
+                  >
+                    {depth > 0 && (
+                      <CornerDownRight
                         aria-hidden
-                        className="size-3 shrink-0 rounded-full border"
-                        style={{ backgroundColor: tag.color ?? undefined }}
+                        className="size-3.5 shrink-0 text-muted-foreground/70"
                       />
-                      <span
-                        className={cn(
-                          'font-medium',
-                          // Struck-through, not just dimmed. An accidentally hidden
-                          // tag should be impossible to overlook.
-                          tag.hidden && 'text-muted-foreground line-through',
-                        )}
-                      >
-                        {tag.name}
-                      </span>
-                      {tag.isTrigger && (
-                        <Badge variant="secondary" title={t('tags.triggerTitle')}>
-                          {t('tags.triggerBadge')}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="w-full max-w-0 py-3">
-                    <p className="truncate text-muted-foreground" title={tag.comment ?? undefined}>
-                      {tag.isTrigger ? t('tags.triggerHint') : (tag.comment ?? '—')}
-                    </p>
-                  </TableCell>
-                  <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
-                    {tag.documentCount ?? ''}
-                  </TableCell>
-                  <TableCell className="py-0 pr-2 text-right">
-                    {!tag.isTrigger && (
-                      <div className="flex items-center justify-end">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label={
-                            tag.hidden
-                              ? t('tags.showToAi', { name: tag.name })
-                              : t('tags.hideFromAi', { name: tag.name })
-                          }
-                          title={tag.hidden ? t('tags.hiddenTitle') : t('tags.visibleTitle')}
-                          disabled={toggleHidden.isPending && toggleHidden.variables?.id === tag.id}
-                          onClick={() =>
-                            toggleHidden.mutate({ id: tag.id, input: { hidden: !tag.hidden } })
-                          }
-                        >
-                          {tag.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label={t('tags.editAria', { name: tag.name })}
-                          onClick={() => setForm({ mode: 'edit', tag })}
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                      </div>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {visible.length === 0 && (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {t('tags.noMatch', { query: query.trim() })}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                    <span
+                      aria-hidden
+                      className="size-3 shrink-0 rounded-full border"
+                      style={{ backgroundColor: tag.color ?? undefined }}
+                    />
+                    <span
+                      className={cn(
+                        'font-medium',
+                        // Struck-through, not just dimmed. An accidentally hidden
+                        // tag should be impossible to overlook.
+                        tag.hidden && 'text-muted-foreground line-through',
+                      )}
+                    >
+                      {tag.name}
+                    </span>
+                    {tag.isTrigger && (
+                      <Badge variant="secondary" title={t('tags.triggerTitle')}>
+                        {t('tags.triggerBadge')}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="w-full max-w-0">
+                  <p className="truncate text-muted-foreground" title={tag.comment ?? undefined}>
+                    {tag.isTrigger ? t('tags.triggerHint') : (tag.comment ?? '—')}
+                  </p>
+                </TableCell>
+                <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                  {tag.documentCount ?? ''}
+                </TableCell>
+                <TableCell className="text-right">
+                  {!tag.isTrigger && (
+                    <div className="flex items-center justify-end">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={
+                          tag.hidden
+                            ? t('tags.showToAi', { name: tag.name })
+                            : t('tags.hideFromAi', { name: tag.name })
+                        }
+                        title={tag.hidden ? t('tags.hiddenTitle') : t('tags.visibleTitle')}
+                        disabled={toggleHidden.isPending && toggleHidden.variables?.id === tag.id}
+                        onClick={() =>
+                          toggleHidden.mutate({ id: tag.id, input: { hidden: !tag.hidden } })
+                        }
+                      >
+                        {tag.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={t('tags.editAria', { name: tag.name })}
+                        onClick={() => setForm({ mode: 'edit', tag })}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+            {visible.length === 0 && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                  {t('tags.noMatch', { query: query.trim() })}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       )}
 
       <Dialog open={!!form} onOpenChange={(open) => !open && setForm(null)}>

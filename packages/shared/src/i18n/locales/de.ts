@@ -154,6 +154,13 @@ export const de = {
     },
   },
   dashboard: {
+    period: 'Zeitraum',
+    last30Days: 'Letzte 30 Tage',
+    last90Days: 'Letzte 90 Tage',
+    last365Days: 'Letzte 365 Tage',
+    allTime: 'Gesamter Zeitraum',
+    processedInPeriod: 'Im Zeitraum verarbeitet',
+    recentEmptyPeriod: 'Keine Aktivität in diesem Zeitraum.',
     pipeline: 'Dokumentenverarbeitung',
     resume: 'Fortsetzen',
     pause: 'Pausieren',

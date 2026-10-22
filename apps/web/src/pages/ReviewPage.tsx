@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { Check, ChevronRight, Inbox, Loader2, X } from 'lucide-react';
+import { Check, Inbox, Loader2, X } from 'lucide-react';
 import type { ReviewDetail, ReviewItemView } from '@paperless-starfruit/shared';
 import {
   useApproveReview,
@@ -16,6 +16,7 @@ import { ReviewTaxonomyPicker } from '@/components/review-taxonomy-picker';
 import { PageSection } from '@/components/ui/page-section';
 import {
   Table,
+  TableAction,
   TableBody,
   TableCell,
   TableHead,
@@ -123,34 +124,6 @@ function ReviewList({
 
   return (
     <div className="space-y-4">
-      <div className="flex h-8 items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {t('review.awaiting', { count: items.length })}
-        </p>
-        {selectedIds.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-              {t('review.clear')}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() =>
-                bulk.mutate(selectedIds, {
-                  // Keep only the items that failed selected, so the user can
-                  // see them, retry, or open one. A full success clears all.
-                  onSuccess: (results) =>
-                    setSelected(new Set(results.filter((r) => !r.ok).map((r) => r.id))),
-                })
-              }
-              disabled={bulk.isPending}
-            >
-              {bulk.isPending && <Loader2 className="animate-spin" />}
-              {t('review.approveSelected', { count: selectedIds.length })}
-            </Button>
-          </div>
-        )}
-      </div>
-
       {bulk.error && (
         <p className="text-sm text-destructive">
           {bulk.error instanceof Error ? bulk.error.message : t('review.bulkApproveFailed')}
@@ -166,7 +139,7 @@ function ReviewList({
       <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10">
+            <TableHead className="w-12">
               <Checkbox
                 aria-label={t('review.selectAll')}
                 checked={
@@ -187,7 +160,7 @@ function ReviewList({
             </TableHead>
             <TableHead className="hidden lg:table-cell">{t('review.tags')}</TableHead>
             <TableHead className="hidden w-28 sm:table-cell">{t('review.fieldDate')}</TableHead>
-            <TableHead className="w-24">
+            <TableHead className="w-28 text-right">
               <span className="sr-only">{t('review.review')}</span>
             </TableHead>
           </TableRow>
@@ -211,14 +184,14 @@ function ReviewList({
                   aria-label={t('review.selectDocument', { documentId: item.documentId })}
                 />
               </TableCell>
-              <TableCell className="whitespace-normal py-4">
+              <TableCell className="whitespace-normal">
                 <Link
                   to={`/review/${item.id}`}
                   className="block truncate font-medium hover:underline"
                 >
                   {item.suggestions.title}
                 </Link>
-                <p className="mt-1 truncate text-xs text-muted-foreground">
+                <p className="mt-1 truncate text-sm text-muted-foreground">
                   #{item.documentId} · {item.suggestions.current.title}
                 </p>
               </TableCell>
@@ -235,18 +208,43 @@ function ReviewList({
               <TableCell className="hidden tabular-nums sm:table-cell">
                 {item.suggestions.date ?? '—'}
               </TableCell>
-              <TableCell>
-                <Button asChild size="sm" variant="ghost">
-                  <Link to={`/review/${item.id}`}>
-                    {t('review.review')}
-                    <ChevronRight className="size-4" />
-                  </Link>
-                </Button>
+              <TableCell className="text-right">
+                <TableAction asChild>
+                  <Link to={`/review/${item.id}`}>{t('review.review')}</Link>
+                </TableAction>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {t('review.awaiting', { count: items.length })}
+        </p>
+        {selectedIds.length > 0 && (
+          <div className="ml-auto flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+              {t('review.clear')}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() =>
+                bulk.mutate(selectedIds, {
+                  // Keep only the items that failed selected, so the user can
+                  // see them, retry, or open one. A full success clears all.
+                  onSuccess: (results) =>
+                    setSelected(new Set(results.filter((r) => !r.ok).map((r) => r.id))),
+                })
+              }
+              disabled={bulk.isPending}
+            >
+              {bulk.isPending && <Loader2 className="animate-spin" />}
+              {t('review.approveSelected', { count: selectedIds.length })}
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

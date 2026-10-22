@@ -145,6 +145,13 @@ export const en = {
     },
   },
   dashboard: {
+    period: 'Period',
+    last30Days: 'Last 30 days',
+    last90Days: 'Last 90 days',
+    last365Days: 'Last 365 days',
+    allTime: 'All time',
+    processedInPeriod: 'Processed in period',
+    recentEmptyPeriod: 'No activity in this period.',
     pipeline: 'Document pipeline',
     resume: 'Resume',
     pause: 'Pause',

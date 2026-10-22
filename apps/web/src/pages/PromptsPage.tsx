@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/ui/page-section';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { Select } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 
 const ICONS: Record<PromptKey, LucideIcon> = {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import toast from 'react-hot-toast';
 import {
   CheckCircle2,
@@ -14,12 +14,13 @@ import {
   Trash2,
   TriangleAlert,
 } from 'lucide-react';
-import type { JobSummary } from '@paperless-starfruit/shared';
+import { statsPeriodSchema, type JobSummary } from '@paperless-starfruit/shared';
 import { useStats } from '@/api/stats';
 import { useClearQueue, useRetryJob } from '@/api/jobs';
 import { useSettings, useUpdateSettings } from '@/api/settings';
 import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
+import { formatTokens } from '@/lib/format-tokens';
 import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/ui/page-section';
@@ -40,9 +41,12 @@ const STATUS_TONE: Record<JobSummary['status'], string> = {
 };
 
 export function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
-  const stats = useStats({ refetchInterval: 5000 });
+  const [searchParams] = useSearchParams();
+  const parsedPeriod = statsPeriodSchema.safeParse(searchParams.get('period'));
+  const period = parsedPeriod.success ? parsedPeriod.data : '30';
+  const stats = useStats({ period, refetchInterval: 5000 });
   const settings = useSettings();
   const updateSettings = useUpdateSettings();
   const clearQueue = useClearQueue();
@@ -167,7 +171,6 @@ export function DashboardPage() {
             label={t('common.done')}
             value={queue.done}
             tone={queue.done > 0 ? 'success' : undefined}
-            hint={t('dashboard.todayHint', { count: throughput })}
           />
           <div className="hidden self-stretch border-l sm:mx-4 sm:block" aria-hidden />
           <Stage
@@ -222,11 +225,20 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Metric label={t('dashboard.processedToday')} value={throughput} />
-        <Metric label={t('dashboard.tokensUsed')} value={tokenSpend.toLocaleString()} />
+        <Metric label={t('dashboard.processedInPeriod')} value={throughput} />
+        <Metric
+          label={t('dashboard.tokensUsed')}
+          value={formatTokens(tokenSpend, language)}
+          title={tokenSpend.toLocaleString(language)}
+        />
         <Metric
           label={t('dashboard.avgTokensPerDoc')}
-          value={queue.done > 0 ? Math.round(tokenSpend / queue.done).toLocaleString() : '—'}
+          value={queue.done > 0 ? formatTokens(tokenSpend / queue.done, language) : '—'}
+          title={
+            queue.done > 0
+              ? Math.round(tokenSpend / queue.done).toLocaleString(language)
+              : undefined
+          }
         />
       </div>
 
@@ -238,63 +250,69 @@ export function DashboardPage() {
         )}
         {recentJobs.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            {t('dashboard.recentEmptyPrefix')} <code className="font-mono">psf-process</code>
-            {t('dashboard.recentEmptySuffix')}
+            {t('dashboard.recentEmptyPeriod')}
           </p>
         ) : (
-          <div className="overflow-hidden rounded-lg border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-4">{t('dashboard.statusHeader')}</TableHead>
-                  <TableHead>{t('dashboard.documentHeader')}</TableHead>
-                  <TableHead className="w-full">{t('dashboard.errorHeader')}</TableHead>
-                  <TableHead className="text-right">{t('dashboard.tokensHeader')}</TableHead>
-                  <TableHead aria-label={t('dashboard.actionsLabel')} />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentJobs.map((job) => (
-                  <TableRow key={job.id} className="hover:bg-transparent">
-                    <TableCell
-                      className={cn('py-3 pl-4 font-medium capitalize', STATUS_TONE[job.status])}
-                    >
-                      {job.status}
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <DocumentLink documentId={job.documentId} />
-                    </TableCell>
-                    <TableCell className="w-full max-w-0 py-3">
-                      <p className="truncate text-destructive" title={job.error ?? undefined}>
-                        {job.error ?? ''}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('dashboard.statusHeader')}</TableHead>
+                <TableHead>{t('dashboard.documentHeader')}</TableHead>
+                <TableHead className="w-full">{t('dashboard.errorHeader')}</TableHead>
+                <TableHead className="text-right">{t('dashboard.tokensHeader')}</TableHead>
+                <TableHead aria-label={t('dashboard.actionsLabel')} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentJobs.map((job) => (
+                <TableRow key={job.id} className="hover:bg-transparent">
+                  <TableCell className={cn('font-medium capitalize', STATUS_TONE[job.status])}>
+                    {job.status}
+                  </TableCell>
+                  <TableCell>
+                    {job.documentTitle && (
+                      <p
+                        className="max-w-48 truncate font-medium sm:max-w-72"
+                        title={job.documentTitle}
+                      >
+                        {job.documentTitle}
                       </p>
-                    </TableCell>
-                    <TableCell className="py-3 text-right text-xs tabular-nums text-muted-foreground">
-                      {job.cost != null ? job.cost.toLocaleString() : ''}
-                    </TableCell>
-                    <TableCell className="py-0 pr-2 text-right">
-                      {job.status === 'failed' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 px-2"
-                          disabled={retry.isPending}
-                          onClick={() => retry.mutate(job.documentId)}
-                        >
-                          {retry.isPending && retry.variables === job.documentId ? (
-                            <Loader2 className="size-3.5 animate-spin" />
-                          ) : (
-                            <RotateCw className="size-3.5" />
-                          )}
-                          {t('common.retry')}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    )}
+                    <DocumentLink documentId={job.documentId} />
+                  </TableCell>
+                  <TableCell className="w-full max-w-0">
+                    <p className="truncate text-destructive" title={job.error ?? undefined}>
+                      {job.error ?? ''}
+                    </p>
+                  </TableCell>
+                  <TableCell
+                    className="text-right text-sm tabular-nums text-muted-foreground"
+                    title={job.cost?.toLocaleString(language)}
+                  >
+                    {job.cost != null ? formatTokens(job.cost, language) : ''}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {job.status === 'failed' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2"
+                        disabled={retry.isPending}
+                        onClick={() => retry.mutate(job.documentId)}
+                      >
+                        {retry.isPending && retry.variables === job.documentId ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <RotateCw className="size-3.5" />
+                        )}
+                        {t('common.retry')}
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </PageSection>
     </div>
@@ -351,12 +369,22 @@ function StageArrow() {
   );
 }
 
-function Metric({ label, value }: { label: string; value: number | string }) {
+function Metric({
+  label,
+  value,
+  title,
+}: {
+  label: string;
+  value: number | string;
+  title?: string;
+}) {
   return (
     // Same chrome as the pipeline card above, so the tiles read as one family.
     <div className="rounded-xl border bg-card p-4">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 text-xl font-semibold tabular-nums" title={title}>
+        {value}
+      </p>
     </div>
   );
 }

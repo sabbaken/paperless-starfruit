@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { desc, eq, gte, or, sql } from 'drizzle-orm';
 import {
   JOB_STATUS,
   REVIEW_STATUS,
   type JobSummary,
   type Stats,
+  type StatsPeriod,
 } from '@paperless-starfruit/shared';
 import { DB } from '../db/db.module';
 import type { Db } from '../db/client';
@@ -17,7 +18,13 @@ const RECENT_LIMIT = 12;
 export class StatsService {
   constructor(@Inject(DB) private readonly db: Db) {}
 
-  get(): Stats {
+  get(period: StatsPeriod = '30'): Stats {
+    const since = period === 'all' ? undefined : new Date(Date.now() - Number(period) * 86_400_000);
+    const inPeriod = since ? gte(job.updatedAt, since) : undefined;
+    // Active work stays visible even when it was queued before the selected period.
+    const visible = inPeriod
+      ? or(inPeriod, eq(job.status, JOB_STATUS.QUEUED), eq(job.status, JOB_STATUS.RUNNING))
+      : undefined;
     // Counted in SQL, not by materialising the table: the dashboard polls this
     // every few seconds from every page, and better-sqlite3 is synchronous, so
     // reading every job row would block the event loop for as long as it takes.
@@ -30,24 +37,17 @@ export class StatsService {
         spend: sql<number>`coalesce(sum(${job.cost}), 0)`.mapWith(Number),
       })
       .from(job)
+      .where(visible)
       .groupBy(job.status)
       .all();
     for (const row of byStatus) {
       if (row.status in queue) queue[row.status as keyof typeof queue] = row.count;
-      tokenSpend += row.spend;
+      if (row.status === JOB_STATUS.DONE || row.status === JOB_STATUS.FAILED) {
+        tokenSpend += row.spend;
+      }
     }
 
-    // Throughput = jobs completed in the last 24h, an at-a-glance "is it working?"
-    // gauge that doesn't grow unbounded the way the lifetime `done` count does.
-    // Pass a Date: the column is drizzle's `timestamp` mode, so it binds as unix
-    // seconds — a raw millisecond number would silently match nothing.
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const throughput =
-      this.db
-        .select({ count: sql<number>`count(*)`.mapWith(Number) })
-        .from(job)
-        .where(and(eq(job.status, JOB_STATUS.DONE), gte(job.updatedAt, dayAgo)))
-        .all()[0]?.count ?? 0;
+    const throughput = queue.done;
 
     // Error rate over *finished* jobs only (done + failed); queued/running aren't
     // outcomes yet. 0 when nothing has finished, so the card never shows NaN.
@@ -62,18 +62,32 @@ export class StatsService {
         .all()[0]?.count ?? 0;
 
     const recentJobs = this.db
-      .select()
+      .select({
+        job,
+        // Read only the title, not the stored prompts/outputs. Older known titles
+        // also give context to retries and OCR-only jobs without extraction results.
+        documentTitle: sql<string | null>`(
+          select trim(json_extract(audit_log.result, '$.title'))
+          from audit_log
+          where audit_log.document_id = job.document_id
+            and json_type(audit_log.result, '$.title') = 'text'
+            and trim(json_extract(audit_log.result, '$.title')) != ''
+          order by audit_log.created_at desc, audit_log.id desc
+          limit 1
+        )`,
+      })
       .from(job)
+      .where(visible)
       .orderBy(desc(job.updatedAt), desc(job.id))
       .limit(RECENT_LIMIT)
       .all()
-      .map(toSummary);
+      .map((row) => ({ ...toSummary(row.job), documentTitle: row.documentTitle }));
 
     return { queue, pendingReview, tokenSpend, throughput, errorRate, recentJobs };
   }
 }
 
-function toSummary(j: Job): JobSummary {
+function toSummary(j: Job): Omit<JobSummary, 'documentTitle'> {
   return {
     id: j.id,
     documentId: j.documentId,

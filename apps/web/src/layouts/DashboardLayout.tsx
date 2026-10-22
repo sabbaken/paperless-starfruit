@@ -41,6 +41,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
+import { DashboardPeriodSelect } from '@/components/dashboard-period-select';
 import { ReviewHeader } from '@/components/review-header';
 import { UpdateNotice } from '@/components/update-notice';
 import { useTranslation } from '@/i18n/I18nProvider';
@@ -283,6 +284,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               )}
             </div>
           )}
+          {pathname === '/dashboard' && <DashboardPeriodSelect />}
         </header>
 
         {/* A flex column all the way down, so a page can flex-1 itself to
