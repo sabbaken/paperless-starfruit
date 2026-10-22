@@ -11,6 +11,7 @@ import { useAuditDetail, useAuditLog } from '@/api/audit';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
+import { formatTokens } from '@/lib/format-tokens';
 import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
 import { PageSection } from '@/components/ui/page-section';
@@ -188,7 +189,7 @@ function HistoryList() {
 }
 
 function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: number) => void }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [params] = useSearchParams();
   return (
     <TableRow
@@ -205,7 +206,7 @@ function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: nu
         {formatTime(item.createdAt)}
       </TableCell>
       <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
-        {item.tokensCost != null ? item.tokensCost.toLocaleString() : ''}
+        {item.tokensCost != null ? formatTokens(item.tokensCost, language) : ''}
       </TableCell>
       <TableCell className="text-right">
         {/* Row click covers the mouse; a real link supports keyboard navigation and opening a new tab. */}
@@ -335,7 +336,7 @@ function HistoryDetailView({ id }: { id: number }) {
 }
 
 function HistoryDetail({ entry }: { entry: AuditEntryDetail }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const parsed = extractionSchema.safeParse(entry.result);
   const result = parsed.success ? parsed.data : null;
   return (
@@ -371,7 +372,7 @@ function HistoryDetail({ entry }: { entry: AuditEntryDetail }) {
             {entry.jobId == null ? '—' : `#${entry.jobId}`}
           </RunFact>
           <RunFact label={t('history.tokensHeader')}>
-            {entry.tokensCost?.toLocaleString() ?? '—'}
+            {entry.tokensCost != null ? formatTokens(entry.tokensCost, language) : '—'}
           </RunFact>
         </dl>
       </div>
