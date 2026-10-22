@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, Loader2, Search, SearchX } from 'lucide-react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { ChevronDown, Loader2, Search, SearchX } from 'lucide-react';
 import {
   AUDIT_DECISIONS,
+  extractionSchema,
   type AuditEntryDetail,
   type AuditEntrySummary,
 } from '@paperless-starfruit/shared';
@@ -11,7 +13,8 @@ import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { DocumentLink } from '@/components/document-link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageSection } from '@/components/ui/page-section';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Empty,
   EmptyDescription,
@@ -33,10 +36,10 @@ import {
 const PAGE_SIZE = 25;
 
 const DECISION_TONE: Record<string, string> = {
-  'auto-applied': 'text-emerald-600 dark:text-emerald-500',
-  'review-queued': 'text-blue-600 dark:text-blue-400',
-  'ocr-only': 'text-cyan-600 dark:text-cyan-400',
-  approved: 'text-emerald-600 dark:text-emerald-500',
+  'auto-applied': 'text-emerald-700 dark:text-emerald-500',
+  'review-queued': 'text-blue-700 dark:text-blue-400',
+  'ocr-only': 'text-cyan-700 dark:text-cyan-400',
+  approved: 'text-emerald-700 dark:text-emerald-500',
   rejected: 'text-destructive',
   skipped: 'text-muted-foreground',
 };
@@ -59,26 +62,36 @@ function formatTime(unixSeconds: number): string {
 
 /** Job-history / audit log: inspect the exact prompt sent to the LLM and its response. */
 export function HistoryPage() {
-  const [openId, setOpenId] = useState<number | null>(null);
-
-  if (openId != null) {
-    return <HistoryDetailView id={openId} onClose={() => setOpenId(null)} />;
-  }
-  return <HistoryList onOpen={setOpenId} />;
+  return <HistoryList />;
 }
 
-function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
+function HistoryList() {
   const { t } = useTranslation();
-  const [q, setQ] = useState('');
-  const [search, setSearch] = useState('');
-  const [decision, setDecision] = useState<string | undefined>(undefined);
-  const [offset, setOffset] = useState(0);
-
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const search = params.get('q') ?? '';
+  const decision = params.get('decision') || undefined;
+  const rawOffset = Number(params.get('offset'));
+  const offset = Number.isSafeInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
+  const [q, setQ] = useState(search);
+  const updateFilters = (values: Record<string, string | undefined>) => {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        for (const [key, value] of Object.entries(values)) {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  };
+  const onOpen = (id: number) => navigate(`/history/${id}${params.size ? `?${params}` : ''}`);
   // Debounce the free-text search so we don't fire a /audit request per keystroke;
   // the committed value (and a reset to page 1) lands 300ms after typing stops.
   const commitSearch = useDebouncedCallback(() => {
-    setSearch(q.trim());
-    setOffset(0);
+    updateFilters({ q: q.trim(), offset: undefined });
   }, 300);
 
   const log = useAuditLog({ q: search || undefined, decision, limit: PAGE_SIZE, offset });
@@ -95,6 +108,7 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
             setQ(e.target.value);
             commitSearch();
           }}
+          aria-label={t('history.searchPlaceholder')}
           placeholder={t('history.searchPlaceholder')}
           className="pl-8"
         />
@@ -105,8 +119,7 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
           label={t('history.all')}
           active={!decision}
           onClick={() => {
-            setDecision(undefined);
-            setOffset(0);
+            updateFilters({ decision: undefined, offset: undefined });
           }}
         />
         {AUDIT_DECISIONS.map((d) => (
@@ -115,8 +128,7 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
             label={t(`auditDecisions.${d}`)}
             active={decision === d}
             onClick={() => {
-              setDecision(d);
-              setOffset(0);
+              updateFilters({ decision: d, offset: undefined });
             }}
           />
         ))}
@@ -124,6 +136,13 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
 
       {log.isLoading ? (
         <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />
+      ) : log.isError ? (
+        <div className="space-y-3">
+          <p role="alert">{t('history.loadFailed')}</p>
+          <Button variant="outline" onClick={() => void log.refetch()}>
+            {t('common.retry')}
+          </Button>
+        </div>
       ) : items.length === 0 ? (
         <Empty>
           <EmptyHeader>
@@ -156,7 +175,12 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
               ))}
             </TableBody>
           </Table>
-          <Pager offset={offset} total={total} count={items.length} onChange={setOffset} />
+          <Pager
+            offset={offset}
+            total={total}
+            count={items.length}
+            onChange={(value) => updateFilters({ offset: value ? String(value) : undefined })}
+          />
         </>
       )}
     </div>
@@ -165,6 +189,7 @@ function HistoryList({ onOpen }: { onOpen: (id: number) => void }) {
 
 function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: number) => void }) {
   const { t } = useTranslation();
+  const [params] = useSearchParams();
   return (
     <TableRow
       onClick={item.hasDetail ? () => onOpen(item.id) : undefined}
@@ -183,16 +208,15 @@ function HistoryRow({ item, onOpen }: { item: AuditEntrySummary; onOpen: (id: nu
         {item.tokensCost != null ? item.tokensCost.toLocaleString() : ''}
       </TableCell>
       <TableCell className="text-right">
-        {/* Row click covers the mouse; a real button keeps the detail reachable by keyboard. */}
+        {/* Row click covers the mouse; a real link supports keyboard navigation and opening a new tab. */}
         {item.hasDetail && (
-          <TableAction
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpen(item.id);
-            }}
-          >
-            {t('history.view')}
+          <TableAction asChild>
+            <Link
+              to={`/history/${item.id}${params.size ? `?${params}` : ''}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {t('history.view')}
+            </Link>
           </TableAction>
         )}
       </TableCell>
@@ -264,67 +288,140 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   );
 }
 
-function HistoryDetailView({ id, onClose }: { id: number; onClose: () => void }) {
-  const detail = useAuditDetail(id);
-
-  if (detail.isLoading || !detail.data) {
-    return <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" />;
+export function HistoryDetailPage() {
+  const { id: rawId } = useParams();
+  const id = Number(rawId);
+  if (!rawId || !/^\d+$/.test(rawId) || !Number.isSafeInteger(id) || id < 1) {
+    return <HistoryDetailError />;
   }
-  return <HistoryDetail entry={detail.data} onClose={onClose} />;
+  return <HistoryDetailView id={id} />;
 }
 
-function HistoryDetail({ entry, onClose }: { entry: AuditEntryDetail; onClose: () => void }) {
+function HistoryDetailError({ onRetry }: { onRetry?: () => void }) {
   const { t } = useTranslation();
+  const [params] = useSearchParams();
   return (
     <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={onClose} className="-ml-2 text-muted-foreground">
-        <ArrowLeft className="size-4" />
-        {t('history.backToHistory')}
-      </Button>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className={cn('font-medium', decisionTone(entry.decision))}>
-          {t(`auditDecisions.${decisionKey(entry.decision)}`)}
-        </span>
-        <DocumentLink documentId={entry.documentId} />
-        {entry.jobId != null && (
-          <span className="text-muted-foreground">
-            {t('history.jobLabel', { jobId: entry.jobId })}
-          </span>
+      <p role="alert">{t('history.loadFailed')}</p>
+      <div className="flex gap-2">
+        {onRetry && (
+          <Button variant="outline" onClick={onRetry}>
+            {t('common.retry')}
+          </Button>
         )}
-        {entry.tokensCost != null && (
-          <span className="text-muted-foreground">
-            {t('history.tokensLabel', { tokens: entry.tokensCost.toLocaleString() })}
-          </span>
-        )}
-        <span className="text-muted-foreground">{formatTime(entry.createdAt)}</span>
+        <Button asChild variant="ghost">
+          <Link to={`/history${params.size ? `?${params}` : ''}`}>
+            {t('history.backToHistory')}
+          </Link>
+        </Button>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t('history.promptTitle')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Block text={entry.prompt} empty={t('history.promptEmpty')} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t('history.responseTitle')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Block text={formatResponse(entry)} empty={t('history.responseEmpty')} />
-        </CardContent>
-      </Card>
     </div>
+  );
+}
+
+function HistoryDetailView({ id }: { id: number }) {
+  const detail = useAuditDetail(id);
+  const { t } = useTranslation();
+  if (detail.isError) return <HistoryDetailError onRetry={() => void detail.refetch()} />;
+  if (!detail.data) {
+    return (
+      <Loader2
+        aria-label={t('app.loadingLabel')}
+        className="mx-auto size-5 animate-spin text-muted-foreground"
+      />
+    );
+  }
+  return <HistoryDetail key={id} entry={detail.data} />;
+}
+
+function HistoryDetail({ entry }: { entry: AuditEntryDetail }) {
+  const { t } = useTranslation();
+  const parsed = extractionSchema.safeParse(entry.result);
+  const result = parsed.success ? parsed.data : null;
+  return (
+    <div className="min-w-0 space-y-6">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span className={cn('font-medium', decisionTone(entry.decision))}>
+            {t(`auditDecisions.${decisionKey(entry.decision)}`)}
+          </span>
+          <span className="text-muted-foreground">{t('history.runLabel', { id: entry.id })}</span>
+        </div>
+        {result && (
+          <h2 className="text-xl font-semibold tracking-tight break-words">{result.title}</h2>
+        )}
+        <dl className="grid grid-cols-2 gap-4 border-y py-4 text-sm sm:grid-cols-4">
+          <RunFact label={t('history.documentHeader')}>
+            <DocumentLink documentId={entry.documentId} />
+          </RunFact>
+          <RunFact label={t('history.whenHeader')}>{formatTime(entry.createdAt)}</RunFact>
+          <RunFact label={t('history.jobHeader')}>
+            {entry.jobId == null ? '—' : `#${entry.jobId}`}
+          </RunFact>
+          <RunFact label={t('history.tokensHeader')}>
+            {entry.tokensCost?.toLocaleString() ?? '—'}
+          </RunFact>
+        </dl>
+      </div>
+      <PageSection title={t('history.responseTitle')}>
+        <Block text={formatResponse(entry)} empty={t('history.responseEmpty')} />
+      </PageSection>
+      <PromptPreview text={entry.prompt} />
+    </div>
+  );
+}
+
+function RunFact({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0 space-y-1">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="break-words tabular-nums">{children}</dd>
+    </div>
+  );
+}
+
+function PromptPreview({ text }: { text: string | null }) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  // Bound both prose and line-heavy prompts, including a single very long line.
+  const preview = text?.split('\n').slice(0, 6).join('\n').slice(0, 600) ?? '';
+  const canExpand = text != null && preview.length < text.length;
+
+  return (
+    <Collapsible open={expanded} onOpenChange={setExpanded}>
+      <PageSection title={t('history.promptTitle')}>
+        <div className="overflow-hidden rounded-lg [&_pre]:rounded-none">
+          {!expanded && (
+            <div className={canExpand ? 'max-h-40 overflow-hidden' : undefined}>
+              <Block text={canExpand ? `${preview}…` : text} empty={t('history.promptEmpty')} />
+            </div>
+          )}
+          <CollapsibleContent>
+            <Block text={text} empty={t('history.promptEmpty')} />
+          </CollapsibleContent>
+          {canExpand && (
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="h-11 w-full rounded-none border-t bg-muted/40">
+                {expanded ? t('history.collapsePrompt') : t('history.expandPrompt')}
+                <ChevronDown
+                  className={cn('size-4 transition-transform', expanded && 'rotate-180')}
+                />
+              </Button>
+            </CollapsibleTrigger>
+          )}
+        </div>
+      </PageSection>
+    </Collapsible>
   );
 }
 
 function Block({ text, empty }: { text: string | null; empty: string }) {
   if (!text) return <p className="text-sm text-muted-foreground">{empty}</p>;
   return (
-    <pre className="max-h-[28rem] overflow-auto rounded-md bg-muted/40 p-3 text-xs whitespace-pre-wrap text-muted-foreground">
+    <pre
+      tabIndex={0}
+      className="rounded-lg bg-muted/40 p-4 font-mono text-sm leading-6 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+    >
       {text}
     </pre>
   );

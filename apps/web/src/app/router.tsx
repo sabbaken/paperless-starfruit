@@ -6,7 +6,7 @@ import { ApiKeysPage } from '@/pages/ApiKeysPage';
 import { ConnectionPage } from '@/pages/ConnectionPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { GeneralPage } from '@/pages/GeneralPage';
-import { HistoryPage } from '@/pages/HistoryPage';
+import { HistoryPage, HistoryDetailPage } from '@/pages/HistoryPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { ProcessingPage } from '@/pages/ProcessingPage';
 import { PromptsPage } from '@/pages/PromptsPage';
@@ -48,6 +48,7 @@ export function AppRouter() {
             <Route path="/review" element={<ReviewPage />} />
             <Route path="/review/:id" element={<ReviewDetailPage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/history/:id" element={<HistoryDetailPage />} />
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/document-types" element={<DocumentTypesPage />} />
             <Route path="/settings" element={<Navigate to="/settings/general" replace />} />

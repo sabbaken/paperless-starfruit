@@ -196,6 +196,14 @@ export const de = {
     clearQueueFailed: 'Warteschlange konnte nicht geleert werden',
   },
   history: {
+    expandPrompt: 'Mehr anzeigen',
+    collapsePrompt: 'Einklappen',
+
+    runLabel: 'Durchlauf #{{id}}',
+    jobHeader: 'Auftrag',
+    loadFailed:
+      'Der Verlauf konnte nicht geladen werden. Der Eintrag ist möglicherweise nicht mehr verfügbar.',
+
     searchPlaceholder: 'Prompts und Antworten durchsuchen…',
     all: 'Alle',
     emptyTitle: 'Keine passenden Durchläufe',

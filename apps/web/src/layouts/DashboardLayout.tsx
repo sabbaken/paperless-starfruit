@@ -42,6 +42,7 @@ import { selectSidebarOpen, setSidebarOpen } from '@/store/settings.slice';
 import { cn } from '@/lib/utils';
 import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { DashboardPeriodSelect } from '@/components/dashboard-period-select';
+import { HistoryHeader } from '@/components/history-header';
 import { ReviewHeader } from '@/components/review-header';
 import { UpdateNotice } from '@/components/update-notice';
 import { useTranslation } from '@/i18n/I18nProvider';
@@ -112,6 +113,14 @@ function GithubIcon() {
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const historyMatch = useMatch('/history/:id');
+  const historyId = Number(historyMatch?.params.id);
+  const isHistoryDetail = Boolean(
+    historyMatch &&
+    /^\d+$/.test(historyMatch.params.id ?? '') &&
+    Number.isSafeInteger(historyId) &&
+    historyId > 0,
+  );
   const reviewMatch = useMatch('/review/:id');
   const reviewId = Number(reviewMatch?.params.id);
   const isReviewDetail = Boolean(
@@ -131,7 +140,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   const metaMap = buildMeta(t);
   const meta =
-    metaMap[pathname] ?? metaMap[pathname.startsWith('/review/') ? '/review' : '/dashboard'];
+    metaMap[pathname] ??
+    metaMap[
+      pathname.startsWith('/review/')
+        ? '/review'
+        : pathname.startsWith('/history/')
+          ? '/history'
+          : '/dashboard'
+    ];
   const width = meta.width ?? 'narrow';
   const conn = connection.data;
   const baseUrl = conn && conn.connected ? conn.baseUrl : null;
@@ -270,12 +286,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         <SidebarRail />
       </Sidebar>
 
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex min-h-14 shrink-0 items-center gap-2 border-b bg-background px-4 py-2">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
           {isReviewDetail ? (
             <ReviewHeader id={reviewId} />
+          ) : isHistoryDetail ? (
+            <HistoryHeader id={historyId} />
           ) : (
             <div className="min-w-0">
               <h1 className="truncate text-sm font-semibold tracking-tight">{meta.title}</h1>

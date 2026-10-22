@@ -186,6 +186,13 @@ export const ru = {
     clearQueueFailed: 'Не удалось очистить очередь',
   },
   history: {
+    expandPrompt: 'Показать ещё',
+    collapsePrompt: 'Свернуть',
+
+    runLabel: 'Обработка #{{id}}',
+    jobHeader: 'Задание',
+    loadFailed: 'Не удалось загрузить историю обработки. Запись может быть недоступна.',
+
     searchPlaceholder: 'Поиск по промптам и ответам…',
     all: 'Все',
     emptyTitle: 'Нет подходящих запусков',

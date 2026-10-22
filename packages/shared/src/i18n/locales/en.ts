@@ -187,6 +187,13 @@ export const en = {
     clearQueueFailed: 'Failed to clear queue',
   },
   history: {
+    expandPrompt: 'Show more',
+    collapsePrompt: 'Collapse',
+
+    runLabel: 'Run #{{id}}',
+    jobHeader: 'Job',
+    loadFailed: 'Could not load this history entry. It may no longer be available.',
+
     searchPlaceholder: 'Search prompts and responses…',
     all: 'All',
     emptyTitle: 'No matching runs',
