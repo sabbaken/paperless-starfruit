@@ -139,7 +139,6 @@ img {
 
 .section-title {
   font-size: clamp(1.9rem, 3.6vw, 2.9rem);
-  margin-top: 18px;
   max-width: 18ch;
 }
 
