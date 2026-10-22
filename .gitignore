@@ -15,6 +15,7 @@ data/
 /tmp
 CLAUDE.md
 .idea
+.taste-skill
 
 # Dev paperless-ngx consume folder (drop files here to ingest)
 docker/paperless-consume/

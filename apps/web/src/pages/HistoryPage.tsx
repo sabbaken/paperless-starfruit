@@ -340,21 +340,33 @@ function HistoryDetail({ entry }: { entry: AuditEntryDetail }) {
   const result = parsed.success ? parsed.data : null;
   return (
     <div className="min-w-0 space-y-6">
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          <span className={cn('font-medium', decisionTone(entry.decision))}>
+      <div className="space-y-3">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-6">
+          <h2 className="min-w-0 text-xl font-semibold tracking-tight break-words sm:text-2xl">
+            {result?.title || t('review.documentNumber', { documentId: entry.documentId })}
+          </h2>
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1 text-xs font-medium whitespace-nowrap sm:mt-1',
+              decisionTone(entry.decision),
+            )}
+          >
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
             {t(`auditDecisions.${decisionKey(entry.decision)}`)}
           </span>
-          <span className="text-muted-foreground">{t('history.runLabel', { id: entry.id })}</span>
         </div>
-        {result && (
-          <h2 className="text-xl font-semibold tracking-tight break-words">{result.title}</h2>
-        )}
-        <dl className="grid grid-cols-2 gap-4 border-y py-4 text-sm sm:grid-cols-4">
-          <RunFact label={t('history.documentHeader')}>
+        <dl className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          <RunFact label={t('history.documentHeader')} hideLabel>
             <DocumentLink documentId={entry.documentId} />
           </RunFact>
-          <RunFact label={t('history.whenHeader')}>{formatTime(entry.createdAt)}</RunFact>
+          <RunFact label={t('history.whenHeader')} hideLabel>
+            <time dateTime={new Date(entry.createdAt * 1000).toISOString()}>
+              {formatTime(entry.createdAt)}
+            </time>
+          </RunFact>
+          <RunFact label={t('history.runLabel', { id: entry.id })} hideLabel>
+            {t('history.runLabel', { id: entry.id })}
+          </RunFact>
           <RunFact label={t('history.jobHeader')}>
             {entry.jobId == null ? '—' : `#${entry.jobId}`}
           </RunFact>
@@ -371,11 +383,19 @@ function HistoryDetail({ entry }: { entry: AuditEntryDetail }) {
   );
 }
 
-function RunFact({ label, children }: { label: string; children: React.ReactNode }) {
+function RunFact({
+  label,
+  children,
+  hideLabel = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  hideLabel?: boolean;
+}) {
   return (
-    <div className="min-w-0 space-y-1">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="break-words tabular-nums">{children}</dd>
+    <div className="inline-flex min-w-0 items-center gap-1.5">
+      <dt className={hideLabel ? 'sr-only' : undefined}>{label}</dt>
+      <dd className="tabular-nums">{children}</dd>
     </div>
   );
 }
