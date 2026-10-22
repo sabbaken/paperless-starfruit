@@ -570,8 +570,8 @@ export const en = {
   site: {
     byok: {
       eyebrow: 'Bring your own keys',
-      title: 'Use your own API keys.',
-      lead: 'Connect the providers you already pay for, or a model running on your own hardware.',
+      title: 'Bring your own AI.',
+      lead: 'Use your own API keys, or connect a local model through an OpenAI-compatible endpoint such as Ollama.',
       logoAlt: '{{name}} logo',
       localName: 'Anything OpenAI-compatible',
       // The cloud rows' model lists stay in the component — they are pure proper

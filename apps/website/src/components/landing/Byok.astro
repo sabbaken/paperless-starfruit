@@ -1,137 +1,125 @@
 ---
-// Bring your own keys: the supported providers, kept brief.
 import { createT } from '@paperless-starfruit/shared';
 const t = createT('en');
 
-const cloud = [
-  {
-    name: 'Anthropic',
-    icon: '/icons/providers/anthropic.png',
-    models: 'Claude Opus 4.5 · Sonnet 4.6 · Haiku 4.5',
-  },
-  { name: 'OpenAI', icon: '/icons/providers/openai.png', models: 'GPT-4.1 · GPT-4o · o4-mini' },
-  { name: 'Google', icon: '/icons/providers/google.png', models: 'Gemini 2.5 Pro · 2.5 Flash' },
-  {
-    name: 'Mistral',
-    icon: '/icons/providers/mistral.png',
-    models: 'Mistral Large · Pixtral · Mistral OCR',
-  },
+const providers = [
+  { name: 'Anthropic', icon: '/icons/providers/anthropic.png' },
+  { name: 'OpenAI', icon: '/icons/providers/openai.png' },
+  { name: 'Google', icon: '/icons/providers/google.png' },
+  { name: 'Mistral', icon: '/icons/providers/mistral.png' },
 ];
 ---
 
-<section class="keys section" id="keys">
-  <div class="container">
-    <h2 class="section-title">{t('site.byok.title')}</h2>
-    <p class="lead">
-      {t('site.byok.lead')}
-    </p>
-
-    <div class="providers">
+<section class="keys section" id="keys" aria-labelledby="keys-title">
+  <div class="container keys__layout">
+    <div>
+      <h2 class="section-title" id="keys-title">{t('site.byok.title')}</h2>
+      <p class="lead">{t('site.byok.lead')}</p>
+    </div>
+    <ul class="providers" aria-label="Supported AI providers">
       {
-        cloud.map((p) => (
-          <div class="provider">
-            <img
-              src={p.icon}
-              width="28"
-              height="28"
-              alt={t('site.byok.logoAlt', { name: p.name })}
-              loading="lazy"
-            />
-            <div class="provider__text">
-              <span class="provider__name">{p.name}</span>
-              <span class="provider__models">{p.models}</span>
-            </div>
-          </div>
+        providers.map((provider) => (
+          <li class="provider">
+            <img src={provider.icon} width="24" height="24" alt="" loading="lazy" />
+            <span>{provider.name}</span>
+          </li>
         ))
       }
-      <div class="provider provider--local">
-        <span class="provider__glyph" aria-hidden="true">&gt;_</span>
-        <div class="provider__text">
-          <span class="provider__name">{t('site.byok.localName')}</span>
-          <span class="provider__models">{t('site.byok.localModels')}</span>
-        </div>
-      </div>
-    </div>
-
-    <p class="keys__note">
-      {t('site.byok.note')}
-    </p>
+      <li class="provider provider--local">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="18" height="7" rx="2"></rect>
+          <rect x="3" y="14" width="18" height="7" rx="2"></rect>
+          <path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6"></path>
+        </svg>
+        <span class="provider__text">
+          <span>{t('site.byok.localName')}</span>
+          <span class="provider__hint">Local &amp; self-hosted</span>
+        </span>
+      </li>
+    </ul>
   </div>
 </section>
 
 <style>
-  .providers {
-    margin-top: clamp(36px, 5vw, 52px);
+  .keys {
+    scroll-margin-top: 80px;
+  }
+
+  .keys .lead {
+    max-width: 46ch;
+  }
+
+  .keys__layout {
     display: grid;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 64px;
+  }
+
+  .providers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 32px;
+    width: 360px;
+    max-width: 100%;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .provider--local {
+    grid-column: 1 / -1;
   }
 
   .provider {
     display: flex;
     align-items: center;
-    gap: 16px;
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    box-shadow: var(--shadow-sm);
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 500;
   }
 
   .provider img {
-    border-radius: 7px;
     flex: none;
+    border-radius: 6px;
   }
 
-  .provider__glyph {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    font-size: 15px;
-    width: 28px;
-    height: 28px;
-    display: grid;
-    place-items: center;
-    background: var(--ink);
-    color: var(--gold);
-    border-radius: 7px;
+  .provider svg {
     flex: none;
   }
 
   .provider__text {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 2px;
-    min-width: 0;
-  }
-  .provider__name {
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .provider__models {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--ink-faint);
-    letter-spacing: 0.01em;
-  }
-  .provider--local {
-    border-style: dashed;
-    background: var(--paper);
   }
 
-  .keys__note {
-    margin-top: 22px;
-    font-family: var(--font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.02em;
+  .provider__hint {
+    font-size: 14px;
+    font-weight: 400;
     color: var(--ink-soft);
   }
 
-  @media (min-width: 720px) {
+  @media (max-width: 1099px) {
+    .keys__layout {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+
+  @media (max-width: 540px) {
     .providers {
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-    .provider--local {
-      grid-column: 1 / -1;
+      gap: 20px;
     }
   }
 </style>
