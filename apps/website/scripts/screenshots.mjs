@@ -21,11 +21,14 @@
  */
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../../..');
+const webRoot = resolve(repoRoot, 'apps/web');
+const webRequire = createRequire(resolve(webRoot, 'package.json'));
 const outDir = resolve(__dirname, '../public/screenshots');
 
 const PORT = 5178; // dedicated, so it never clashes with a running `pnpm dev`
@@ -322,6 +325,7 @@ function fixtureFor(apiPath) {
   if (apiPath === '/providers') return providers;
   if (apiPath === '/settings') return settings;
   if (apiPath === '/tags') return tags;
+  if (apiPath === '/document-types') return [];
   if (apiPath === '/version') return version;
   if (/^\/review\/\d+$/.test(apiPath)) return reviewDetail;
   if (apiPath === '/review') return reviewList;
@@ -342,10 +346,12 @@ const TARGETS = [
     path: '/review',
     // Open the first item to capture the side-by-side review detail.
     prep: async (page) => {
-      const review = page.getByRole('button', { name: 'Review' });
+      const review = page.getByRole('table').getByRole('link', { name: 'Review', exact: true });
       await review.first().waitFor({ timeout: 15000 });
       await review.first().click();
-      await page.getByText('AI suggestions', { exact: true }).waitFor({ timeout: 15000 });
+      await page
+        .getByRole('region', { name: 'AI suggestions', exact: true })
+        .waitFor({ timeout: 15000 });
     },
   },
   {
@@ -397,19 +403,14 @@ async function main() {
   await mkdir(outDir, { recursive: true });
 
   console.log(`Starting web dev server on :${PORT} …`);
-  const server = spawn(
-    'pnpm',
-    [
-      '--filter',
-      '@paperless-starfruit/web',
-      'exec',
-      'vite',
-      '--port',
-      String(PORT),
-      '--strictPort',
-    ],
-    { cwd: repoRoot, detached: true, stdio: ['ignore', 'ignore', 'inherit'] },
-  );
+  // Launch Vite directly: terminating a `pnpm exec` wrapper reports an error
+  // even when screenshots succeeded and shutdown was intentional.
+  const viteCli = resolve(dirname(webRequire.resolve('vite/package.json')), 'bin/vite.js');
+  const server = spawn(process.execPath, [viteCli, '--port', String(PORT), '--strictPort'], {
+    cwd: webRoot,
+    detached: true,
+    stdio: ['ignore', 'ignore', 'inherit'],
+  });
 
   const killServer = () => {
     try {
@@ -431,7 +432,8 @@ async function main() {
         console.error(
           '\nThe Chromium browser is missing. Run once:\n  pnpm --filter @paperless-starfruit/website exec playwright install chromium\n',
         );
-        process.exit(1);
+        process.exitCode = 1;
+        return;
       }
       throw err;
     }
@@ -479,8 +481,11 @@ async function main() {
       `\nDone. ${TARGETS.length} screenshots written to apps/website/public/screenshots/`,
     );
   } finally {
-    if (browser) await browser.close();
-    killServer();
+    try {
+      if (browser) await browser.close();
+    } finally {
+      killServer();
+    }
   }
 }
 
