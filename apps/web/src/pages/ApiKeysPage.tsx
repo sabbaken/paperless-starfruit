@@ -1,23 +1,12 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import {
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  Loader2,
-  Pencil,
-  Plus,
-  Server,
-  Trash2,
-  XCircle,
-} from 'lucide-react';
+import { CheckCircle2, Eye, EyeOff, Loader2, Pencil, Plus, Server, Trash2 } from 'lucide-react';
 import {
   CLOUD_PROVIDER_KINDS,
   PROVIDER_KIND,
   PROVIDER_KIND_META,
   type ProviderConfig,
   type ProviderKind,
-  type ProviderTestResult,
 } from '@paperless-starfruit/shared';
 import {
   useCreateProvider,
@@ -26,7 +15,7 @@ import {
   useTestProvider,
   useUpdateProvider,
 } from '@/api/providers';
-import { cn } from '@/lib/utils';
+import { ConnectionTest } from '@/components/connection-test';
 import { ProviderLogo } from '@/components/provider-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -215,7 +204,6 @@ function CredentialForm({
   const editing = !!cred;
   const meta = PROVIDER_KIND_META[kind];
   const [showKey, setShowKey] = useState(false);
-  const [testResult, setTestResult] = useState<ProviderTestResult | null>(null);
 
   const { register, handleSubmit, formState } = useForm<FormValues>({
     defaultValues: {
@@ -245,11 +233,7 @@ function CredentialForm({
     }
   });
   const onTest = handleSubmit((v) => {
-    setTestResult(null);
-    test.mutate(
-      { ...toInput(v), id: editing && cred ? cred.id : undefined },
-      { onSuccess: (r) => setTestResult(r) },
-    );
+    test.mutate({ ...toInput(v), id: editing && cred ? cred.id : undefined });
   });
   const busy = save.isPending || test.isPending;
 
@@ -326,21 +310,33 @@ function CredentialForm({
           </div>
         </div>
 
-        <TestLine
+        <ConnectionTest
+          label={t('common.test')}
+          onTest={onTest}
           pending={test.isPending}
-          result={testResult}
-          error={test.error}
-          saveError={save.error}
+          disabled={busy}
+          error={
+            test.error?.message ??
+            (test.data && !test.data.ok ? (test.data.error ?? t('apiKeys.testFailed')) : undefined)
+          }
+          success={
+            test.data?.ok
+              ? test.data.latencyMs != null
+                ? t('apiKeys.reachableWithLatency', { latency: test.data.latencyMs })
+                : t('apiKeys.reachable')
+              : undefined
+          }
         />
+        {save.error && (
+          <p role="alert" className="text-sm text-destructive">
+            {save.error.message}
+          </p>
+        )}
       </form>
 
       <div className="mt-5 flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onDone} disabled={busy}>
           {t('common.cancel')}
-        </Button>
-        <Button type="button" variant="outline" onClick={onTest} disabled={busy}>
-          {test.isPending && <Loader2 className="animate-spin" />}
-          {t('common.test')}
         </Button>
         <Button type="submit" form="credential-form" disabled={busy}>
           {save.isPending && <Loader2 className="animate-spin" />}
@@ -348,59 +344,5 @@ function CredentialForm({
         </Button>
       </div>
     </>
-  );
-}
-
-function TestLine({
-  pending,
-  result,
-  error,
-  saveError,
-}: {
-  pending: boolean;
-  result: ProviderTestResult | null;
-  error: Error | null;
-  saveError: Error | null;
-}) {
-  const { t } = useTranslation();
-  let tone: 'probing' | 'ok' | 'fault' | null = null;
-  let text = '';
-  if (saveError) {
-    tone = 'fault';
-    text = saveError.message;
-  } else if (pending) {
-    tone = 'probing';
-    text = t('apiKeys.contactingProvider');
-  } else if (error) {
-    tone = 'fault';
-    text = error.message;
-  } else if (result?.ok) {
-    tone = 'ok';
-    text =
-      result.latencyMs != null
-        ? t('apiKeys.reachableWithLatency', { latency: result.latencyMs })
-        : t('apiKeys.reachable');
-  } else if (result && !result.ok) {
-    tone = 'fault';
-    text = result.error ?? t('apiKeys.testFailed');
-  }
-  if (!tone) return null;
-
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm',
-        tone === 'fault' && 'border-destructive/40 bg-destructive/5 text-destructive',
-      )}
-    >
-      {tone === 'probing' ? (
-        <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
-      ) : tone === 'ok' ? (
-        <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-500" />
-      ) : (
-        <XCircle className="size-4 shrink-0 text-destructive" />
-      )}
-      <span className="truncate">{text}</span>
-    </div>
   );
 }

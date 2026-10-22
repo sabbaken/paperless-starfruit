@@ -44,6 +44,7 @@ import { ACTIVE_NAV_ITEM } from '@/lib/nav';
 import { DashboardPeriodSelect } from '@/components/dashboard-period-select';
 import { HistoryHeader } from '@/components/history-header';
 import { ReviewHeader } from '@/components/review-header';
+import { PageHeaderActionsContext } from '@/components/page-header-actions';
 import { UpdateNotice } from '@/components/update-notice';
 import { useTranslation } from '@/i18n/I18nProvider';
 import type { TFunction } from '@paperless-starfruit/shared';
@@ -111,6 +112,7 @@ function GithubIcon() {
 
 /** The connected app chrome: shadcn sidebar nav + page header. Wraps the routed pages. */
 export function DashboardLayout({ children }: { children: ReactNode }) {
+  const [headerActionsTarget, setHeaderActionsTarget] = useState<HTMLDivElement | null>(null);
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const historyMatch = useMatch('/history/:id');
@@ -287,36 +289,42 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       </Sidebar>
 
       <SidebarInset className="min-w-0">
-        <header className="sticky top-0 z-10 flex min-h-14 shrink-0 items-center gap-2 border-b bg-background px-4 py-2">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
-          {isReviewDetail ? (
-            <ReviewHeader id={reviewId} />
-          ) : isHistoryDetail ? (
-            <HistoryHeader id={historyId} />
-          ) : (
-            <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold tracking-tight">{meta.title}</h1>
-              {meta.description && (
-                <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
-              )}
-            </div>
-          )}
-          {pathname === '/dashboard' && <DashboardPeriodSelect />}
-        </header>
-
-        {/* A flex column all the way down, so a page can flex-1 itself to
-            vertically center sparse content (e.g. an empty state). */}
-        <div className="flex flex-1 flex-col px-6 py-8">
-          <div
-            className={cn(
-              'mx-auto flex w-full flex-1 flex-col',
-              width === 'wide' ? 'max-w-5xl' : 'max-w-3xl',
+        <PageHeaderActionsContext.Provider value={headerActionsTarget}>
+          <header className="sticky top-0 z-10 flex min-h-14 shrink-0 items-center gap-2 border-b bg-background px-4 py-2">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
+            {isReviewDetail ? (
+              <ReviewHeader id={reviewId} />
+            ) : isHistoryDetail ? (
+              <HistoryHeader id={historyId} />
+            ) : (
+              <div className="min-w-0">
+                <h1 className="truncate text-sm font-semibold tracking-tight">{meta.title}</h1>
+                {meta.description && (
+                  <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
+                )}
+              </div>
             )}
-          >
-            {children}
+            {pathname === '/dashboard' && <DashboardPeriodSelect />}
+            <div
+              ref={setHeaderActionsTarget}
+              className="ml-auto flex shrink-0 items-center gap-2 empty:hidden"
+            />
+          </header>
+
+          {/* A flex column all the way down, so a page can flex-1 itself to
+            vertically center sparse content (e.g. an empty state). */}
+          <div className="flex flex-1 flex-col px-6 py-8">
+            <div
+              className={cn(
+                'mx-auto flex w-full flex-1 flex-col',
+                width === 'wide' ? 'max-w-5xl' : 'max-w-3xl',
+              )}
+            >
+              {children}
+            </div>
           </div>
-        </div>
+        </PageHeaderActionsContext.Provider>
       </SidebarInset>
     </SidebarProvider>
   );

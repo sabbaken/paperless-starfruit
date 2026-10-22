@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PageHeaderActions } from '@/components/page-header-actions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Empty,
@@ -124,21 +125,21 @@ export function TagsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            aria-label={t('tags.filterAriaLabel')}
-            placeholder={t('tags.filterPlaceholder')}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-        <Button size="sm" variant="outline" onClick={() => setForm({ mode: 'create' })}>
+      <PageHeaderActions>
+        <Button size="sm" onClick={() => setForm({ mode: 'create' })}>
           <Plus className="size-4" />
           {t('tags.newTag')}
         </Button>
+      </PageHeaderActions>
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          aria-label={t('tags.filterAriaLabel')}
+          placeholder={t('tags.filterPlaceholder')}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-8"
+        />
       </div>
 
       {list.length === 0 ? (

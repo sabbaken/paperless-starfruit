@@ -14,7 +14,6 @@ import {
 import {
   paperlessConnectionInputSchema,
   type ConnectionStatus,
-  type ConnectionTestResult,
   type PaperlessConnectionInput,
   type TFunction,
 } from '@paperless-starfruit/shared';
@@ -26,6 +25,7 @@ import {
 } from '@/api/connection';
 import { useTranslation } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/utils';
+import { ConnectionTest } from '@/components/connection-test';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,7 @@ import { Label } from '@/components/ui/label';
 /** Where paperless-ngx documents how to mint an API token. */
 const TOKEN_DOCS_URL = 'https://docs.paperless-ngx.com/api/#authorization';
 
-type Tone = 'idle' | 'probing' | 'success' | 'connected' | 'fault';
+type Tone = 'idle' | 'probing' | 'connected' | 'fault';
 interface StatusView {
   tone: Tone;
   title: string;
@@ -111,7 +111,7 @@ export function PaperlessConnectionForm({
   const onSave = handleSubmit((values) =>
     save.mutate(values, {
       onSuccess: () => {
-        // Clear any prior Test result so it can't outrank the freshly-saved state.
+        // Clear the probe result after saving the connection.
         test.reset();
         form.resetField('token');
         onConnected?.();
@@ -136,10 +136,7 @@ export function PaperlessConnectionForm({
   const view = computeStatus({
     t,
     status,
-    testPending: test.isPending,
     savePending: save.isPending,
-    testResult: test.data,
-    testError: test.error,
     saveError: save.error,
   });
 
@@ -209,8 +206,6 @@ export function PaperlessConnectionForm({
           )}
         </div>
 
-        <ConnectionStatusAlert view={view} />
-
         <details className="group">
           <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
             <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
@@ -242,34 +237,34 @@ export function PaperlessConnectionForm({
             )}
           </div>
         </details>
+
+        <ConnectionTest
+          label={t('paperless.testConnection')}
+          onTest={onTest}
+          pending={test.isPending}
+          disabled={busy}
+          error={
+            test.error?.message ??
+            (test.data && !test.data.ok
+              ? (test.data.error ?? t('paperless.status.instanceRejected'))
+              : undefined)
+          }
+          success={
+            test.data?.ok
+              ? `${t('paperless.status.connectionVerified')} · ${describeProbe(t, test.data.documentCount, test.data.version)}`
+              : undefined
+          }
+        />
+        <ConnectionStatusAlert view={view} />
       </form>
 
-      <div className="mt-5 flex flex-col gap-2">
-        <div className="flex w-full gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={onTest}
-            disabled={busy}
-          >
-            {test.isPending && <Loader2 className="animate-spin" />}
-            {t('paperless.testConnection')}
-          </Button>
-          <Button type="submit" form="connect-form" className="flex-1" disabled={busy}>
-            {save.isPending && <Loader2 className="animate-spin" />}
-            {connected ? t('paperless.saveChanges') : t('paperless.saveContinue')}
-          </Button>
-        </div>
+      <div className="mt-5 flex gap-2">
+        <Button type="submit" form="connect-form" className="flex-1" disabled={busy}>
+          {save.isPending && <Loader2 className="animate-spin" />}
+          {connected ? t('paperless.saveChanges') : t('paperless.saveContinue')}
+        </Button>
         {showDisconnect && connected && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
-            onClick={onDisconnect}
-            disabled={disconnect.isPending}
-          >
+          <Button type="button" variant="destructive" onClick={onDisconnect} disabled={busy}>
             {disconnect.isPending && <Loader2 className="animate-spin" />}
             {t('paperless.disconnect')}
           </Button>
@@ -313,21 +308,14 @@ function ConnectionStatusAlert({ view }: { view: StatusView }) {
 function computeStatus({
   t,
   status,
-  testPending,
   savePending,
-  testResult,
-  testError,
   saveError,
 }: {
   t: TFunction;
   status: ConnectionStatus;
-  testPending: boolean;
   savePending: boolean;
-  testResult: ConnectionTestResult | undefined;
-  testError: Error | null;
   saveError: Error | null;
 }): StatusView {
-  if (testPending) return { tone: 'probing', title: t('paperless.status.checkingAccess') };
   if (savePending) return { tone: 'probing', title: t('paperless.status.verifyingStoring') };
 
   if (saveError)
@@ -336,26 +324,6 @@ function computeStatus({
       title: t('paperless.status.couldntConnect'),
       detail: saveError.message,
     };
-  if (testError)
-    return {
-      tone: 'fault',
-      title: t('paperless.status.couldntConnect'),
-      detail: testError.message,
-    };
-  if (testResult && !testResult.ok) {
-    return {
-      tone: 'fault',
-      title: t('paperless.status.couldntConnect'),
-      detail: testResult.error ?? t('paperless.status.instanceRejected'),
-    };
-  }
-  if (testResult?.ok) {
-    return {
-      tone: 'success',
-      title: t('paperless.status.connectionVerified'),
-      detail: describeProbe(t, testResult.documentCount, testResult.version),
-    };
-  }
   if (status.connected)
     return { tone: 'connected', title: t('paperless.status.connected'), detail: status.baseUrl };
   return { tone: 'idle', title: '' };
