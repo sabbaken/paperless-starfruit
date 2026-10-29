@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AlertCircle,
@@ -89,7 +90,11 @@ export function PaperlessConnectionForm({
   const connection = useConnection();
   const status = connection.data;
 
-  const form = useForm<PaperlessConnectionInput>({
+  const form = useForm<
+    z.input<typeof paperlessConnectionInputSchema>,
+    unknown,
+    PaperlessConnectionInput
+  >({
     resolver: zodResolver(paperlessConnectionInputSchema),
     defaultValues: { baseUrl: '', token: '', apiVersion: undefined },
   });
